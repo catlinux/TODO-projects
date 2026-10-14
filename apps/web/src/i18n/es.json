@@ -45,5 +45,13 @@
     "moveRight": "Mover a la derecha",
     "delete": "Eliminar columna",
     "empty": "No hay columnas todavía"
+  },
+  "dnd": {
+    "announcements": {
+      "start": "Se empezó a arrastrar {{item}}",
+      "over": "{{item}} está sobre una columna",
+      "end": "Se soltó {{item}}",
+      "cancel": "Se canceló el arrastre de {{item}}"
+    }
   }
 }

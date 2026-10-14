@@ -2,7 +2,7 @@
 
 Gestor de tareas, agenda y proyectos con esteroides: tablero Kanban con tarjetas arrastrables, calendario, avisos por correo y notificaciones, trabajo en equipo en el mismo proyecto y un conector para que una IA pueda gestionarlo.
 
-> **Estado: v0.1.0, primera versión usable.** Registro e inicio de sesión, proyectos y tareas (crear, editar, borrar). Aún sin Kanban, calendario ni avisos: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
+> **Estado: v0.2.0.** Registro e inicio de sesión, proyectos, tareas y tablero Kanban con columnas configurables y tarjetas arrastrables. Aún sin calendario ni avisos: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
 
 - **Autor y mantenedor:** CatLinux
 - **Idioma:** todo el proyecto (interfaz, documentación y commits) está en español.
@@ -52,7 +52,7 @@ pnpm --filter @todo/api dev     # API en http://localhost:3000
 pnpm --filter @todo/web dev     # web en http://localhost:5173 (proxifica /api a la API)
 ```
 
-Abre la web, crea una cuenta y empieza con un proyecto.
+Abre la web, crea una cuenta y un proyecto: arrastra las tarjetas entre columnas.
 
 Comprobaciones: `pnpm lint`, `pnpm typecheck`, `pnpm test` (los tests de la API usan PGlite y no necesitan Docker) y `pnpm --filter @todo/web build`.
 

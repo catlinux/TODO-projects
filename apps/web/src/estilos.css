@@ -51,3 +51,83 @@ button {
 ul {
   padding-left: 1.25rem;
 }
+
+.tablero {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.columna-kanban {
+  min-width: 240px;
+  max-width: 320px;
+  background: #edf1f7;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 0 0 280px;
+}
+
+.columna-kanban__tareas {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 6rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.columna-kanban__vacia {
+  color: #6b7280;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.tarjeta-kanban {
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.tarjeta-kanban--arrastrando {
+  opacity: 0.5;
+}
+
+.tarjeta-kanban--superpuesta {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+.tarjeta-kanban__encabezado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tarjeta-kanban__asa {
+  width: 1.75rem;
+  padding: 0.25rem 0;
+  cursor: grab;
+}
+
+.tarjeta-kanban__mover label,
+.tarjeta-kanban__mover select {
+  width: 100%;
+}
+
+@media (max-width: 740px) {
+  .tablero {
+    flex-direction: column;
+  }
+
+  .columna-kanban {
+    max-width: none;
+  }
+}

@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
+import { Tablero } from "../componentes/Tablero";
 
 export default function ProyectoDetalle() {
   const { t } = useTranslation();
@@ -54,25 +55,6 @@ export default function ProyectoDetalle() {
       await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
     },
   });
-
-  const moverTarea = useMutation({
-    mutationFn: async ({ tareaId, columnaId }: { tareaId: string; columnaId: string }) =>
-      peticion(`/tareas/${tareaId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ columnaId }),
-      }),
-    onSuccess: async () => {
-      await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
-    },
-  });
-
-  const borrarTarea = useMutation({
-    mutationFn: async (tareaId: string) => peticion(`/tareas/${tareaId}`, { method: "DELETE" }),
-    onSuccess: async () => {
-      await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
-    },
-  });
-
   const crearColumna = useMutation({
     mutationFn: async () =>
       peticion(`/proyectos/${proyectoId}/columnas`, {
@@ -135,13 +117,6 @@ export default function ProyectoDetalle() {
 
   const listaColumnas = (columnas.data ?? []).slice().sort((a, b) => a.posicion - b.posicion);
   const listaTareas = tareas.data ?? [];
-
-  function tareasDeColumna(columnaId: string) {
-    return listaTareas
-      .filter((tarea) => tarea.columnaId === columnaId)
-      .slice()
-      .sort((a, b) => a.posicion - b.posicion);
-  }
 
   return (
     <main className="contenedor">
@@ -263,40 +238,7 @@ export default function ProyectoDetalle() {
           </button>
         </form>
 
-        {listaColumnas.map((columna) => (
-          <section key={columna.id} className="columna-tareas">
-            <h3>{columna.nombre}</h3>
-            {tareasDeColumna(columna.id).length === 0 ? (
-              <p>{t("tasks.empty")}</p>
-            ) : (
-              <ul>
-                {tareasDeColumna(columna.id).map((tarea) => (
-                  <li key={tarea.id}>
-                    <span>{tarea.titulo}</span>
-                    <label>
-                      {t("tasks.moveTo")}
-                      <select
-                        value={tarea.columnaId}
-                        onChange={(e) =>
-                          moverTarea.mutate({ tareaId: tarea.id, columnaId: e.target.value })
-                        }
-                      >
-                        {listaColumnas.map((opcion) => (
-                          <option key={opcion.id} value={opcion.id}>
-                            {opcion.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button type="button" onClick={() => void borrarTarea.mutate(tarea.id)}>
-                      {t("tasks.delete")}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ))}
+        <Tablero proyectoId={proyectoId} columnas={listaColumnas} tareas={listaTareas} />
       </section>
     </main>
   );

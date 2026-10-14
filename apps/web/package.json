@@ -12,6 +12,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-query": "^5.100.8",
     "@todo/shared": "workspace:*",
     "i18next": "^26.1.2",

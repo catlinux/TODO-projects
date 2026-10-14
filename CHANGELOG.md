@@ -4,6 +4,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.2.0] - 2026-10-14
+
+### Añadido
+- Columnas configurables por proyecto: crear, renombrar, reordenar y borrar. Cada proyecto nuevo empieza con «Pendiente», «En curso» y «Hecha».
+- Tablero Kanban con dnd-kit: arrastrar tarjetas entre columnas y reordenarlas, con la posición guardada en la API y alternativa sin arrastre (selector «Mover a»).
+
+### Cambiado
+- Las tareas ya no tienen `estado`: la columna lo sustituye y cada tarea guarda su `posicion`. La migración conserva los datos existentes (los estados pasan a las columnas por defecto). Cambio incompatible en la API; antes de la 1.0.0 cuenta como versión menor.
+
+### Corregido
+- Un PATCH de tarea sin `estado` ya no lo reiniciaba a «pendiente».
+
 ## [0.1.0] - 2026-10-14
 
 ### Añadido
