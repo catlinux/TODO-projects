@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -26,14 +26,31 @@ export const proyectos = pgTable("proyectos", {
     .$onUpdate(() => new Date()),
 });
 
+export const columnas = pgTable("columnas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  proyectoId: uuid("proyecto_id")
+    .notNull()
+    .references(() => proyectos.id, { onDelete: "cascade" }),
+  nombre: text("nombre").notNull(),
+  posicion: integer("posicion").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 export const tareas = pgTable("tareas", {
   id: uuid("id").primaryKey().defaultRandom(),
   proyectoId: uuid("proyecto_id")
     .notNull()
     .references(() => proyectos.id, { onDelete: "cascade" }),
+  columnaId: uuid("columna_id")
+    .notNull()
+    .references(() => columnas.id, { onDelete: "restrict" }),
   titulo: text("titulo").notNull(),
   descripcion: text("descripcion"),
-  estado: text("estado").notNull().default("pendiente"),
+  posicion: integer("posicion").notNull(),
   venceEn: timestamp("vence_en", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })

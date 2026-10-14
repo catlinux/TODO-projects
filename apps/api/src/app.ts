@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import type { Database } from "./db/index.js";
 import { registrarRutasAuth } from "./auth.js";
 import { obtenerSesion } from "./auth.js";
+import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasProyectos } from "./proyectos.js";
 import { registrarRutasTareas } from "./tareas.js";
 
@@ -35,6 +36,7 @@ export async function buildApp(db: Database): Promise<FastifyInstance> {
 
   registrarRutasAuth(app, db);
   registrarRutasProyectos(app, db);
+  registrarRutasColumnas(app, db);
   registrarRutasTareas(app, db);
 
   return app;

@@ -13,5 +13,5 @@ Contexto: ver `README.md` y `docs/ARQUITECTURA.md`. Idioma: español en interfaz
 
 ## 0.2
 
-- [ ] **7. Columnas configurables por proyecto** (modelo, API y gestión en la web).
+- [x] **7. Columnas configurables por proyecto** (modelo, API y gestión en la web).
 - [ ] **8. Tablero Kanban** con dnd-kit: arrastrar tarjetas entre columnas y reordenar, persistiendo la posición. Versión **0.2.0** (menor).

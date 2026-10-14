@@ -12,6 +12,7 @@ import * as schema from "./schema.js";
 type Usuario = typeof schema.usuarios.$inferSelect;
 type Proyecto = typeof schema.proyectos.$inferSelect;
 type Tarea = typeof schema.tareas.$inferSelect;
+type Columna = typeof schema.columnas.$inferSelect;
 
 describe("esquema de base de datos", () => {
   const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
@@ -29,7 +30,7 @@ describe("esquema de base de datos", () => {
       sql`select table_name from information_schema.tables where table_schema = 'public'`,
     );
     const names = result.rows.map((row) => row.table_name);
-    expect(names).toEqual(expect.arrayContaining(["usuarios", "proyectos", "tareas"]));
+    expect(names).toEqual(expect.arrayContaining(["usuarios", "proyectos", "tareas", "columnas"]));
   });
 
   it("inserta usuarios, proyectos y tareas con sus relaciones", async () => {
@@ -41,14 +42,18 @@ describe("esquema de base de datos", () => {
       .insert(schema.proyectos)
       .values({ nombre: "Proyecto", propietarioId: usuario.id })
       .returning()) as [Proyecto];
+    const [columna] = (await db
+      .insert(schema.columnas)
+      .values({ proyectoId: proyecto.id, nombre: "Pendiente", posicion: 0 })
+      .returning()) as [Columna];
     const [tarea] = (await db
       .insert(schema.tareas)
-      .values({ proyectoId: proyecto.id, titulo: "Tarea" })
+      .values({ proyectoId: proyecto.id, columnaId: columna.id, titulo: "Tarea", posicion: 0 })
       .returning()) as [Tarea];
 
     expect(proyecto.propietarioId).toBe(usuario.id);
     expect(tarea.proyectoId).toBe(proyecto.id);
-    expect(tarea.estado).toBe("pendiente");
+    expect(tarea.columnaId).toBe(columna.id);
     expect(usuario.createdAt).toBeInstanceOf(Date);
     expect(usuario.updatedAt).toBeInstanceOf(Date);
   });
@@ -62,7 +67,16 @@ describe("esquema de base de datos", () => {
       .insert(schema.proyectos)
       .values({ nombre: "Borrar", propietarioId: usuario.id })
       .returning()) as [Proyecto];
-    await db.insert(schema.tareas).values({ proyectoId: proyecto.id, titulo: "Se va" });
+    const [columna] = (await db
+      .insert(schema.columnas)
+      .values({ proyectoId: proyecto.id, nombre: "Pendiente", posicion: 0 })
+      .returning()) as [Columna];
+    await db.insert(schema.tareas).values({
+      proyectoId: proyecto.id,
+      columnaId: columna.id,
+      titulo: "Se va",
+      posicion: 0,
+    });
 
     await db.delete(schema.proyectos).where(eq(schema.proyectos.id, proyecto.id));
     const restantes = await db

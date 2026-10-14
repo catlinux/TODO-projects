@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { esquemaProyecto, esquemaProyectoParcial } from "@todo/shared";
 
-import { proyectos } from "./db/schema.js";
+import { columnas, proyectos } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
@@ -43,14 +43,26 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
       return;
     }
 
-    const [proyecto] = await db
-      .insert(proyectos)
-      .values({
-        nombre: resultado.data.nombre,
-        descripcion: resultado.data.descripcion,
-        propietarioId: usuario.id,
-      })
-      .returning();
+    const proyecto = await db.transaction(async (tx) => {
+      const [creado] = await tx
+        .insert(proyectos)
+        .values({
+          nombre: resultado.data.nombre,
+          descripcion: resultado.data.descripcion,
+          propietarioId: usuario.id,
+        })
+        .returning();
+
+      if (!creado) return null;
+
+      await tx.insert(columnas).values([
+        { proyectoId: creado.id, nombre: "Pendiente", posicion: 0 },
+        { proyectoId: creado.id, nombre: "En curso", posicion: 1 },
+        { proyectoId: creado.id, nombre: "Hecha", posicion: 2 },
+      ]);
+
+      return creado;
+    });
 
     if (!proyecto) {
       reply.code(500).send({ mensaje: "No se pudo crear el proyecto" });

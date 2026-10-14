@@ -154,11 +154,9 @@ describe("proyectos y tareas", () => {
     const tarea = creacion.json() as {
       id: string;
       titulo: string;
-      estado: string;
       venceEn: string;
     };
     expect(tarea.titulo).toBe("Primera tarea");
-    expect(tarea.estado).toBe("pendiente");
     expect(tarea.venceEn).toBe("2026-12-31T10:00:00.000Z");
 
     const listado = await app.inject({
@@ -183,10 +181,10 @@ describe("proyectos y tareas", () => {
       method: "PATCH",
       url: `/tareas/${tarea.id}`,
       headers: { cookie: `sesion=${cookie}` },
-      payload: { titulo: "Tarea editada", estado: "en_curso" },
+      payload: { titulo: "Tarea editada" },
     });
     expect(edicion.statusCode).toBe(200);
-    expect(edicion.json()).toMatchObject({ titulo: "Tarea editada", estado: "en_curso" });
+    expect(edicion.json()).toMatchObject({ titulo: "Tarea editada" });
 
     const soloTitulo = await app.inject({
       method: "PATCH",
@@ -194,7 +192,7 @@ describe("proyectos y tareas", () => {
       headers: { cookie: `sesion=${cookie}` },
       payload: { titulo: "Otro título" },
     });
-    expect(soloTitulo.json()).toMatchObject({ titulo: "Otro título", estado: "en_curso" });
+    expect(soloTitulo.json()).toMatchObject({ titulo: "Otro título" });
 
     const borrado = await app.inject({
       method: "DELETE",
@@ -307,7 +305,7 @@ describe("proyectos y tareas", () => {
       method: "POST",
       url: `/proyectos/${proyecto.id}/tareas`,
       headers: { cookie: `sesion=${cookie}` },
-      payload: { titulo: "Tarea", estado: "inexistente" },
+      payload: { titulo: "Tarea", columnaId: "no-es-uuid" },
     });
     expect(estado.statusCode).toBe(400);
 

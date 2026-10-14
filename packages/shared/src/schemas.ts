@@ -27,7 +27,7 @@ export const esquemaProyectoParcial = esquemaProyecto.partial();
 export const esquemaTarea = z.object({
   titulo: z.string().trim().min(1, "Título obligatorio").max(300, "Título demasiado largo"),
   descripcion: z.string().max(5000, "Descripción demasiado larga").optional(),
-  estado: z.enum(["pendiente", "en_curso", "hecha"]).default("pendiente"),
+  columnaId: z.string().uuid("Columna no válida").optional(),
   venceEn: z
     .string()
     .datetime({ offset: true })
@@ -35,7 +35,23 @@ export const esquemaTarea = z.object({
     .transform((valor) => (valor ? new Date(valor) : undefined)),
 });
 
-// Sin el default de estado: en un PATCH omitirlo no debe reiniciarlo a «pendiente».
 export const esquemaTareaParcial = esquemaTarea
-  .extend({ estado: esquemaTarea.shape.estado.removeDefault() })
+  .extend({
+    posicion: z.number().int().min(0, "Posición no válida").optional(),
+    columnaId: z.string().uuid("Columna no válida").optional(),
+  })
   .partial();
+
+export const esquemaColumna = z.object({
+  nombre: z.string().trim().min(1, "Nombre obligatorio").max(100, "Nombre demasiado largo"),
+});
+
+export const esquemaColumnaParcial = z.object({
+  nombre: z
+    .string()
+    .trim()
+    .min(1, "Nombre obligatorio")
+    .max(100, "Nombre demasiado largo")
+    .optional(),
+  posicion: z.number().int().min(0, "Posición no válida").optional(),
+});
