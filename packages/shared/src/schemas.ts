@@ -16,3 +16,23 @@ export const esquemaLogin = z.object({
 
 export type DatosRegistro = z.infer<typeof esquemaRegistro>;
 export type DatosLogin = z.infer<typeof esquemaLogin>;
+
+export const esquemaProyecto = z.object({
+  nombre: z.string().trim().min(1, "Nombre obligatorio").max(200, "Nombre demasiado largo"),
+  descripcion: z.string().max(5000, "Descripción demasiado larga").optional(),
+});
+
+export const esquemaProyectoParcial = esquemaProyecto.partial();
+
+export const esquemaTarea = z.object({
+  titulo: z.string().trim().min(1, "Título obligatorio").max(300, "Título demasiado largo"),
+  descripcion: z.string().max(5000, "Descripción demasiado larga").optional(),
+  estado: z.enum(["pendiente", "en_curso", "hecha"]).default("pendiente"),
+  venceEn: z
+    .string()
+    .datetime({ offset: true })
+    .optional()
+    .transform((valor) => (valor ? new Date(valor) : undefined)),
+});
+
+export const esquemaTareaParcial = esquemaTarea.partial();

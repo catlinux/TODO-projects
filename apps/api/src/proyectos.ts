@@ -1,0 +1,177 @@
+import { type FastifyInstance, type FastifyReply } from "fastify";
+import { and, asc, eq } from "drizzle-orm";
+import { z } from "zod";
+
+import { esquemaProyecto, esquemaProyectoParcial } from "@todo/shared";
+
+import { proyectos } from "./db/schema.js";
+import type { Database } from "./db/index.js";
+
+const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
+
+type RespuestaError = { mensaje: string };
+
+function responderValidacion(reply: FastifyReply, mensaje: string): void {
+  reply.code(400).send({ mensaje } satisfies RespuestaError);
+}
+
+export function registrarRutasProyectos(app: FastifyInstance, db: Database): void {
+  app.get("/proyectos", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    return db
+      .select()
+      .from(proyectos)
+      .where(eq(proyectos.propietarioId, usuario.id))
+      .orderBy(asc(proyectos.createdAt));
+  });
+
+  app.post("/proyectos", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    const resultado = esquemaProyecto.safeParse(request.body);
+    if (!resultado.success) {
+      responderValidacion(reply, "Datos de proyecto no válidos");
+      return;
+    }
+
+    const [proyecto] = await db
+      .insert(proyectos)
+      .values({
+        nombre: resultado.data.nombre,
+        descripcion: resultado.data.descripcion,
+        propietarioId: usuario.id,
+      })
+      .returning();
+
+    if (!proyecto) {
+      reply.code(500).send({ mensaje: "No se pudo crear el proyecto" });
+      return;
+    }
+
+    reply.code(201).send(proyecto);
+  });
+
+  app.get("/proyectos/:id", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    const params = esquemaId.safeParse(request.params);
+    if (!params.success) {
+      responderValidacion(reply, "Identificador no válido");
+      return;
+    }
+
+    const [proyecto] = await db
+      .select()
+      .from(proyectos)
+      .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
+      .limit(1);
+
+    if (!proyecto) {
+      reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    return proyecto;
+  });
+
+  app.patch("/proyectos/:id", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    const params = esquemaId.safeParse(request.params);
+    if (!params.success) {
+      responderValidacion(reply, "Identificador no válido");
+      return;
+    }
+
+    const body = esquemaProyectoParcial.safeParse(request.body);
+    if (!body.success) {
+      responderValidacion(reply, "Datos de proyecto no válidos");
+      return;
+    }
+
+    const existente = await db
+      .select({ id: proyectos.id })
+      .from(proyectos)
+      .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
+      .limit(1);
+
+    if (existente.length === 0) {
+      reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    const cambios: {
+      nombre?: string;
+      descripcion?: string;
+      updatedAt: Date;
+    } = { updatedAt: new Date() };
+
+    if (body.data.nombre !== undefined) {
+      cambios.nombre = body.data.nombre;
+    }
+    if (body.data.descripcion !== undefined) {
+      cambios.descripcion = body.data.descripcion;
+    }
+
+    const [proyecto] = await db
+      .update(proyectos)
+      .set(cambios)
+      .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
+      .returning();
+
+    if (!proyecto) {
+      reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    reply.send(proyecto);
+  });
+
+  app.delete("/proyectos/:id", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    const params = esquemaId.safeParse(request.params);
+    if (!params.success) {
+      responderValidacion(reply, "Identificador no válido");
+      return;
+    }
+
+    const existente = await db
+      .select({ id: proyectos.id })
+      .from(proyectos)
+      .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
+      .limit(1);
+
+    if (existente.length === 0) {
+      reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    await db
+      .delete(proyectos)
+      .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)));
+
+    reply.code(204).send();
+  });
+}
