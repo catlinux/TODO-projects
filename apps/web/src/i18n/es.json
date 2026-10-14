@@ -1,0 +1,43 @@
+{
+  "app": {
+    "title": "TODO-projects",
+    "loading": "Cargando…"
+  },
+  "nav": {
+    "projects": "Proyectos",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "email": "Correo electrónico",
+    "name": "Nombre",
+    "password": "Contraseña",
+    "submitLogin": "Entrar",
+    "submitRegister": "Crear cuenta",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "error": "No se pudo completar la acción"
+  },
+  "projects": {
+    "title": "Proyectos",
+    "name": "Nombre",
+    "description": "Descripción",
+    "create": "Crear proyecto",
+    "empty": "No hay proyectos todavía"
+  },
+  "tasks": {
+    "title": "Tareas",
+    "listTitle": "Tareas del proyecto",
+    "taskTitle": "Título",
+    "status": "Estado",
+    "states": {
+      "pendiente": "Pendiente",
+      "en_curso": "En curso",
+      "hecha": "Hecha"
+    },
+    "create": "Crear tarea",
+    "delete": "Eliminar",
+    "empty": "No hay tareas todavía"
+  }
+}

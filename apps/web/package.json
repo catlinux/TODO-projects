@@ -4,8 +4,30 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint src"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.100.8",
+    "@todo/shared": "workspace:*",
+    "i18next": "^26.1.2",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-i18next": "^17.0.16",
+    "react-router-dom": "^7.14.2"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "jsdom": "^29.1.0",
+    "vite": "^8.0.10",
+    "vitest": "^5.0.4"
   }
 }

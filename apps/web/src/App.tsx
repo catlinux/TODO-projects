@@ -1,0 +1,51 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+
+import { peticion, type UsuarioApi } from "./api";
+import Login from "./paginas/Login";
+import Registro from "./paginas/Registro";
+import Proyectos from "./paginas/Proyectos";
+import ProyectoDetalle from "./paginas/ProyectoDetalle";
+
+function useSesion() {
+  return useQuery({
+    queryKey: ["yo"],
+    queryFn: () => peticion<UsuarioApi>("/auth/yo"),
+    retry: false,
+  });
+}
+
+function RutaProtegida({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
+  const { isLoading, isError } = useSesion();
+  if (isLoading) return <p>{t("app.loading")}</p>;
+  if (isError) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<Registro />} />
+      <Route path="/" element={<Navigate to="/proyectos" replace />} />
+      <Route
+        path="/proyectos"
+        element={
+          <RutaProtegida>
+            <Proyectos />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/proyectos/:id"
+        element={
+          <RutaProtegida>
+            <ProyectoDetalle />
+          </RutaProtegida>
+        }
+      />
+    </Routes>
+  );
+}
