@@ -2,7 +2,7 @@
 
 Gestor de tareas, agenda y proyectos con esteroides: tablero Kanban con tarjetas arrastrables, calendario, avisos por correo y notificaciones, trabajo en equipo en el mismo proyecto y un conector para que una IA pueda gestionarlo.
 
-> **Estado: fase de diseño (v0.0.1).** Todavía no hay código. Este repositorio contiene solo la documentación y el plan de trabajo.
+> **Estado: v0.1.0, primera versión usable.** Registro e inicio de sesión, proyectos y tareas (crear, editar, borrar). Aún sin Kanban, calendario ni avisos: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
 
 - **Autor y mantenedor:** CatLinux
 - **Idioma:** todo el proyecto (interfaz, documentación y commits) está en español.
@@ -37,7 +37,26 @@ TypeScript en todo el proyecto, con monorepo pnpm: Fastify + Drizzle + PostgreSQ
 
 ## Instalación y uso
 
-Aún no disponibles: no hay nada que instalar todavía. Se documentarán aquí (o en `docs/INSTALACION.md` y `docs/USO.md`) cuando exista la primera versión usable.
+Requisitos: Node.js 24, pnpm 10 y Docker (para PostgreSQL).
+
+```sh
+pnpm install
+docker compose up -d          # PostgreSQL 16 de desarrollo (usuario, clave y base: todo)
+```
+
+En dos terminales (la API aplica las migraciones al arrancar):
+
+```sh
+export DATABASE_URL=postgres://todo:todo@localhost:5432/todo   # PowerShell: $env:DATABASE_URL = "..."
+pnpm --filter @todo/api dev     # API en http://localhost:3000
+pnpm --filter @todo/web dev     # web en http://localhost:5173 (proxifica /api a la API)
+```
+
+Abre la web, crea una cuenta y empieza con un proyecto.
+
+Comprobaciones: `pnpm lint`, `pnpm typecheck`, `pnpm test` (los tests de la API usan PGlite y no necesitan Docker) y `pnpm --filter @todo/web build`.
+
+Pendiente para producción: empaquetado con Docker, límite de intentos de acceso y revisión de seguridad (ver [TODO](TODO.md)).
 
 ## Versionado
 

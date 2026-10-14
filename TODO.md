@@ -3,7 +3,9 @@
 ## Prioridad alta
 
 - Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
-- Ejecutar el plan de la 0.1: base del monorepo, autenticación, proyectos y tareas (ver `.agents/plans/base/base.PLAN.md`).
+- Revisión de seguridad de la autenticación (registro concurrente con el mismo correo devuelve 500 por la restricción única).
+- Empaquetado de producción: Dockerfile de la API y la web (hoy se arranca con `tsx`).
+- Ejecutar el plan de la 0.2: columnas configurables y tablero Kanban (ver `.agents/plans/base/base.PLAN.md`).
 - Rate limit en endpoints de autenticación (pendiente de seguridad).
 
 ## Prioridad media
