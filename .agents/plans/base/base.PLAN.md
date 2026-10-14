@@ -5,7 +5,7 @@ Contexto: ver `README.md` y `docs/ARQUITECTURA.md`. Idioma: español en interfaz
 ## 0.1
 
 - [x] **1. Monorepo.** pnpm workspaces, TypeScript estricto, ESLint, Prettier, Vitest; carpetas `apps/api`, `apps/web`, `packages/shared`. Criterio: `pnpm install && pnpm test` pasan. Ejecutor: AgentRelay (esfuerzo medio). Sin entrada de CHANGELOG hasta cerrar la 0.1.
-- [ ] **2. Base de datos y API.** Fastify + Drizzle + PostgreSQL (Docker Compose para desarrollo); tablas `usuarios`, `proyectos`, `tareas` con UUID, `created_at` y `updated_at`. Criterio: las migraciones se aplican y hay tests de integración. Ejecutor: AgentRelay (medio).
+- [x] **2. Base de datos y API.** Fastify + Drizzle + PostgreSQL (Docker Compose para desarrollo); tablas `usuarios`, `proyectos`, `tareas` con UUID, `created_at` y `updated_at`. Criterio: las migraciones se aplican y hay tests de integración. Ejecutor: AgentRelay (medio).
 - [ ] **3. Autenticación.** Registro e inicio de sesión (argon2, sesión por cookie httpOnly). Criterio: tests de registro, login y rutas protegidas. Revisión de seguridad por Opus.
 - [ ] **4. CRUD de proyectos y tareas** en la API, con validación zod compartida desde `packages/shared`. Ejecutor: AgentRelay (medio).
 - [ ] **5. Web mínima.** React + Vite: login, lista de proyectos, lista de tareas, crear/editar/borrar. Interfaz en español con i18n. Ejecutor: AgentRelay (medio).
