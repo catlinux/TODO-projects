@@ -12,6 +12,9 @@ secrets.json
 wp-config.php
 .htpasswd
 node_modules/
+dist/
+coverage/
+*.tsbuildinfo
 .agentrelay/
 agentrelay.config.json
 *.log

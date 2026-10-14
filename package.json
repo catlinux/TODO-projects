@@ -1,0 +1,19 @@
+{
+  "name": "todo-projects",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test"
+  },
+  "devDependencies": {
+    "eslint": "^10.12.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.4"
+  }
+}
