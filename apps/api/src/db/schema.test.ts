@@ -35,7 +35,7 @@ describe("esquema de base de datos", () => {
   it("inserta usuarios, proyectos y tareas con sus relaciones", async () => {
     const [usuario] = (await db
       .insert(schema.usuarios)
-      .values({ email: "ana@example.com", nombre: "Ana" })
+      .values({ email: "ana@example.com", nombre: "Ana", passwordHash: "hash" })
       .returning()) as [Usuario];
     const [proyecto] = (await db
       .insert(schema.proyectos)
@@ -56,7 +56,7 @@ describe("esquema de base de datos", () => {
   it("borra las tareas en cascada al borrar el proyecto", async () => {
     const [usuario] = (await db
       .insert(schema.usuarios)
-      .values({ email: "borrado@example.com", nombre: "Borrado" })
+      .values({ email: "borrado@example.com", nombre: "Borrado", passwordHash: "hash" })
       .returning()) as [Usuario];
     const [proyecto] = (await db
       .insert(schema.proyectos)
@@ -76,7 +76,7 @@ describe("esquema de base de datos", () => {
   it("actualiza updated_at", async () => {
     const [usuario] = (await db
       .insert(schema.usuarios)
-      .values({ email: "fecha@example.com", nombre: "Fecha" })
+      .values({ email: "fecha@example.com", nombre: "Fecha", passwordHash: "hash" })
       .returning()) as [Usuario];
     const ahora = new Date(Date.now() + 1000);
     await db

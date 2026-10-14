@@ -4,7 +4,7 @@ export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   nombre: text("nombre").notNull(),
-  passwordHash: text("password_hash"),
+  passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -35,6 +35,20 @@ export const tareas = pgTable("tareas", {
   descripcion: text("descripcion"),
   estado: text("estado").notNull().default("pendiente"),
   venceEn: timestamp("vence_en", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const sesiones = pgTable("sesiones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  usuarioId: uuid("usuario_id")
+    .notNull()
+    .references(() => usuarios.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiraEn: timestamp("expira_en", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
