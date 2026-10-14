@@ -92,7 +92,18 @@ export function registrarRutasAuth(app: FastifyInstance, db: Database): void {
     }
 
     const passwordHash = await hash(contrasena);
-    const [usuario] = await db.insert(usuarios).values({ email, nombre, passwordHash }).returning();
+    let usuario: typeof usuarios.$inferSelect | undefined;
+    try {
+      [usuario] = await db.insert(usuarios).values({ email, nombre, passwordHash }).returning();
+    } catch (error) {
+      // Dos registros simultáneos con el mismo correo: gana la restricción única.
+      const causa = (error as { cause?: { code?: string } }).cause;
+      if (causa?.code === "23505") {
+        reply.code(409).send({ mensaje: "El correo ya está registrado" });
+        return;
+      }
+      throw error;
+    }
 
     if (!usuario) {
       reply.code(500).send({ mensaje: "No se pudo crear el usuario" });

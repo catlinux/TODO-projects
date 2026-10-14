@@ -61,6 +61,21 @@ describe("autenticación", () => {
     expect(cookie).toContain("Path=/");
   });
 
+  it("registros simultáneos con el mismo correo: uno 201 y otro 409", async () => {
+    const peticion = () =>
+      app.inject({
+        method: "POST",
+        url: "/auth/registro",
+        payload: {
+          email: "carrera@example.com",
+          nombre: "Carrera",
+          contrasena: "contrasena-larga-1",
+        },
+      });
+    const respuestas = await Promise.all([peticion(), peticion()]);
+    expect(respuestas.map((r) => r.statusCode).sort()).toEqual([201, 409]);
+  });
+
   it("rechaza el registro duplicado con 409", async () => {
     const respuesta = await app.inject({
       method: "POST",
