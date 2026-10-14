@@ -13,14 +13,22 @@ export interface ProyectoApi {
   updatedAt: string;
 }
 
-export type EstadoTarea = "pendiente" | "en_curso" | "hecha";
+export interface ColumnaApi {
+  id: string;
+  proyectoId: string;
+  nombre: string;
+  posicion: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface TareaApi {
   id: string;
   proyectoId: string;
+  columnaId: string;
   titulo: string;
   descripcion?: string | null;
-  estado: EstadoTarea;
+  posicion: number;
   venceEn?: string | null;
   createdAt: string;
   updatedAt: string;

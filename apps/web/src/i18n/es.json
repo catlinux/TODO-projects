@@ -30,14 +30,20 @@
     "title": "Tareas",
     "listTitle": "Tareas del proyecto",
     "taskTitle": "Título",
-    "status": "Estado",
-    "states": {
-      "pendiente": "Pendiente",
-      "en_curso": "En curso",
-      "hecha": "Hecha"
-    },
+    "moveTo": "Mover a",
     "create": "Crear tarea",
     "delete": "Eliminar",
     "empty": "No hay tareas todavía"
+  },
+  "columns": {
+    "title": "Columnas",
+    "name": "Nombre de la columna",
+    "create": "Añadir columna",
+    "rename": "Renombrar",
+    "save": "Guardar",
+    "moveLeft": "Mover a la izquierda",
+    "moveRight": "Mover a la derecha",
+    "delete": "Eliminar columna",
+    "empty": "No hay columnas todavía"
   }
 }
