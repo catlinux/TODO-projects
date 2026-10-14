@@ -35,4 +35,7 @@ export const esquemaTarea = z.object({
     .transform((valor) => (valor ? new Date(valor) : undefined)),
 });
 
-export const esquemaTareaParcial = esquemaTarea.partial();
+// Sin el default de estado: en un PATCH omitirlo no debe reiniciarlo a «pendiente».
+export const esquemaTareaParcial = esquemaTarea
+  .extend({ estado: esquemaTarea.shape.estado.removeDefault() })
+  .partial();

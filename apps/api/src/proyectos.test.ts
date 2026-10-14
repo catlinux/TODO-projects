@@ -188,6 +188,14 @@ describe("proyectos y tareas", () => {
     expect(edicion.statusCode).toBe(200);
     expect(edicion.json()).toMatchObject({ titulo: "Tarea editada", estado: "en_curso" });
 
+    const soloTitulo = await app.inject({
+      method: "PATCH",
+      url: `/tareas/${tarea.id}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { titulo: "Otro título" },
+    });
+    expect(soloTitulo.json()).toMatchObject({ titulo: "Otro título", estado: "en_curso" });
+
     const borrado = await app.inject({
       method: "DELETE",
       url: `/tareas/${tarea.id}`,
