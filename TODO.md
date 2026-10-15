@@ -15,6 +15,8 @@
 - Calendario, agenda, recurrencias y exportación `.ics` (0.3).
 - `.ics` con recurrencia: las zonas con horario de verano fuera de la UE (p. ej. `America/New_York`) caen al fallback en UTC porque aún no se generan sus reglas de VTIMEZONE.
 - Recordatorios por correo y Web Push (0.4).
+- Completar una ocurrencia suelta de una tarea recurrente y excepciones de la serie.
+- Suscripción al calendario `.ics` por URL con token (hoy solo descarga con sesión; llega con el token de la 0.6).
 
 ## Prioridad baja
 

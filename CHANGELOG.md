@@ -4,6 +4,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.3.0] - 2026-10-15
+
+### Añadido
+- Fecha y hora en las tareas, con recurrencia (diaria, semanal, mensual o anual; cada N; días de la semana; termina nunca o tras N veces) y zona horaria propia: la hora local se conserva al cruzar el cambio de hora.
+- Edición de tareas (título, descripción, fecha y recurrencia) y navegación común con cierre de sesión.
+- Agenda con vista de lista (próximos 30 días) y calendario mensual (FullCalendar), alimentada por `GET /agenda`.
+- Exportación `.ics` (RFC 5545) con `GET /agenda.ics` y enlace de descarga en la web.
+
+### Corregido
+- Registros simultáneos con el mismo correo devolvían 500; ahora devuelven 409.
+- `rrule` no se importaba en Node (la API no arrancaba con la recurrencia); ahora funciona en Node y en Vite.
+
 ## [0.2.0] - 2026-10-14
 
 ### Añadido
