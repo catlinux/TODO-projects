@@ -57,6 +57,13 @@
       "when": 1792031848150,
       "tag": "0007_tokens_api",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792032276194,
+      "tag": "0008_actividad",
+      "breakpoints": true
     }
   ]
 }

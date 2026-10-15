@@ -136,6 +136,15 @@
       "lectura": "Lectura (solo consultar)",
       "escritura": "Escritura (crear y editar)",
       "calendario": "Calendario (solo suscripción .ics)"
+    },
+    "activity": "Actividad del conector",
+    "activityEmpty": "Todavía no hay actividad hecha con tokens",
+    "undo": "Deshacer",
+    "undone": "Deshecho",
+    "actions": {
+      "crear": "Creó",
+      "editar": "Editó",
+      "borrar": "Borró"
     }
   }
 }

@@ -269,6 +269,8 @@ declare module "fastify" {
   interface FastifyRequest {
     usuario: typeof usuarios.$inferSelect | null;
     permisoToken: "lectura" | "escritura" | "calendario" | null;
+    tokenId: string | null;
+    tokenNombre: string | null;
   }
 
   interface FastifyInstance {

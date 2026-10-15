@@ -2,7 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { peticion, type PermisoTokenApi, type TokenApi, type TokenCreadoApi } from "../api";
+import {
+  peticion,
+  type ActividadApi,
+  type PermisoTokenApi,
+  type TokenApi,
+  type TokenCreadoApi,
+} from "../api";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
 
 const PERMISOS: PermisoTokenApi[] = ["lectura", "escritura", "calendario"];
@@ -16,10 +22,16 @@ export default function Ajustes() {
   const [expiraEnLocal, setExpiraEnLocal] = useState("");
   const [creado, setCreado] = useState<TokenCreadoApi | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorActividad, setErrorActividad] = useState<string | null>(null);
 
   const tokens = useQuery({
     queryKey: ["tokens"],
     queryFn: () => peticion<TokenApi[]>("/tokens"),
+  });
+
+  const actividad = useQuery({
+    queryKey: ["actividad"],
+    queryFn: () => peticion<ActividadApi[]>("/actividad"),
   });
 
   const crear = useMutation({
@@ -50,6 +62,17 @@ export default function Ajustes() {
     mutationFn: async (id: string) => peticion(`/tokens/${id}`, { method: "DELETE" }),
     onSuccess: async () => {
       await cliente.invalidateQueries({ queryKey: ["tokens"] });
+    },
+  });
+
+  const deshacer = useMutation({
+    mutationFn: async (id: string) => peticion(`/actividad/${id}/deshacer`, { method: "POST" }),
+    onSuccess: async () => {
+      setErrorActividad(null);
+      await cliente.invalidateQueries({ queryKey: ["actividad"] });
+    },
+    onError: (err: unknown) => {
+      setErrorActividad(err instanceof Error ? err.message : t("auth.error"));
     },
   });
 
@@ -153,6 +176,34 @@ export default function Ajustes() {
               ))}
             </tbody>
           </table>
+        )}
+      </section>
+
+      <section>
+        <h2>{t("settings.activity")}</h2>
+        {actividad.isLoading && <p>{t("app.loading")}</p>}
+        {actividad.isError && <p className="error">{t("auth.error")}</p>}
+        {actividad.data && actividad.data.length === 0 && <p>{t("settings.activityEmpty")}</p>}
+        {errorActividad && <p className="error">{errorActividad}</p>}
+        {actividad.data && actividad.data.length > 0 && (
+          <ul className="actividad">
+            {actividad.data.map((registro) => (
+              <li key={registro.id} className={registro.deshechoEn ? "token-revocado" : undefined}>
+                <span>
+                  {t(`settings.actions.${registro.accion}`)}: {registro.titulo ?? "—"}
+                </span>{" "}
+                <span>{registro.tokenNombre ?? "—"}</span>{" "}
+                <span>{formatearFechaHoraEs(registro.createdAt)}</span>{" "}
+                <button
+                  type="button"
+                  disabled={registro.deshechoEn !== null}
+                  onClick={() => deshacer.mutate(registro.id)}
+                >
+                  {registro.deshechoEn ? t("settings.undone") : t("settings.undo")}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </main>

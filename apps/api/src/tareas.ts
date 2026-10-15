@@ -6,6 +6,8 @@ import { esquemaTarea, esquemaTareaParcial, ZONA_POR_DEFECTO } from "@todo/share
 
 import { columnas, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
+import { instantaneaTarea, registrarActividad } from "./actividad.js";
+import { colocarTareaEnColumna, reindexarColumna } from "./tablero-posiciones.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
 
@@ -30,16 +32,6 @@ export async function obtenerTareaPropia(db: Database, id: string, usuarioId: st
     .limit(1);
 
   return fila ?? null;
-}
-
-async function reindexarColumna(
-  tx: Parameters<Parameters<Database["transaction"]>[0]>[0],
-  columnaId: string,
-  idsEnOrden: string[],
-) {
-  for (let i = 0; i < idsEnOrden.length; i += 1) {
-    await tx.update(tareas).set({ posicion: i }).where(eq(tareas.id, idsEnOrden[i]!));
-  }
 }
 
 export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
@@ -134,27 +126,43 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       columnaDestino = columna;
     }
 
-    const existentes = await db
-      .select({ id: tareas.id })
-      .from(tareas)
-      .where(eq(tareas.columnaId, columnaDestino.id));
+    const tarea = await db.transaction(async (tx) => {
+      const existentes = await tx
+        .select({ id: tareas.id })
+        .from(tareas)
+        .where(eq(tareas.columnaId, columnaDestino.id));
 
-    const posicion = existentes.length;
+      const posicion = existentes.length;
 
-    const [tarea] = await db
-      .insert(tareas)
-      .values({
-        proyectoId: params.data.id,
-        columnaId: columnaDestino.id,
-        titulo: body.data.titulo,
-        descripcion: body.data.descripcion,
-        posicion,
-        venceEn: body.data.venceEn,
-        recurrencia: body.data.recurrencia ?? null,
-        zona: body.data.zona ?? ZONA_POR_DEFECTO,
-        recordatorioMin: body.data.recordatorioMin ?? null,
-      })
-      .returning();
+      const [creada] = await tx
+        .insert(tareas)
+        .values({
+          proyectoId: params.data.id,
+          columnaId: columnaDestino.id,
+          titulo: body.data.titulo,
+          descripcion: body.data.descripcion,
+          posicion,
+          venceEn: body.data.venceEn,
+          recurrencia: body.data.recurrencia ?? null,
+          zona: body.data.zona ?? ZONA_POR_DEFECTO,
+          recordatorioMin: body.data.recordatorioMin ?? null,
+        })
+        .returning();
+
+      if (creada && request.tokenId) {
+        await registrarActividad(tx, {
+          usuarioId: usuario.id,
+          tokenId: request.tokenId,
+          tokenNombre: request.tokenNombre,
+          accion: "crear",
+          entidadId: creada.id,
+          antes: null,
+          despues: instantaneaTarea(creada),
+        });
+      }
+
+      return creada;
+    });
 
     if (!tarea) {
       reply.code(500).send({ mensaje: "No se pudo crear la tarea" });
@@ -261,67 +269,51 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       cambios.recordatorioMin = body.data.recordatorioMin;
     if (moving) cambios.columnaId = columnaDestinoId;
 
-    if (moving) {
-      await db.transaction(async (tx) => {
-        const cross = tareaActual.columnaId !== columnaDestinoId;
+    await db.transaction(async (tx) => {
+      if (moving) {
+        cambios.posicion = await colocarTareaEnColumna(tx, {
+          tareaId: params.data.id,
+          columnaOrigenId: tareaActual.columnaId,
+          columnaDestinoId,
+          posicion: body.data.posicion,
+        });
+      }
 
-        if (cross) {
-          const idsOrigen = (
-            await tx
-              .select({ id: tareas.id })
-              .from(tareas)
-              .where(eq(tareas.columnaId, tareaActual.columnaId))
-              .orderBy(asc(tareas.posicion))
-          )
-            .map((r) => r.id)
-            .filter((id) => id !== params.data.id);
-
-          const idsDestino = (
-            await tx
-              .select({ id: tareas.id })
-              .from(tareas)
-              .where(eq(tareas.columnaId, columnaDestinoId))
-              .orderBy(asc(tareas.posicion))
-          )
-            .map((r) => r.id)
-            .filter((id) => id !== params.data.id);
-
-          const requested = body.data.posicion ?? idsDestino.length;
-          const posicionFinal = Math.min(Math.max(requested, 0), idsDestino.length);
-
-          await reindexarColumna(tx, tareaActual.columnaId, idsOrigen);
-          idsDestino.splice(posicionFinal, 0, params.data.id);
-          await reindexarColumna(tx, columnaDestinoId, idsDestino);
-
-          cambios.posicion = posicionFinal;
-        } else {
-          const idsColumna = (
-            await tx
-              .select({ id: tareas.id })
-              .from(tareas)
-              .where(eq(tareas.columnaId, tareaActual.columnaId))
-              .orderBy(asc(tareas.posicion))
-          ).map((r) => r.id);
-
-          const idsSinActual = idsColumna.filter((id) => id !== params.data.id);
-          const requested =
-            body.data.posicion !== undefined
-              ? body.data.posicion
-              : idsColumna.indexOf(params.data.id);
-          const posicionFinal = Math.min(Math.max(requested, 0), idsSinActual.length);
-
-          const reordered = [...idsSinActual];
-          reordered.splice(posicionFinal, 0, params.data.id);
-          await reindexarColumna(tx, tareaActual.columnaId, reordered);
-
-          cambios.posicion = posicionFinal;
-        }
-
-        await tx.update(tareas).set(cambios).where(eq(tareas.id, params.data.id));
+      const despues = instantaneaTarea({
+        ...tareaActual,
+        titulo: cambios.titulo ?? tareaActual.titulo,
+        descripcion:
+          cambios.descripcion !== undefined ? cambios.descripcion : tareaActual.descripcion,
+        columnaId: cambios.columnaId ?? tareaActual.columnaId,
+        posicion: cambios.posicion ?? tareaActual.posicion,
+        venceEn: cambios.venceEn !== undefined ? cambios.venceEn : tareaActual.venceEn,
+        recurrencia:
+          cambios.recurrencia !== undefined ? cambios.recurrencia : tareaActual.recurrencia,
+        zona: cambios.zona ?? tareaActual.zona,
+        recordatorioMin:
+          cambios.recordatorioMin !== undefined
+            ? cambios.recordatorioMin
+            : tareaActual.recordatorioMin,
+        updatedAt: cambios.updatedAt,
       });
-    } else {
-      await db.update(tareas).set(cambios).where(eq(tareas.id, params.data.id));
-    }
+
+      await tx.update(tareas).set(cambios).where(eq(tareas.id, params.data.id));
+
+      if (
+        request.tokenId &&
+        JSON.stringify(instantaneaTarea(tareaActual)) !== JSON.stringify(despues)
+      ) {
+        await registrarActividad(tx, {
+          usuarioId: usuario.id,
+          tokenId: request.tokenId,
+          tokenNombre: request.tokenNombre,
+          accion: "editar",
+          entidadId: params.data.id,
+          antes: instantaneaTarea(tareaActual),
+          despues,
+        });
+      }
+    });
 
     const [tarea] = await db.select().from(tareas).where(eq(tareas.id, params.data.id)).limit(1);
 
@@ -353,20 +345,33 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     }
 
     const columnaId = fila.tarea.columnaId;
-    await db.delete(tareas).where(eq(tareas.id, params.data.id));
-
-    const restantes = await db
-      .select({ id: tareas.id })
-      .from(tareas)
-      .where(eq(tareas.columnaId, columnaId))
-      .orderBy(asc(tareas.posicion));
 
     await db.transaction(async (tx) => {
+      await tx.delete(tareas).where(eq(tareas.id, params.data.id));
+
+      const restantes = await tx
+        .select({ id: tareas.id })
+        .from(tareas)
+        .where(eq(tareas.columnaId, columnaId))
+        .orderBy(asc(tareas.posicion));
+
       await reindexarColumna(
         tx,
         columnaId,
         restantes.map((r) => r.id),
       );
+
+      if (request.tokenId) {
+        await registrarActividad(tx, {
+          usuarioId: usuario.id,
+          tokenId: request.tokenId,
+          tokenNombre: request.tokenNombre,
+          accion: "borrar",
+          entidadId: params.data.id,
+          antes: instantaneaTarea(fila.tarea),
+          despues: null,
+        });
+      }
     });
 
     reply.code(204).send();

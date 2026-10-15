@@ -75,6 +75,12 @@ describe("Ajustes", () => {
             headers: { "Content-Type": "application/json" },
           });
         }
+        if (url === "/api/actividad") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         return new Response(JSON.stringify({}), {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -122,6 +128,12 @@ describe("Ajustes", () => {
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
         }
+        if (url === "/api/actividad") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         return new Response(JSON.stringify({}), {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -134,5 +146,147 @@ describe("Ajustes", () => {
 
     await user.click(screen.getByRole("button", { name: /revocar/i }));
     await waitFor(() => expect(urlBorrada).toBe("/api/tokens/t1"));
+  });
+
+  it("muestra la actividad del conector y permite deshacerla", async () => {
+    let deshecha = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/actividad/a1/deshacer" && method === "POST") {
+          deshecha = true;
+          return new Response(null, { status: 204 });
+        }
+        if (url === "/api/actividad") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "a1",
+                accion: "editar",
+                entidad: "tarea",
+                entidadId: "t1",
+                tokenNombre: "Conector",
+                antes: null,
+                despues: null,
+                deshechoEn: null,
+                createdAt: "2026-05-10T10:00:00.000Z",
+                titulo: "Tarea editada",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/tokens") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const { user } = renderAjustes();
+    expect(await screen.findByText(/Editó: Tarea editada/)).toBeTruthy();
+    expect(screen.getByText("Conector")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: /deshacer/i }));
+    await waitFor(() => expect(deshecha).toBe(true));
+  });
+
+  it("muestra el mensaje del servidor si no se puede deshacer", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/actividad/a1/deshacer" && method === "POST") {
+          return new Response(JSON.stringify({ mensaje: "La tarea ha cambiado desde entonces" }), {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url === "/api/actividad") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "a1",
+                accion: "borrar",
+                entidad: "tarea",
+                entidadId: "t1",
+                tokenNombre: "Conector",
+                antes: null,
+                despues: null,
+                deshechoEn: null,
+                createdAt: "2026-05-10T10:00:00.000Z",
+                titulo: "Borrada",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/tokens") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const { user } = renderAjustes();
+    expect(await screen.findByText(/Borró: Borrada/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /deshacer/i }));
+
+    expect(await screen.findByText("La tarea ha cambiado desde entonces")).toBeTruthy();
+  });
+
+  it("deshabilita el botón si la actividad ya está deshecha", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/actividad") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "a1",
+                accion: "crear",
+                entidad: "tarea",
+                entidadId: "t1",
+                tokenNombre: "Conector",
+                antes: null,
+                despues: null,
+                deshechoEn: "2026-05-11T10:00:00.000Z",
+                createdAt: "2026-05-10T10:00:00.000Z",
+                titulo: "Creada",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/tokens") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    renderAjustes();
+    expect(await screen.findByText(/Creó: Creada/)).toBeTruthy();
+    const boton = screen.getByRole("button", { name: /deshecho/i }) as HTMLButtonElement;
+    expect(boton.disabled).toBe(true);
   });
 });

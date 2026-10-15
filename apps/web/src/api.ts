@@ -71,6 +71,19 @@ export interface TokenCreadoApi {
   token: string;
 }
 
+export interface ActividadApi {
+  id: string;
+  accion: "crear" | "editar" | "borrar";
+  entidad: string;
+  entidadId: string;
+  tokenNombre: string | null;
+  antes: unknown;
+  despues: unknown;
+  deshechoEn: string | null;
+  createdAt: string;
+  titulo: string | null;
+}
+
 export class ErrorHttp extends Error {
   status: number;
 

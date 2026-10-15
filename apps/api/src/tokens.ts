@@ -25,6 +25,7 @@ export function hashTokenApi(token: string): string {
 
 export interface TokenApiValido {
   id: string;
+  nombre: string;
   permiso: PermisoToken;
   usuario: typeof usuarios.$inferSelect;
 }
@@ -57,7 +58,12 @@ export async function buscarTokenApi(db: Database, token: string): Promise<Token
     await db.update(tokensApi).set({ ultimoUso: ahora }).where(eq(tokensApi.id, fila.token.id));
   }
 
-  return { id: fila.token.id, permiso: fila.token.permiso as PermisoToken, usuario: fila.usuario };
+  return {
+    id: fila.token.id,
+    nombre: fila.token.nombre,
+    permiso: fila.token.permiso as PermisoToken,
+    usuario: fila.usuario,
+  };
 }
 
 export interface LimiteFallosTokens {

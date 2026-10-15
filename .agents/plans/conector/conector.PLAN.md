@@ -9,6 +9,6 @@ Decisiones:
 - El servidor MCP vive en `apps/mcp`, habla con la API REST usando un token y transporte stdio; no accede a la base de datos.
 
 - [x] **G1. Tokens de API.** Tabla `tokens_api`, rutas `POST/GET/DELETE /tokens`, Bearer en `requireAuth` con permisos, `GET /agenda.ics` con token de calendario (`?token=` o Bearer), límite de intentos con token inválido, tests; web: página «Ajustes» para crear (mostrando el token una vez), listar y revocar.
-- [ ] **G2. Registro de actividad y deshacer.** Tabla `actividad` (origen: web o token, acción, entidad, antes/después), alta automática al crear, editar, mover o borrar tareas con token, `GET /actividad` y `POST /actividad/:id/deshacer` (con comprobación de que el estado actual coincide con el «después»; si no, 409), vista en Ajustes.
+- [x] **G2. Registro de actividad y deshacer.** Tabla `actividad` (origen: web o token, acción, entidad, antes/después), alta automática al crear, editar, mover o borrar tareas con token, `GET /actividad` y `POST /actividad/:id/deshacer` (con comprobación de que el estado actual coincide con el «después»; si no, 409), vista en Ajustes.
 - [ ] **G3. Servidor MCP.** `apps/mcp` con `@modelcontextprotocol/sdk`: herramientas `listar_proyectos`, `listar_tareas`, `crear_tarea`, `mover_tarjeta`, `actualizar_tarea`, `revisar_vencidas`, `resumir_proyecto`; configuración por `TODO_API_URL` y `TODO_API_TOKEN`; tests con la API simulada; `docs/CONECTOR-IA.md`.
 - [ ] **G4. Cierre.** README, CHANGELOG, TODO, versión (menor).

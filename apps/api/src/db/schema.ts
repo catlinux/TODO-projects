@@ -1,4 +1,13 @@
-import { integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -152,3 +161,27 @@ export const tokensApi = pgTable("tokens_api", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const actividad = pgTable(
+  "actividad",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    usuarioId: uuid("usuario_id")
+      .notNull()
+      .references(() => usuarios.id, { onDelete: "cascade" }),
+    tokenId: uuid("token_id").references(() => tokensApi.id, { onDelete: "set null" }),
+    tokenNombre: text("token_nombre"),
+    accion: text("accion").notNull(),
+    entidad: text("entidad").notNull(),
+    entidadId: uuid("entidad_id").notNull(),
+    antes: jsonb("antes"),
+    despues: jsonb("despues"),
+    deshechoEn: timestamp("deshecho_en", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (tabla) => [index("actividad_usuario_created_idx").on(tabla.usuarioId, tabla.createdAt.desc())],
+);

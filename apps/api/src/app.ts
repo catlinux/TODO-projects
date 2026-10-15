@@ -7,6 +7,7 @@ import type { Database } from "./db/index.js";
 import { MENSAJE_DEMASIADOS_INTENTOS, registrarRutasAuth, type LimitesAuth } from "./auth.js";
 import { obtenerSesion } from "./auth.js";
 import { registrarRutasAgenda } from "./agenda.js";
+import { registrarRutasActividad } from "./actividad.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasOcurrencias } from "./ocurrencias.js";
@@ -112,11 +113,15 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
 
   app.decorateRequest("usuario", null);
   app.decorateRequest("permisoToken", null);
+  app.decorateRequest("tokenId", null);
+  app.decorateRequest("tokenNombre", null);
   app.decorate("requireAuth", async (request, reply) => {
     const porCookie = await obtenerSesion(db, request.cookies.sesion);
     if (porCookie) {
       request.usuario = porCookie.usuario;
       request.permisoToken = null;
+      request.tokenId = null;
+      request.tokenNombre = null;
       return;
     }
 
@@ -140,6 +145,8 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
         }
         request.usuario = valido.usuario;
         request.permisoToken = valido.permiso;
+        request.tokenId = valido.id;
+        request.tokenNombre = valido.nombre;
         return;
       }
 
@@ -174,6 +181,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   registrarRutasTareas(app, db);
   registrarRutasOcurrencias(app, db);
   registrarRutasAgenda(app, db);
+  registrarRutasActividad(app, db);
   registrarRutasPush(app, db, { vapidPublicKey });
 
   return app;
