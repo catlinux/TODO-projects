@@ -185,3 +185,29 @@ fieldset {
   text-decoration: line-through;
   opacity: 0.6;
 }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.token-creado {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin: 1rem 0;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.token-revocado {
+  opacity: 0.6;
+}

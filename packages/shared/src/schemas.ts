@@ -59,6 +59,20 @@ export const esquemaTareaParcial = esquemaTareaBase
   })
   .partial();
 
+export const PERMISOS_TOKEN = ["lectura", "escritura", "calendario"] as const;
+
+export const esquemaTokenApi = z.object({
+  nombre: z.string().trim().min(1, "Nombre obligatorio").max(100, "Nombre demasiado largo"),
+  permiso: z.enum(["lectura", "escritura", "calendario"]),
+  expiraEn: z
+    .union([z.string().datetime({ offset: true }), z.null()])
+    .optional()
+    .transform((valor) => (valor == null ? valor : new Date(valor))),
+});
+
+export type PermisoToken = (typeof PERMISOS_TOKEN)[number];
+export type DatosTokenApi = z.infer<typeof esquemaTokenApi>;
+
 export const esquemaColumna = z.object({
   nombre: z.string().trim().min(1, "Nombre obligatorio").max(100, "Nombre demasiado largo"),
 });

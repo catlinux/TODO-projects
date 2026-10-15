@@ -24,6 +24,7 @@ export function BarraNavegacion() {
     <nav className="barra-navegacion">
       <Link to="/proyectos">{t("nav.projects")}</Link>
       <Link to="/agenda">{t("nav.agenda")}</Link>
+      <Link to="/ajustes">{t("nav.settings")}</Link>
       <AvisosNavegador />
       <button type="button" onClick={() => cerrarSesion.mutate()} disabled={cerrarSesion.isPending}>
         {t("nav.logout")}

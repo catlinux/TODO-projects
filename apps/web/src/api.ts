@@ -49,6 +49,28 @@ export interface OcurrenciaAgenda {
   hecha: boolean;
 }
 
+export type PermisoTokenApi = "lectura" | "escritura" | "calendario";
+
+export interface TokenApi {
+  id: string;
+  nombre: string;
+  permiso: PermisoTokenApi;
+  prefijo: string;
+  ultimoUso?: string | null;
+  expiraEn?: string | null;
+  revocadoEn?: string | null;
+  createdAt: string;
+}
+
+export interface TokenCreadoApi {
+  id: string;
+  nombre: string;
+  permiso: PermisoTokenApi;
+  prefijo: string;
+  expiraEn?: string | null;
+  token: string;
+}
+
 export class ErrorHttp extends Error {
   status: number;
 

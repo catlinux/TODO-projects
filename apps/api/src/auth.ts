@@ -268,6 +268,7 @@ export function registrarRutasAuth(app: FastifyInstance, db: Database, limites: 
 declare module "fastify" {
   interface FastifyRequest {
     usuario: typeof usuarios.$inferSelect | null;
+    permisoToken: "lectura" | "escritura" | "calendario" | null;
   }
 
   interface FastifyInstance {

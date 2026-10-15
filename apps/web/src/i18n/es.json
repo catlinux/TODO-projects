@@ -6,7 +6,8 @@
   "nav": {
     "projects": "Proyectos",
     "logout": "Cerrar sesión",
-    "agenda": "Agenda"
+    "agenda": "Agenda",
+    "settings": "Ajustes"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -116,5 +117,25 @@
     "bloqueado": "Permiso bloqueado en el navegador",
     "sinConfigurar": "Los avisos del servidor no están configurados",
     "error": "No se pudieron cambiar los avisos del navegador"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "tokens": "Tokens de API",
+    "name": "Nombre",
+    "permission": "Permiso",
+    "expires": "Caducidad",
+    "create": "Crear token",
+    "copyWarning": "Cópialo ahora: no se volverá a mostrar.",
+    "copy": "Copiar",
+    "subscription": "URL de suscripción:",
+    "empty": "No tienes tokens todavía",
+    "prefix": "Prefijo",
+    "lastUse": "Último uso",
+    "revoke": "Revocar",
+    "permissions": {
+      "lectura": "Lectura (solo consultar)",
+      "escritura": "Escritura (crear y editar)",
+      "calendario": "Calendario (solo suscripción .ics)"
+    }
   }
 }

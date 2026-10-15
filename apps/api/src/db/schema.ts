@@ -133,3 +133,22 @@ export const ocurrenciasHechas = pgTable(
     uniqueIndex("ocurrencias_hechas_tarea_ocurrencia_idx").on(tabla.tareaId, tabla.ocurrencia),
   ],
 );
+
+export const tokensApi = pgTable("tokens_api", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  usuarioId: uuid("usuario_id")
+    .notNull()
+    .references(() => usuarios.id, { onDelete: "cascade" }),
+  nombre: text("nombre").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  prefijo: text("prefijo").notNull(),
+  permiso: text("permiso").notNull(),
+  ultimoUso: timestamp("ultimo_uso", { withTimezone: true }),
+  expiraEn: timestamp("expira_en", { withTimezone: true }),
+  revocadoEn: timestamp("revocado_en", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});

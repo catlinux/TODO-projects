@@ -50,6 +50,13 @@
       "when": 1792031382262,
       "tag": "0006_ocurrencias_hechas",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792031848150,
+      "tag": "0007_tokens_api",
+      "breakpoints": true
     }
   ]
 }

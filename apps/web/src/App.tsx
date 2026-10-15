@@ -9,6 +9,7 @@ import Registro from "./paginas/Registro";
 import Proyectos from "./paginas/Proyectos";
 import ProyectoDetalle from "./paginas/ProyectoDetalle";
 import Agenda from "./paginas/Agenda";
+import Ajustes from "./paginas/Ajustes";
 
 function useSesion() {
   return useQuery({
@@ -58,6 +59,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Agenda />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/ajustes"
+        element={
+          <RutaProtegida>
+            <Ajustes />
           </RutaProtegida>
         }
       />
