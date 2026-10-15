@@ -2,7 +2,7 @@ import { type FastifyInstance } from "fastify";
 import { and, asc, eq, gte, isNotNull, lte, or } from "drizzle-orm";
 import { z } from "zod";
 
-import { expandirOcurrencias } from "@todo/shared";
+import { expandirOcurrencias, generarCalendarioIcs } from "@todo/shared";
 
 import { columnas, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
@@ -111,5 +111,50 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
     });
 
     return ocurrencias.slice(0, TOPE_OCURRENCIAS);
+  });
+
+  app.get("/agenda.ics", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    const filas = await db
+      .select({
+        id: tareas.id,
+        titulo: tareas.titulo,
+        descripcion: tareas.descripcion,
+        venceEn: tareas.venceEn,
+        recurrencia: tareas.recurrencia,
+        proyectoNombre: proyectos.nombre,
+      })
+      .from(tareas)
+      .innerJoin(proyectos, eq(tareas.proyectoId, proyectos.id))
+      .where(and(eq(proyectos.propietarioId, usuario.id), isNotNull(tareas.venceEn)))
+      .orderBy(asc(tareas.venceEn));
+
+    const eventos = filas.flatMap((fila) =>
+      fila.venceEn
+        ? [
+            {
+              uid: fila.id,
+              titulo: fila.titulo,
+              descripcion: fila.descripcion,
+              inicio: fila.venceEn,
+              recurrencia: fila.recurrencia,
+              proyecto: fila.proyectoNombre,
+            },
+          ]
+        : [],
+    );
+
+    const calendario = generarCalendarioIcs(eventos);
+
+    reply
+      .header("Content-Type", "text/calendar; charset=utf-8")
+      .header("Content-Disposition", 'attachment; filename="todo-projects.ics"');
+
+    return calendario;
   });
 }

@@ -380,4 +380,71 @@ describe("agenda", () => {
     expect(ocurrencias).toHaveLength(1);
     expect(ocurrencias[0]!.esRecurrente).toBe(false);
   });
+
+  it("exige sesión para el .ics", async () => {
+    const respuesta = await app.inject({ method: "GET", url: "/agenda.ics" });
+    expect(respuesta.statusCode).toBe(401);
+  });
+
+  it("exporta en .ics las tareas con fecha", async () => {
+    const { cookie } = await registrar(app, "ics");
+    const proyecto = await crearProyecto(app, cookie, "Ics");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Con fecha",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Sin fecha",
+      columnaId: proyecto.columnaId,
+    });
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Recurrente",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-11T10:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;BYDAY=MO",
+    });
+
+    const respuesta = await app.inject({
+      method: "GET",
+      url: "/agenda.ics",
+      headers: { cookie: `sesion=${cookie}` },
+    });
+
+    expect(respuesta.statusCode).toBe(200);
+    expect(respuesta.headers["content-type"]).toContain("text/calendar");
+    expect(respuesta.headers["content-type"]).toContain("charset=utf-8");
+    expect(respuesta.headers["content-disposition"]).toContain("attachment");
+    expect(respuesta.headers["content-disposition"]).toContain("todo-projects.ics");
+
+    const cuerpo = respuesta.body;
+    expect(cuerpo).toContain("BEGIN:VCALENDAR\r\n");
+    expect(cuerpo).toContain("SUMMARY:Con fecha");
+    expect(cuerpo).toContain("SUMMARY:Recurrente");
+    expect(cuerpo).not.toContain("SUMMARY:Sin fecha");
+    expect(cuerpo).toContain("RRULE:FREQ=WEEKLY;BYDAY=MO");
+    expect(cuerpo).toContain("CATEGORIES:Ics");
+  });
+
+  it("no exporta tareas de otro usuario", async () => {
+    const alice = await registrar(app, "ics-alice");
+    const bob = await registrar(app, "ics-bob");
+    const proyecto = await crearProyecto(app, alice.cookie, "Ajeno");
+
+    await crearTarea(app, alice.cookie, proyecto.id, {
+      titulo: "Privada",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+
+    const respuesta = await app.inject({
+      method: "GET",
+      url: "/agenda.ics",
+      headers: { cookie: `sesion=${bob.cookie}` },
+    });
+
+    expect(respuesta.statusCode).toBe(200);
+    expect(respuesta.body).not.toContain("SUMMARY:Privada");
+  });
 });

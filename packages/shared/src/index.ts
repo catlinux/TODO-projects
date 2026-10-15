@@ -4,3 +4,4 @@ export function suma(a: number, b: number): number {
 
 export * from "./schemas.js";
 export * from "./recurrencia.js";
+export * from "./ics.js";
