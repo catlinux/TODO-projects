@@ -12,5 +12,5 @@ Decisiones:
 - [x] **B. Empaquetado de producción.** `Dockerfile` multi-etapa (API con tsx o compilada, web estática servida por Caddy o nginx con proxy `/api`), `docker-compose.prod.yml` con Postgres, variables en `.env.example`, `docs/DESPLIEGUE.md`. Sin poder probar Docker en el equipo: dejarlo documentado como no probado.
 - [x] **C. Núcleo de avisos.** Migración (`recordatorio_min`, tablas `avisos_enviados` y `suscripciones_push`), interfaz `Canal`, canales `correo` y `push`, función `procesarAvisos(db, ahora, canales)` con tests con PGlite (ventana, recurrentes con zona, deduplicación, canal que falla no bloquea al resto), `recordatorioMin` en el esquema zod de tarea.
 - [x] **D. Endpoints y arranque.** `GET /push/clave`, `POST/DELETE /push/suscripcion`, bucle periódico en `server.ts` (intervalo y desactivación por entorno), apagado limpio, tests.
-- [ ] **E. Web.** Campo «Avisar antes» en el formulario de tarea, service worker y botón «Activar avisos del navegador», estado de la suscripción.
+- [x] **E. Web.** Campo «Avisar antes» en el formulario de tarea, service worker y botón «Activar avisos del navegador», estado de la suscripción.
 - [ ] **F. Cierre 0.4.0.** README, CHANGELOG, TODO, versión (menor). Pendiente del usuario: credenciales SMTP y claves VAPID en producción.

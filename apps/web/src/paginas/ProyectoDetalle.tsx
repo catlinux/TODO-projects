@@ -14,6 +14,7 @@ function valoresIniciales(): ValoresFormularioTarea {
     descripcion: "",
     venceEnLocal: "",
     recurrencia: recurrenciaPorDefecto(),
+    recordatorioMin: null,
   };
 }
 
@@ -67,6 +68,7 @@ export default function ProyectoDetalle() {
           venceEn,
           recurrencia: venceEn ? construirRegla(valores.recurrencia) : null,
           zona: zonaNavegador(),
+          recordatorioMin: venceEn ? valores.recordatorioMin : null,
         }),
       });
     },

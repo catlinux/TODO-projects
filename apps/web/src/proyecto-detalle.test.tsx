@@ -430,6 +430,7 @@ describe("ProyectoDetalle", () => {
     await user.click(screen.getByRole("checkbox", { name: "X" }));
     await user.selectOptions(screen.getByLabelText(/termina/i), "veces");
     fireEvent.change(screen.getByLabelText(/número de veces/i), { target: { value: "10" } });
+    await user.selectOptions(screen.getByLabelText(/avisar antes/i), "15");
     await user.click(screen.getByRole("button", { name: /crear tarea/i }));
 
     await waitFor(() => expect(cuerpoPost).not.toBeNull());
@@ -438,6 +439,7 @@ describe("ProyectoDetalle", () => {
       venceEn: "2026-05-10T08:00:00.000Z",
       recurrencia: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;COUNT=10",
       zona: "Europe/Madrid",
+      recordatorioMin: 15,
     });
   });
 
@@ -531,5 +533,94 @@ describe("ProyectoDetalle", () => {
       recurrencia: null,
       zona: "Europe/Madrid",
     });
+  });
+
+  it("edita el aviso y lo quita sin borrar la fecha", async () => {
+    let cuerpoPatch: string | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "t1",
+                proyectoId: "p1",
+                columnaId: "c1",
+                titulo: "Con aviso",
+                posicion: 0,
+                venceEn: "2026-05-10T08:00:00.000Z",
+                recurrencia: null,
+                recordatorioMin: 60,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/tareas/t1" && method === "PATCH") {
+          cuerpoPatch = String(init?.body ?? "");
+          return new Response(JSON.stringify({ id: "t1" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("Aviso: 1 hora antes")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /editar/i }));
+
+    const selector = screen.getAllByLabelText(/avisar antes/i).at(-1)!;
+    await user.selectOptions(selector, "none");
+    await user.click(screen.getByRole("button", { name: /guardar/i }));
+
+    await waitFor(() => expect(cuerpoPatch).not.toBeNull());
+    expect(JSON.parse(String(cuerpoPatch))).toMatchObject({ recordatorioMin: null });
   });
 });

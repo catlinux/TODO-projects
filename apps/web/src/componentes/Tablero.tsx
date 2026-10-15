@@ -26,7 +26,7 @@ import {
   zonaNavegador,
 } from "../recurrencia-web";
 import { moverTareaEnLista } from "../tablero-utils";
-import { CamposTarea, type ValoresFormularioTarea } from "./CamposTarea";
+import { CamposTarea, OPCIONES_RECORDATORIO, type ValoresFormularioTarea } from "./CamposTarea";
 
 export interface PropiedadesTablero {
   proyectoId: string;
@@ -68,6 +68,7 @@ function TarjetaArrastrable({
     descripcion: tarea.descripcion ?? "",
     venceEnLocal: aValorLocal(tarea.venceEn),
     recurrencia: analizarRegla(tarea.recurrencia),
+    recordatorioMin: tarea.recordatorioMin ?? null,
   });
 
   const estilo = {
@@ -81,8 +82,16 @@ function TarjetaArrastrable({
       descripcion: tarea.descripcion ?? "",
       venceEnLocal: aValorLocal(tarea.venceEn),
       recurrencia: analizarRegla(tarea.recurrencia),
+      recordatorioMin: tarea.recordatorioMin ?? null,
     });
     setEditando(true);
+  }
+
+  function etiquetaRecordatorio(minutos: number): string {
+    const opcion = OPCIONES_RECORDATORIO.find((actual) => actual.valor === minutos);
+    return opcion
+      ? t(`tasks.reminderOptions.${opcion.clave}`)
+      : t("tasks.reminderUnknown", { minutos });
   }
 
   return (
@@ -108,6 +117,11 @@ function TarjetaArrastrable({
         <p className="tarjeta-kanban__fecha">{formatearFechaHoraEs(tarea.venceEn)}</p>
       )}
       {tarea.recurrencia && <p className="tarjeta-kanban__repite">{t("tasks.repeats")}</p>}
+      {tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined && (
+        <p className="tarjeta-kanban__aviso">
+          {t("tasks.reminderShort", { valor: etiquetaRecordatorio(tarea.recordatorioMin) })}
+        </p>
+      )}
 
       {editando ? (
         <form
@@ -199,6 +213,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
         venceEn,
         recurrencia,
         zona: zonaNavegador(),
+        recordatorioMin: venceEn ? valores.recordatorioMin : null,
       }),
     });
     await cliente.invalidateQueries({ queryKey });

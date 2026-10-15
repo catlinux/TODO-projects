@@ -65,7 +65,20 @@
     "edit": "Editar",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "drag": "Arrastrar tarea"
+    "drag": "Arrastrar tarea",
+    "reminder": "Avisar antes",
+    "reminderOptions": {
+      "0": "A la hora",
+      "5": "5 minutos antes",
+      "15": "15 minutos antes",
+      "30": "30 minutos antes",
+      "60": "1 hora antes",
+      "1440": "1 día antes",
+      "10080": "1 semana antes",
+      "none": "Sin aviso"
+    },
+    "reminderShort": "Aviso: {{valor}}",
+    "reminderUnknown": "{{minutos}} minutos antes"
   },
   "columns": {
     "title": "Columnas",
@@ -92,5 +105,15 @@
     "calendar": "Calendario",
     "download": "Descargar calendario (.ics)",
     "empty": "No hay eventos en los próximos 30 días"
+  },
+  "push": {
+    "activar": "Activar avisos del navegador",
+    "desactivar": "Desactivar avisos del navegador",
+    "activo": "Avisos del navegador activados",
+    "inactivo": "Avisos del navegador desactivados",
+    "noSoportado": "Tu navegador no admite avisos",
+    "bloqueado": "Permiso bloqueado en el navegador",
+    "sinConfigurar": "Los avisos del servidor no están configurados",
+    "error": "No se pudieron cambiar los avisos del navegador"
   }
 }

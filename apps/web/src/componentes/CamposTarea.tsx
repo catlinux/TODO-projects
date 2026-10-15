@@ -7,6 +7,7 @@ export interface ValoresFormularioTarea {
   descripcion: string;
   venceEnLocal: string;
   recurrencia: DatosRecurrencia;
+  recordatorioMin: number | null;
 }
 
 interface Propiedades {
@@ -15,6 +16,16 @@ interface Propiedades {
 }
 
 const FRECUENCIAS: FrecuenciaRecurrencia[] = ["ninguna", "diaria", "semanal", "mensual", "anual"];
+
+export const OPCIONES_RECORDATORIO: Array<{ valor: number; clave: string }> = [
+  { valor: 0, clave: "0" },
+  { valor: 5, clave: "5" },
+  { valor: 15, clave: "15" },
+  { valor: 30, clave: "30" },
+  { valor: 60, clave: "60" },
+  { valor: 1440, clave: "1440" },
+  { valor: 10080, clave: "10080" },
+];
 
 export function CamposTarea({ valores, onCambio }: Propiedades) {
   const { t } = useTranslation();
@@ -55,6 +66,27 @@ export function CamposTarea({ valores, onCambio }: Propiedades) {
           value={valores.venceEnLocal}
           onChange={(evento) => onCambio({ ...valores, venceEnLocal: evento.target.value })}
         />
+      </label>
+
+      <label>
+        {t("tasks.reminder")}
+        <select
+          value={valores.recordatorioMin === null ? "none" : String(valores.recordatorioMin)}
+          disabled={!valores.venceEnLocal}
+          onChange={(evento) =>
+            onCambio({
+              ...valores,
+              recordatorioMin: evento.target.value === "none" ? null : Number(evento.target.value),
+            })
+          }
+        >
+          <option value="none">{t("tasks.reminderOptions.none")}</option>
+          {OPCIONES_RECORDATORIO.map((opcion) => (
+            <option key={opcion.clave} value={opcion.clave}>
+              {t(`tasks.reminderOptions.${opcion.clave}`)}
+            </option>
+          ))}
+        </select>
       </label>
 
       <fieldset disabled={!valores.venceEnLocal} className="recurrencia">

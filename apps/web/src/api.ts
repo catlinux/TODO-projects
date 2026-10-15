@@ -32,6 +32,7 @@ export interface TareaApi {
   venceEn?: string | null;
   recurrencia?: string | null;
   zona?: string | null;
+  recordatorioMin?: number | null;
   createdAt: string;
   updatedAt: string;
 }
