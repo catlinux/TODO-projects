@@ -15,6 +15,7 @@ type TaskChanges = {
   columnaId?: string;
   posicion?: number;
   venceEn?: Date | null;
+  recurrencia?: string | null;
   updatedAt: Date;
 };
 
@@ -147,6 +148,7 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
         descripcion: body.data.descripcion,
         posicion,
         venceEn: body.data.venceEn,
+        recurrencia: body.data.recurrencia ?? null,
       })
       .returning();
 
@@ -227,10 +229,29 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
 
     const moving = targetColumnIdRequested !== undefined || body.data.posicion !== undefined;
 
+    // `venceEn: null` borra también la recurrencia; si hay recurrencia debe
+    // quedar una fecha en el valor resultante tras aplicar el parche.
+    const venceEnResultante =
+      body.data.venceEn !== undefined ? body.data.venceEn : tareaActual.venceEn;
+    let recurrenciaResultante =
+      body.data.recurrencia !== undefined ? body.data.recurrencia : tareaActual.recurrencia;
+
+    if (body.data.venceEn === null) {
+      recurrenciaResultante = null;
+    }
+
+    if (recurrenciaResultante != null && venceEnResultante == null) {
+      reply.code(400).send({ mensaje: "Una tarea recurrente necesita fecha" });
+      return;
+    }
+
     const cambios: TaskChanges = { updatedAt: new Date() };
     if (body.data.titulo !== undefined) cambios.titulo = body.data.titulo;
     if (body.data.descripcion !== undefined) cambios.descripcion = body.data.descripcion;
     if (body.data.venceEn !== undefined) cambios.venceEn = body.data.venceEn;
+    if (body.data.recurrencia !== undefined || body.data.venceEn === null) {
+      cambios.recurrencia = recurrenciaResultante;
+    }
     if (moving) cambios.columnaId = columnaDestinoId;
 
     if (moving) {

@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+import { esquemaRecurrencia } from "./recurrencia.js";
+
+const esquemaVenceEn = z
+  .union([z.string().datetime({ offset: true }), z.null()])
+  .optional()
+  .transform((valor) => (valor == null ? valor : new Date(valor)));
+
 export const esquemaRegistro = z.object({
   email: z.string().trim().toLowerCase().email("Correo electrónico no válido"),
   nombre: z.string().trim().min(1, "Nombre obligatorio").max(100, "Nombre demasiado largo"),
@@ -24,21 +31,22 @@ export const esquemaProyecto = z.object({
 
 export const esquemaProyectoParcial = esquemaProyecto.partial();
 
-export const esquemaTarea = z.object({
+export const esquemaTareaBase = z.object({
   titulo: z.string().trim().min(1, "Título obligatorio").max(300, "Título demasiado largo"),
   descripcion: z.string().max(5000, "Descripción demasiado larga").optional(),
   columnaId: z.string().uuid("Columna no válida").optional(),
-  venceEn: z
-    .string()
-    .datetime({ offset: true })
-    .optional()
-    .transform((valor) => (valor ? new Date(valor) : undefined)),
+  venceEn: esquemaVenceEn,
+  recurrencia: esquemaRecurrencia.nullable().optional(),
 });
 
-export const esquemaTareaParcial = esquemaTarea
+export const esquemaTarea = esquemaTareaBase.refine(
+  (datos) => datos.recurrencia == null || datos.venceEn != null,
+  { message: "Una tarea recurrente necesita fecha", path: ["venceEn"] },
+);
+
+export const esquemaTareaParcial = esquemaTareaBase
   .extend({
     posicion: z.number().int().min(0, "Posición no válida").optional(),
-    columnaId: z.string().uuid("Columna no válida").optional(),
   })
   .partial();
 

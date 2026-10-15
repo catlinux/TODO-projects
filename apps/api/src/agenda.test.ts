@@ -1,0 +1,383 @@
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import { migrate } from "drizzle-orm/pglite/migrator";
+import { fileURLToPath } from "node:url";
+import { type FastifyInstance } from "fastify";
+
+import { buildApp } from "./app.js";
+import type { Database } from "./db/index.js";
+import * as schema from "./db/schema.js";
+
+const migrationsFolder = fileURLToPath(new URL("../drizzle", import.meta.url));
+
+function obtenerCookie(respuesta: { headers: Record<string, unknown> }): string {
+  const bruto = respuesta.headers["set-cookie"];
+  const valor = Array.isArray(bruto) ? bruto[0]! : bruto;
+  const texto = String(valor ?? "");
+  const coincidencia = texto.match(/sesion=([^;]+)/);
+  if (!coincidencia || !coincidencia[1]) return "";
+  return coincidencia[1];
+}
+
+async function registrar(app: FastifyInstance, sufijo: string) {
+  const respuesta = await app.inject({
+    method: "POST",
+    url: "/auth/registro",
+    payload: {
+      email: `agenda-${sufijo}@example.com`,
+      nombre: sufijo,
+      contrasena: "contrasena-muy-larga",
+    },
+  });
+  return { cookie: obtenerCookie(respuesta) };
+}
+
+async function crearProyecto(app: FastifyInstance, cookie: string, nombre = "Proyecto") {
+  const respuesta = await app.inject({
+    method: "POST",
+    url: "/proyectos",
+    headers: { cookie: `sesion=${cookie}` },
+    payload: { nombre },
+  });
+  const proyecto = respuesta.json() as { id: string };
+  const columnasRespuesta = await app.inject({
+    method: "GET",
+    url: `/proyectos/${proyecto.id}/columnas`,
+    headers: { cookie: `sesion=${cookie}` },
+  });
+  const columnas = columnasRespuesta.json() as Array<{ id: string }>;
+  return { id: proyecto.id, columnaId: columnas[0]!.id };
+}
+
+interface DatosTarea {
+  titulo: string;
+  columnaId: string;
+  venceEn?: string | null;
+  recurrencia?: string | null;
+}
+
+async function crearTarea(
+  app: FastifyInstance,
+  cookie: string,
+  proyectoId: string,
+  datos: DatosTarea,
+) {
+  return app.inject({
+    method: "POST",
+    url: `/proyectos/${proyectoId}/tareas`,
+    headers: { cookie: `sesion=${cookie}` },
+    payload: datos,
+  });
+}
+
+async function consultarAgenda(app: FastifyInstance, cookie: string, desde: string, hasta: string) {
+  return app.inject({
+    method: "GET",
+    url: `/agenda?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`,
+    headers: { cookie: `sesion=${cookie}` },
+  });
+}
+
+interface Ocurrencia {
+  tareaId: string;
+  titulo: string;
+  proyectoId: string;
+  proyectoNombre: string;
+  columnaId: string;
+  columnaNombre: string;
+  fecha: string;
+  esRecurrente: boolean;
+}
+
+describe("agenda", () => {
+  let client: PGlite;
+  let db: ReturnType<typeof drizzle<typeof schema>>;
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    client = new PGlite();
+    db = drizzle(client, { schema });
+    await migrate(db, { migrationsFolder });
+    app = await buildApp(db as unknown as Database);
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("exige sesión", async () => {
+    const respuesta = await app.inject({
+      method: "GET",
+      url: "/agenda?desde=2026-01-01T00:00:00.000Z&hasta=2026-01-31T00:00:00.000Z",
+    });
+    expect(respuesta.statusCode).toBe(401);
+  });
+
+  it("valida los parámetros del rango", async () => {
+    const { cookie } = await registrar(app, "validacion");
+
+    const sinParametros = await app.inject({
+      method: "GET",
+      url: "/agenda",
+      headers: { cookie: `sesion=${cookie}` },
+    });
+    expect(sinParametros.statusCode).toBe(400);
+
+    const invertido = await consultarAgenda(
+      app,
+      cookie,
+      "2026-02-01T00:00:00.000Z",
+      "2026-01-01T00:00:00.000Z",
+    );
+    expect(invertido.statusCode).toBe(400);
+
+    const excesivo = await consultarAgenda(
+      app,
+      cookie,
+      "2026-01-01T00:00:00.000Z",
+      "2027-06-01T00:00:00.000Z",
+    );
+    expect(excesivo.statusCode).toBe(400);
+  });
+
+  it("devuelve tareas simples dentro del rango y ninguna fuera", async () => {
+    const { cookie } = await registrar(app, "simple");
+    const proyecto = await crearProyecto(app, cookie, "Simple");
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Reunión",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+    expect(creacion.statusCode).toBe(201);
+
+    const dentro = await consultarAgenda(
+      app,
+      cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    expect(dentro.statusCode).toBe(200);
+    const ocurrencias = dentro.json() as Ocurrencia[];
+    expect(ocurrencias).toHaveLength(1);
+    expect(ocurrencias[0]).toMatchObject({
+      titulo: "Reunión",
+      proyectoNombre: "Simple",
+      fecha: "2026-05-10T10:00:00.000Z",
+      esRecurrente: false,
+    });
+    expect(ocurrencias[0]!.tareaId).toBeTruthy();
+    expect(ocurrencias[0]!.columnaNombre).toBe("Pendiente");
+
+    const fuera = await consultarAgenda(
+      app,
+      cookie,
+      "2026-06-01T00:00:00.000Z",
+      "2026-06-30T23:59:59.000Z",
+    );
+    expect((fuera.json() as Ocurrencia[]).length).toBe(0);
+  });
+
+  it("expande una tarea recurrente semanal", async () => {
+    const { cookie } = await registrar(app, "recurrente");
+    const proyecto = await crearProyecto(app, cookie, "Recurrente");
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Semanal",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-03-02T08:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+    });
+    expect(creacion.statusCode).toBe(201);
+    expect((creacion.json() as { recurrencia: string }).recurrencia).toBe("FREQ=WEEKLY;COUNT=3");
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-03-01T00:00:00.000Z",
+      "2026-03-31T23:59:59.000Z",
+    );
+    const ocurrencias = respuesta.json() as Ocurrencia[];
+    expect(ocurrencias.map((o) => o.fecha)).toEqual([
+      "2026-03-02T08:00:00.000Z",
+      "2026-03-09T08:00:00.000Z",
+      "2026-03-16T08:00:00.000Z",
+    ]);
+    expect(ocurrencias.every((o) => o.esRecurrente)).toBe(true);
+  });
+
+  it("ordena las ocurrencias por fecha", async () => {
+    const { cookie } = await registrar(app, "orden");
+    const proyecto = await crearProyecto(app, cookie, "Orden");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Tarde",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-07-20T18:00:00.000Z",
+    });
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Temprano",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-07-20T06:00:00.000Z",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-07-01T00:00:00.000Z",
+      "2026-07-31T23:59:59.000Z",
+    );
+    const fechas = (respuesta.json() as Ocurrencia[]).map((o) => o.fecha);
+    expect(fechas).toEqual(["2026-07-20T06:00:00.000Z", "2026-07-20T18:00:00.000Z"]);
+  });
+
+  it("aísla las tareas entre usuarios", async () => {
+    const alice = await registrar(app, "alice-agenda");
+    const bob = await registrar(app, "bob-agenda");
+    const proyecto = await crearProyecto(app, alice.cookie, "Privado");
+
+    await crearTarea(app, alice.cookie, proyecto.id, {
+      titulo: "Solo de Alice",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      bob.cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    expect(respuesta.statusCode).toBe(200);
+    expect(respuesta.json()).toEqual([]);
+  });
+
+  it("borra fecha y recurrencia con PATCH", async () => {
+    const { cookie } = await registrar(app, "borrado");
+    const proyecto = await crearProyecto(app, cookie, "Borrado");
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Con recurrencia",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-09-10T10:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+    });
+    const tarea = creacion.json() as { id: string };
+
+    const borrado = await app.inject({
+      method: "PATCH",
+      url: `/tareas/${tarea.id}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { venceEn: null },
+    });
+    expect(borrado.statusCode).toBe(200);
+    const actualizada = borrado.json() as { venceEn: string | null; recurrencia: string | null };
+    expect(actualizada.venceEn).toBeNull();
+    expect(actualizada.recurrencia).toBeNull();
+
+    const agenda = await consultarAgenda(
+      app,
+      cookie,
+      "2026-09-01T00:00:00.000Z",
+      "2026-09-30T23:59:59.000Z",
+    );
+    expect(agenda.json()).toEqual([]);
+  });
+
+  it("rechaza una recurrencia sin fecha", async () => {
+    const { cookie } = await registrar(app, "sin-fecha");
+    const proyecto = await crearProyecto(app, cookie, "Sin fecha");
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Sin fecha",
+      columnaId: proyecto.columnaId,
+      recurrencia: "FREQ=DAILY;COUNT=3",
+    });
+    expect(creacion.statusCode).toBe(400);
+
+    const sinFecha = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Sin fecha",
+      columnaId: proyecto.columnaId,
+    });
+    const tarea = sinFecha.json() as { id: string };
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/tareas/${tarea.id}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { recurrencia: "FREQ=DAILY;COUNT=3" },
+    });
+    expect(patch.statusCode).toBe(400);
+    expect(patch.json()).toMatchObject({ mensaje: "Una tarea recurrente necesita fecha" });
+  });
+
+  it("rechaza una regla de recurrencia inválida", async () => {
+    const { cookie } = await registrar(app, "regla");
+    const proyecto = await crearProyecto(app, cookie, "Regla");
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Regla mala",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+      recurrencia: "FREQ=HOURLY",
+    });
+    expect(creacion.statusCode).toBe(400);
+  });
+
+  it("incluye recurrentes empezados antes del rango", async () => {
+    const { cookie } = await registrar(app, "antes");
+    const proyecto = await crearProyecto(app, cookie, "Antes");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Semanal larga",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-01-05T08:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=10",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-03-01T00:00:00.000Z",
+      "2026-03-31T23:59:59.000Z",
+    );
+    const fechas = (respuesta.json() as Ocurrencia[]).map((o) => o.fecha);
+    expect(fechas).toEqual(["2026-03-02T08:00:00.000Z", "2026-03-09T08:00:00.000Z"]);
+  });
+
+  it("borra solo la recurrencia manteniendo la fecha", async () => {
+    const { cookie } = await registrar(app, "solo-recurrencia");
+    const proyecto = await crearProyecto(app, cookie, "Solo recurrencia");
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Varias",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-09-10T10:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+    });
+    const tarea = creacion.json() as { id: string };
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/tareas/${tarea.id}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { recurrencia: null },
+    });
+    expect(patch.statusCode).toBe(200);
+    const actualizada = patch.json() as { venceEn: string | null; recurrencia: string | null };
+    expect(actualizada.recurrencia).toBeNull();
+    expect(actualizada.venceEn).not.toBeNull();
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-09-01T00:00:00.000Z",
+      "2026-09-30T23:59:59.000Z",
+    );
+    const ocurrencias = respuesta.json() as Ocurrencia[];
+    expect(ocurrencias).toHaveLength(1);
+    expect(ocurrencias[0]!.esRecurrente).toBe(false);
+  });
+});

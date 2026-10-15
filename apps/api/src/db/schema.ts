@@ -52,6 +52,7 @@ export const tareas = pgTable("tareas", {
   descripcion: text("descripcion"),
   posicion: integer("posicion").notNull(),
   venceEn: timestamp("vence_en", { withTimezone: true }),
+  recurrencia: text("recurrencia"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
