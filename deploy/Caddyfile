@@ -1,3 +1,13 @@
+{
+	# Detrás de Apache (o de otro proxy en la red privada). Con «strict», Caddy
+	# toma la IP más a la derecha que no sea de confianza (la que añade Apache),
+	# de modo que un X-Forwarded-For enviado por el cliente no la falsea.
+	servers {
+		trusted_proxies static private_ranges
+		trusted_proxies_strict
+	}
+}
+
 # Sirve la SPA y hace de proxy hacia la API quitando el prefijo /api.
 :80 {
 	encode zstd gzip
@@ -9,7 +19,11 @@
 	}
 
 	handle_path /api/* {
-		reverse_proxy api:3000
+		# La API confía en un solo salto (TRUST_PROXY=1) y toma la primera IP:
+		# se le entrega solo la IP real del cliente.
+		reverse_proxy api:3000 {
+			header_up X-Forwarded-For {client_ip}
+		}
 	}
 
 	# Solo la web: fallback a index.html para las rutas de la SPA.

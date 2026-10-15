@@ -1,5 +1,10 @@
 services:
   postgres:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: postgres:16
     restart: unless-stopped
     environment:
@@ -15,6 +20,11 @@ services:
       retries: 5
 
   api:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     build:
       context: .
       target: api
@@ -41,6 +51,11 @@ services:
       - "3000"
 
   web:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     build:
       context: .
       target: web

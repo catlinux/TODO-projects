@@ -1,6 +1,7 @@
 # Creado por AgentRelay para no confirmar secretos en el repositorio.
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.p12
@@ -20,3 +21,6 @@ agentrelay.config.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Copias de la base de datos
+backups/
