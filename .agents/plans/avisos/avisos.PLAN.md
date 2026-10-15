@@ -8,7 +8,7 @@ Decisiones:
 - Interfaz `Canal` desacoplada: `correo` (Nodemailer; SMTP por variables de entorno, desactivado si faltan) y `push` (Web Push con claves VAPID por variables de entorno). Telegram y demás, en la 0.9.
 - Las credenciales (SMTP, claves VAPID) nunca van al repositorio: `.env` y variables de entorno; `.env.example` solo con nombres.
 
-- [ ] **A. Límite de intentos.** `@fastify/rate-limit` en `/auth/registro` y `/auth/login` (por IP y por correo en login), 429 en español, configurable por entorno, tests. Versión: parche en el cierre.
+- [x] **A. Límite de intentos.** `@fastify/rate-limit` en `/auth/registro` y `/auth/login` (por IP y por correo en login), 429 en español, configurable por entorno, tests. Versión: parche en el cierre.
 - [ ] **B. Empaquetado de producción.** `Dockerfile` multi-etapa (API con tsx o compilada, web estática servida por Caddy o nginx con proxy `/api`), `docker-compose.prod.yml` con Postgres, variables en `.env.example`, `docs/DESPLIEGUE.md`. Sin poder probar Docker en el equipo: dejarlo documentado como no probado.
 - [ ] **C. Núcleo de avisos.** Migración (`recordatorio_min`, tablas `avisos_enviados` y `suscripciones_push`), interfaz `Canal`, canales `correo` y `push`, función `procesarAvisos(db, ahora, canales)` con tests con PGlite (ventana, recurrentes con zona, deduplicación, canal que falla no bloquea al resto), `recordatorioMin` en el esquema zod de tarea.
 - [ ] **D. Endpoints y arranque.** `GET /push/clave`, `POST/DELETE /push/suscripcion`, bucle periódico en `server.ts` (intervalo y desactivación por entorno), apagado limpio, tests.

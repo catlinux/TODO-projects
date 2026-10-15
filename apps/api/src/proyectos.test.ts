@@ -41,7 +41,9 @@ describe("proyectos y tareas", () => {
     client = new PGlite();
     db = drizzle(client, { schema });
     await migrate(db, { migrationsFolder });
-    app = await buildApp(db as unknown as Database);
+    app = await buildApp(db as unknown as Database, {
+      limiteAuth: { max: 100000, ventanaMs: 60 * 60 * 1000, maxPorCorreo: 100000 },
+    });
     await app.ready();
   });
 
