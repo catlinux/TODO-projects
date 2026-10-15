@@ -100,6 +100,16 @@ Tienes dos opciones:
 
   y en `volumes` añade `caddy_data:` y `caddy_config:`. Caddy pedirá y renovará el certificado solo.
 
+## Avisos
+
+Los avisos son opcionales y se configuran en `.env`:
+
+- **Correo**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` y `SMTP_SECURE` (`1` para TLS directo en el 465, `0` para STARTTLS). Sin `SMTP_HOST` el canal de correo queda desactivado.
+- **Push**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT`. Genera las claves una vez con `npx web-push generate-vapid-keys` y cópialas al `.env`; sin las tres el canal push queda desactivado. `VAPID_SUBJECT` debe ser un contacto válido, por ejemplo `mailto:tu-correo@ejemplo.com`.
+- **`AVISOS_ACTIVOS`**: `1` (por defecto) arranca el bucle que procesa los avisos cada minuto; `0` lo desactiva.
+
+Si no hay ningún canal configurado, la API no arranca el bucle y lo indica por consola. El servicio `api` del compose recibe estas variables desde el `.env`.
+
 ## Notas
 
 - La API confía en el proxy (`TRUST_PROXY=1`) para calcular la IP real de los límites de intentos. No lo pongas a `0` si estás detrás de Caddy.

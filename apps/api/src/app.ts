@@ -7,6 +7,7 @@ import type { Database } from "./db/index.js";
 import { MENSAJE_DEMASIADOS_INTENTOS, registrarRutasAuth, type LimitesAuth } from "./auth.js";
 import { obtenerSesion } from "./auth.js";
 import { registrarRutasAgenda } from "./agenda.js";
+import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasProyectos } from "./proyectos.js";
 import { registrarRutasTareas } from "./tareas.js";
@@ -17,6 +18,7 @@ export interface OpcionesApp {
     ventanaMs?: number;
     maxPorCorreo?: number;
   };
+  vapidPublicKey?: string | null;
 }
 
 const MAX_POR_IP = 10;
@@ -38,6 +40,11 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
     },
     maxPorCorreo: opciones.limiteAuth?.maxPorCorreo ?? MAX_POR_CORREO,
   };
+
+  const vapidPublicKey =
+    opciones.vapidPublicKey !== undefined
+      ? opciones.vapidPublicKey
+      : (process.env.VAPID_PUBLIC_KEY ?? null);
 
   await app.register(cookie);
   // global:false: solo se aplica a las rutas que declaran su propio rateLimit.
@@ -78,6 +85,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   registrarRutasColumnas(app, db);
   registrarRutasTareas(app, db);
   registrarRutasAgenda(app, db);
+  registrarRutasPush(app, db, { vapidPublicKey });
 
   return app;
 }
