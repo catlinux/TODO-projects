@@ -5,7 +5,6 @@
 - Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
 - Revisión de seguridad de la autenticación por un modelo potente (el fallo del registro simultáneo ya está corregido).
 - Rediseño del aspecto de la web (tablero a ancho completo, columnas compactas, tarjetas limpias, color de acento); secundario frente a lo funcional.
-- Tests de la API: el de `updated_at` fija el valor a mano en lugar de comprobar que cambia solo.
 
 - Probar el despliegue de `docs/DESPLIEGUE.md` en un servidor con Docker (no probado todavía).
 
@@ -16,7 +15,7 @@
 - Kanban con tarjetas arrastrables (0.2).
 - Calendario, agenda, recurrencias y exportación `.ics` (0.3).
 - `.ics` con recurrencia: las zonas con horario de verano fuera de la UE (p. ej. `America/New_York`) caen al fallback en UTC porque aún no se generan sus reglas de VTIMEZONE.
-- Completar una ocurrencia suelta de una tarea recurrente y excepciones de la serie.
+- Excepciones de una serie recurrente (mover o editar una sola ocurrencia).
 - Suscripción al calendario `.ics` por URL con token (hoy solo descarga con sesión; llega con el token de la 0.6).
 
 ## Prioridad baja

@@ -174,3 +174,14 @@ fieldset {
 .agenda-hora {
   color: #4b5563;
 }
+
+.agenda-hecha a,
+.agenda-hecha .agenda-hora {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.fc-event.hecha {
+  text-decoration: line-through;
+  opacity: 0.6;
+}

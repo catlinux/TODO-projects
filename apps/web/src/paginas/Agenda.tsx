@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,19 +7,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import esLocale from "@fullcalendar/core/locales/es";
 import type { DatesSetArg, EventClickArg, EventInput } from "@fullcalendar/core";
 
-import { peticion } from "../api";
+import { peticion, type OcurrenciaAgenda } from "../api";
 import { formatearFechaHoraEs } from "../recurrencia-web";
-
-export interface OcurrenciaAgenda {
-  tareaId: string;
-  titulo: string;
-  proyectoId: string;
-  proyectoNombre: string;
-  columnaId: string;
-  columnaNombre: string;
-  fecha: string;
-  esRecurrente: boolean;
-}
 
 type Vista = "lista" | "calendario";
 
@@ -46,7 +35,28 @@ function rangoProximos30Dias(): { desde: string; hasta: string } {
 export default function Agenda() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const cliente = useQueryClient();
   const [vista, setVista] = useState<Vista>("lista");
+
+  const marcarHecha = useMutation({
+    mutationFn: async ({
+      tareaId,
+      fecha,
+      hecha,
+    }: {
+      tareaId: string;
+      fecha: string;
+      hecha: boolean;
+    }) => {
+      await peticion(`/tareas/${tareaId}/ocurrencias`, {
+        method: "POST",
+        body: JSON.stringify({ fecha, hecha }),
+      });
+    },
+    onSuccess: async () => {
+      await cliente.invalidateQueries({ queryKey: ["agenda"] });
+    },
+  });
 
   const [rangoLista] = useState(rangoProximos30Dias);
   const lista = useQuery({
@@ -75,6 +85,7 @@ export default function Agenda() {
       id: `${ocurrencia.tareaId}-${ocurrencia.fecha}`,
       title: ocurrencia.titulo,
       start: ocurrencia.fecha,
+      classNames: ocurrencia.hecha ? ["hecha"] : [],
       extendedProps: { proyectoId: ocurrencia.proyectoId },
     })) ?? [];
 
@@ -114,7 +125,24 @@ export default function Agenda() {
                   <h2>{etiquetaDia(ocurrencias[0]!.fecha)}</h2>
                   <ul>
                     {ocurrencias.map((ocurrencia) => (
-                      <li key={`${ocurrencia.tareaId}-${ocurrencia.fecha}`}>
+                      <li
+                        key={`${ocurrencia.tareaId}-${ocurrencia.fecha}`}
+                        className={ocurrencia.hecha ? "agenda-hecha" : undefined}
+                      >
+                        <label className="agenda-hecha-check">
+                          <input
+                            type="checkbox"
+                            checked={ocurrencia.hecha}
+                            onChange={(evento) =>
+                              marcarHecha.mutate({
+                                tareaId: ocurrencia.tareaId,
+                                fecha: ocurrencia.fecha,
+                                hecha: evento.target.checked,
+                              })
+                            }
+                          />
+                          {t("agenda.done")}
+                        </label>{" "}
                         <span className="agenda-hora">
                           {formatearFechaHoraEs(ocurrencia.fecha)}
                         </span>{" "}

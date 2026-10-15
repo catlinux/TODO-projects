@@ -114,3 +114,22 @@ export const suscripcionesPush = pgTable("suscripciones_push", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const ocurrenciasHechas = pgTable(
+  "ocurrencias_hechas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    ocurrencia: timestamp("ocurrencia", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (tabla) => [
+    uniqueIndex("ocurrencias_hechas_tarea_ocurrencia_idx").on(tabla.tareaId, tabla.ocurrencia),
+  ],
+);

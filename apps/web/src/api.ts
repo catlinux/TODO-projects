@@ -37,6 +37,18 @@ export interface TareaApi {
   updatedAt: string;
 }
 
+export interface OcurrenciaAgenda {
+  tareaId: string;
+  titulo: string;
+  proyectoId: string;
+  proyectoNombre: string;
+  columnaId: string;
+  columnaNombre: string;
+  fecha: string;
+  esRecurrente: boolean;
+  hecha: boolean;
+}
+
 export class ErrorHttp extends Error {
   status: number;
 

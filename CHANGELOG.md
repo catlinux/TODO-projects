@@ -4,6 +4,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.5.0] - 2026-10-15
+
+### Añadido
+- Marcar como hecha una ocurrencia suelta de una tarea recurrente (casilla en la Agenda; tachada en lista y calendario). Los avisos omiten las ocurrencias hechas.
+
+### Cambiado
+- `GET /agenda` incluye `hecha` en cada elemento. Tabla nueva `ocurrencias_hechas` (migración compatible).
+- El test de `updated_at` comprueba ahora que se actualiza solo, sin fijarlo a mano.
+
 ## [0.4.0] - 2026-10-15
 
 ### Añadido

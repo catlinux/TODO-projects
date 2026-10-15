@@ -43,6 +43,13 @@
       "when": 1792026035185,
       "tag": "0005_avisos",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792031382262,
+      "tag": "0006_ocurrencias_hechas",
+      "breakpoints": true
     }
   ]
 }

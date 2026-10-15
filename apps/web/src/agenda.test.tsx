@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ vi.mock("@fullcalendar/react", async () => {
   return {
     default: (props: {
       datesSet?: (info: { startStr: string; endStr: string }) => void;
-      events?: unknown[];
+      events?: Array<{ classNames?: string[] }>;
     }) => {
       React.useEffect(() => {
         props.datesSet?.({
@@ -17,10 +17,12 @@ vi.mock("@fullcalendar/react", async () => {
           endStr: "2026-06-01T00:00:00.000Z",
         });
       }, []);
+      const eventos = props.events ?? [];
+      const hechas = eventos.filter((evento) => evento.classNames?.includes("hecha")).length;
       return React.createElement(
         "div",
         { "data-testid": "calendario" },
-        `${props.events?.length ?? 0} eventos`,
+        `${eventos.length} eventos (${hechas} hechas)`,
       );
     },
   };
@@ -39,6 +41,7 @@ const ocurrencias = [
     columnaNombre: "Pendiente",
     fecha: "2026-05-10T08:00:00.000Z",
     esRecurrente: false,
+    hecha: true,
   },
   {
     tareaId: "t2",
@@ -49,6 +52,7 @@ const ocurrencias = [
     columnaNombre: "Pendiente",
     fecha: "2026-05-10T15:00:00.000Z",
     esRecurrente: false,
+    hecha: false,
   },
 ];
 
@@ -74,10 +78,15 @@ describe("Agenda", () => {
     vi.restoreAllMocks();
   });
 
-  it("agrupa las ocurrencias por día en la vista Lista", async () => {
+  it("agrupa las ocurrencias por día y marca las hechas", async () => {
+    let cuerpoPost: string | null = null;
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/tareas/t1/ocurrencias" && init?.method === "POST") {
+          cuerpoPost = String(init.body ?? "");
+          return new Response(null, { status: 204 });
+        }
         if (url.startsWith("/api/agenda?")) {
           return new Response(JSON.stringify(ocurrencias), {
             status: 200,
@@ -91,20 +100,29 @@ describe("Agenda", () => {
       }),
     );
 
-    renderAgenda();
+    const { user } = renderAgenda();
 
     expect(await screen.findByText(/10 de mayo/i)).toBeTruthy();
-    expect(await screen.findByText(/Reunión/)).toBeTruthy();
-    expect(await screen.findByText(/Demostración/)).toBeTruthy();
-
-    const enlace = screen.getByRole("link", { name: /Reunión/ });
+    const enlace = await screen.findByRole("link", { name: /Reunión/ });
     expect(enlace.getAttribute("href")).toBe("/proyectos/p1");
+    expect(enlace.closest("li")?.className).toContain("agenda-hecha");
+
+    const casillas = screen.getAllByLabelText(/hecha/i);
+    expect((casillas[0] as HTMLInputElement).checked).toBe(true);
+    expect((casillas[1] as HTMLInputElement).checked).toBe(false);
 
     const descarga = screen.getByRole("link", { name: /descargar calendario/i });
     expect(descarga.getAttribute("href")).toBe("/api/agenda.ics");
+
+    await user.click(casillas[0]!);
+    await waitFor(() => expect(cuerpoPost).not.toBeNull());
+    expect(JSON.parse(String(cuerpoPost))).toEqual({
+      fecha: "2026-05-10T08:00:00.000Z",
+      hecha: false,
+    });
   });
 
-  it("carga el calendario con el rango visible", async () => {
+  it("carga el calendario con el rango visible y marca los eventos hechos", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
@@ -125,7 +143,7 @@ describe("Agenda", () => {
     await user.click(screen.getByRole("button", { name: /calendario/i }));
 
     expect(await screen.findByTestId("calendario")).toBeTruthy();
-    expect(await screen.findByText("2 eventos")).toBeTruthy();
+    expect(await screen.findByText("2 eventos (1 hechas)")).toBeTruthy();
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       expect.stringContaining("/api/agenda?desde=2026-05-01"),
       expect.anything(),

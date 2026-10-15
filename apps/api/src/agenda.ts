@@ -1,10 +1,10 @@
 import { type FastifyInstance } from "fastify";
-import { and, asc, eq, gte, isNotNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, lte, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { expandirOcurrencias, generarCalendarioIcs } from "@todo/shared";
 
-import { columnas, proyectos, tareas } from "./db/schema.js";
+import { columnas, ocurrenciasHechas, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 
 const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
@@ -25,6 +25,7 @@ interface OcurrenciaAgenda {
   columnaNombre: string;
   fecha: string;
   esRecurrente: boolean;
+  hecha: boolean;
 }
 
 export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
@@ -79,6 +80,18 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
       )
       .orderBy(asc(tareas.venceEn));
 
+    const idsTareas = [...new Set(filas.map((fila) => fila.tareaId))];
+    const marcas = new Set<string>();
+    if (idsTareas.length > 0) {
+      const hechas = await db
+        .select({ tareaId: ocurrenciasHechas.tareaId, ocurrencia: ocurrenciasHechas.ocurrencia })
+        .from(ocurrenciasHechas)
+        .where(inArray(ocurrenciasHechas.tareaId, idsTareas));
+      for (const marca of hechas) {
+        marcas.add(`${marca.tareaId}|${marca.ocurrencia.getTime()}`);
+      }
+    }
+
     const ocurrencias: OcurrenciaAgenda[] = [];
 
     for (const fila of filas) {
@@ -102,6 +115,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
           columnaNombre: fila.columnaNombre,
           fecha: fecha.toISOString(),
           esRecurrente: fila.recurrencia !== null,
+          hecha: marcas.has(`${fila.tareaId}|${fecha.getTime()}`),
         });
       }
     }

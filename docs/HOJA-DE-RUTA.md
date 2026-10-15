@@ -13,4 +13,6 @@
 | 0.9 | Telegram y, después, WhatsApp o SMS |
 | 1.0 | Versión estable; después, Android |
 
+La numeración es orientativa: las versiones se publican por orden de entrega y pueden no coincidir con esta tabla (el multiusuario está aparcado).
+
 El detalle ejecutable de cada versión se escribe en `.agents/plans/` cuando toca.

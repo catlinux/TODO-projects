@@ -21,7 +21,7 @@ type TaskChanges = {
   updatedAt: Date;
 };
 
-async function obtenerTareaPropia(db: Database, id: string, usuarioId: string) {
+export async function obtenerTareaPropia(db: Database, id: string, usuarioId: string) {
   const [fila] = await db
     .select({ tarea: tareas, proyecto: proyectos })
     .from(tareas)

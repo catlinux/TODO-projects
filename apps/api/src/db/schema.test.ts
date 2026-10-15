@@ -92,10 +92,17 @@ describe("esquema de base de datos", () => {
       .insert(schema.usuarios)
       .values({ email: "fecha@example.com", nombre: "Fecha", passwordHash: "hash" })
       .returning()) as [Usuario];
-    const ahora = new Date(Date.now() + 1000);
+
+    const pasado = new Date(Date.now() - 60_000);
     await db
       .update(schema.usuarios)
-      .set({ nombre: "Fecha nueva", updatedAt: ahora })
+      .set({ updatedAt: pasado })
+      .where(eq(schema.usuarios.id, usuario.id));
+
+    // Sin indicar updatedAt: debe encargarse el $onUpdate del esquema.
+    await db
+      .update(schema.usuarios)
+      .set({ nombre: "Fecha nueva" })
       .where(eq(schema.usuarios.id, usuario.id));
 
     const [actualizado] = (await db
@@ -103,7 +110,7 @@ describe("esquema de base de datos", () => {
       .from(schema.usuarios)
       .where(eq(schema.usuarios.id, usuario.id))) as [Usuario];
 
-    expect(actualizado.updatedAt.getTime()).toBe(ahora.getTime());
+    expect(actualizado.updatedAt.getTime()).toBeGreaterThan(pasado.getTime());
   });
 
   it("GET /salud responde 200", async () => {

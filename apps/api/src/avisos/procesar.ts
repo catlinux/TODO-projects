@@ -2,7 +2,14 @@ import { and, eq, gte, inArray, isNotNull, lte, or } from "drizzle-orm";
 
 import { expandirOcurrencias, partesEnZona } from "@todo/shared";
 
-import { avisosEnviados, proyectos, suscripcionesPush, tareas, usuarios } from "../db/schema.js";
+import {
+  avisosEnviados,
+  ocurrenciasHechas,
+  proyectos,
+  suscripcionesPush,
+  tareas,
+  usuarios,
+} from "../db/schema.js";
 import type { Database } from "../db/index.js";
 import { SinDestinoError, type Canal, type DestinoAviso, type SuscripcionPush } from "./canal.js";
 
@@ -95,6 +102,17 @@ export async function procesarAvisos(
     pushPorUsuario.set(suscripcion.usuarioId, lista);
   }
 
+  // Una sola consulta por lote para saber qué ocurrencias están marcadas.
+  const idsTareas = [...new Set(filas.map((fila) => fila.tareaId))];
+  const marcas = new Set<string>();
+  const hechas = await db
+    .select({ tareaId: ocurrenciasHechas.tareaId, ocurrencia: ocurrenciasHechas.ocurrencia })
+    .from(ocurrenciasHechas)
+    .where(inArray(ocurrenciasHechas.tareaId, idsTareas));
+  for (const marca of hechas) {
+    marcas.add(`${marca.tareaId}|${marca.ocurrencia.getTime()}`);
+  }
+
   for (const fila of filas) {
     if (!fila.venceEn || fila.recordatorioMin === null) {
       continue;
@@ -111,6 +129,9 @@ export async function procesarAvisos(
     );
 
     for (const ocurrencia of ocurrencias) {
+      if (marcas.has(`${fila.tareaId}|${ocurrencia.getTime()}`)) {
+        continue;
+      }
       if (ocurrencia.getTime() < ahora.getTime() - MARGEN_OCURRENCIA_MS) {
         continue;
       }

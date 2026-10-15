@@ -104,7 +104,8 @@
     "list": "Lista",
     "calendar": "Calendario",
     "download": "Descargar calendario (.ics)",
-    "empty": "No hay eventos en los próximos 30 días"
+    "empty": "No hay eventos en los próximos 30 días",
+    "done": "Hecha"
   },
   "push": {
     "activar": "Activar avisos del navegador",
