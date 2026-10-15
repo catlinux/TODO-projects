@@ -148,6 +148,16 @@ web:
 
 (y `caddy_data:` y `caddy_config:` en `volumes`). Caddy pedirá y renovará el certificado solo. Esta variante no se ha probado.
 
+## Registro de usuarios
+
+Por defecto cualquiera puede registrarse. Para un uso personal, pon `REGISTRO_ABIERTO=0` en `.env` (`/auth/registro` responde 403) y crea tu usuario desde el servidor:
+
+```sh
+deploy/crear-usuario.sh correo@ejemplo.com "Tu nombre"
+```
+
+El script pide la contraseña sin mostrarla. Tras cambiar `.env`: `docker compose -f docker-compose.prod.yml up -d`.
+
 ## Avisos
 
 Los avisos son opcionales y se configuran en `.env`:

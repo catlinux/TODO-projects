@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.6.0] - 2026-10-15
+
+### Añadido
+- `REGISTRO_ABIERTO=0` cierra el registro: `/auth/registro` responde 403. Por defecto sigue abierto.
+- `deploy/crear-usuario.sh` crea un usuario en producción pidiendo la contraseña sin mostrarla.
+
 ## [0.5.1] - 2026-10-15
 
 ### Añadido

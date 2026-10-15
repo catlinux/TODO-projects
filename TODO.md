@@ -2,6 +2,8 @@
 
 ## Prioridad alta
 
+- Acceso personal solo con PIN (6 a 12 dígitos) y huella (passkeys/WebAuthn), sin correo ni contraseña; el PIN con argon2, límite por IP y bloqueo escalonado, y la huella fuera de ese bloqueo (0.7.0).
+
 - Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
 - Revisión de seguridad de la autenticación por un modelo potente (el fallo del registro simultáneo ya está corregido).
 - Rediseño del aspecto de la web (tablero a ancho completo, columnas compactas, tarjetas limpias, color de acento); secundario frente a lo funcional.

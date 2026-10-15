@@ -125,7 +125,12 @@ export async function obtenerSesion(db: Database, token: string | undefined) {
   return fila;
 }
 
-export function registrarRutasAuth(app: FastifyInstance, db: Database, limites: LimitesAuth): void {
+export function registrarRutasAuth(
+  app: FastifyInstance,
+  db: Database,
+  limites: LimitesAuth,
+  registroAbierto = true,
+): void {
   const limitePorCorreo = crearLimitePorCorreo(limites.maxPorCorreo, limites.login.ventanaMs);
 
   app.post(
@@ -136,6 +141,11 @@ export function registrarRutasAuth(app: FastifyInstance, db: Database, limites: 
       },
     },
     async (request, reply) => {
+      if (!registroAbierto) {
+        reply.code(403).send({ mensaje: "El registro está cerrado" });
+        return;
+      }
+
       const resultado = esquemaRegistro.safeParse(request.body);
       if (!resultado.success) {
         reply.code(400).send({ mensaje: "Datos de registro no válidos" });

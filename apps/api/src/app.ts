@@ -26,6 +26,8 @@ export interface OpcionesApp {
     ventanaMs?: number;
   };
   vapidPublicKey?: string | null;
+  /** Si es false, /auth/registro responde 403. Por defecto, REGISTRO_ABIERTO distinto de "0". */
+  registroAbierto?: boolean;
 }
 
 const MAX_POR_IP = 10;
@@ -174,7 +176,12 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
     }
   });
 
-  registrarRutasAuth(app, db, limiteAuth);
+  registrarRutasAuth(
+    app,
+    db,
+    limiteAuth,
+    opciones.registroAbierto ?? process.env.REGISTRO_ABIERTO !== "0",
+  );
   registrarRutasTokens(app, db);
   registrarRutasProyectos(app, db);
   registrarRutasColumnas(app, db);

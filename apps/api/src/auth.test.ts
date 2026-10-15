@@ -40,6 +40,24 @@ describe("autenticación", () => {
     await app.close();
   });
 
+  it("rechaza el registro con 403 si está cerrado", async () => {
+    const cerrada = await buildApp(db as unknown as Database, { registroAbierto: false });
+    await cerrada.ready();
+    const respuesta = await cerrada.inject({
+      method: "POST",
+      url: "/auth/registro",
+      payload: { email: "cerrado@example.com", nombre: "X", contrasena: "contrasena-muy-larga" },
+    });
+    await cerrada.close();
+
+    expect(respuesta.statusCode).toBe(403);
+    const filas = await db
+      .select()
+      .from(schema.usuarios)
+      .where(eq(schema.usuarios.email, "cerrado@example.com"));
+    expect(filas).toHaveLength(0);
+  });
+
   it("registra un usuario y define una cookie httpOnly con SameSite", async () => {
     const respuesta = await app.inject({
       method: "POST",
