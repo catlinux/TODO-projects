@@ -68,7 +68,7 @@ function crearLimitePorCorreo(max: number, ventanaMs: number): LimitePorCorreo {
 }
 
 let hashFicticioPromesa: Promise<string> | undefined;
-function obtenerHashFicticio(): Promise<string> {
+export function obtenerHashFicticio(): Promise<string> {
   hashFicticioPromesa ??= hash("contraseña-ficticia-para-igualar-tiempos");
   return hashFicticioPromesa;
 }
@@ -81,7 +81,11 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-async function crearSesion(db: Database, usuarioId: string, reply: FastifyReply): Promise<void> {
+export async function crearSesion(
+  db: Database,
+  usuarioId: string,
+  reply: FastifyReply,
+): Promise<void> {
   const token = generarToken();
   const tokenHash = hashToken(token);
   const expiraEn = new Date(Date.now() + UNA_SEMANA_MS);
@@ -130,6 +134,7 @@ export function registrarRutasAuth(
   db: Database,
   limites: LimitesAuth,
   registroAbierto = true,
+  accesoCorreo = true,
 ): void {
   const limitePorCorreo = crearLimitePorCorreo(limites.maxPorCorreo, limites.login.ventanaMs);
 
@@ -201,6 +206,11 @@ export function registrarRutasAuth(
       },
     },
     async (request, reply) => {
+      if (!accesoCorreo) {
+        reply.code(403).send({ mensaje: "El acceso con correo está desactivado" });
+        return;
+      }
+
       const resultado = esquemaLogin.safeParse(request.body);
       if (!resultado.success) {
         reply.code(400).send({ mensaje: "Datos de inicio de sesión no válidos" });

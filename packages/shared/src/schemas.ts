@@ -28,6 +28,10 @@ export const esquemaLogin = z.object({
   contrasena: z.string().min(1, "Contraseña obligatoria").max(128, "Contraseña demasiado larga"),
 });
 
+export const esquemaPin = z.object({
+  pin: z.string().regex(/^\d{6,12}$/, "El PIN debe tener de 6 a 12 dígitos"),
+});
+
 export type DatosRegistro = z.infer<typeof esquemaRegistro>;
 export type DatosLogin = z.infer<typeof esquemaLogin>;
 

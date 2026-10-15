@@ -1,4 +1,5 @@
 import {
+  bigint,
   index,
   integer,
   jsonb,
@@ -14,6 +15,8 @@ export const usuarios = pgTable("usuarios", {
   email: text("email").notNull().unique(),
   nombre: text("nombre").notNull(),
   passwordHash: text("password_hash").notNull(),
+  // PIN de acceso personal (argon2). Solo el propietario lo tiene.
+  pinHash: text("pin_hash"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -184,4 +187,27 @@ export const actividad = pgTable(
       .$onUpdate(() => new Date()),
   },
   (tabla) => [index("actividad_usuario_created_idx").on(tabla.usuarioId, tabla.createdAt.desc())],
+);
+
+export const passkeys = pgTable(
+  "passkeys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    usuarioId: uuid("usuario_id")
+      .notNull()
+      .references(() => usuarios.id, { onDelete: "cascade" }),
+    credencialId: text("credencial_id").notNull().unique(),
+    // Clave pública en SPKI DER, base64url.
+    clavePublica: text("clave_publica").notNull(),
+    algoritmo: integer("algoritmo").notNull(),
+    contador: bigint("contador", { mode: "number" }).notNull().default(0),
+    nombre: text("nombre").notNull(),
+    ultimoUso: timestamp("ultimo_uso", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (tabla) => [index("passkeys_usuario_idx").on(tabla.usuarioId)],
 );

@@ -64,6 +64,13 @@
       "when": 1792032276194,
       "tag": "0008_actividad",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792050000000,
+      "tag": "0009_pin_passkeys",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { sql } from "drizzle-orm";
 
 import type { Database } from "./db/index.js";
+import { crearBloqueoGlobal, registrarRutasAcceso } from "./acceso.js";
 import { MENSAJE_DEMASIADOS_INTENTOS, registrarRutasAuth, type LimitesAuth } from "./auth.js";
 import { obtenerSesion } from "./auth.js";
 import { registrarRutasAgenda } from "./agenda.js";
@@ -13,6 +14,7 @@ import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasOcurrencias } from "./ocurrencias.js";
 import { registrarRutasProyectos } from "./proyectos.js";
 import { registrarRutasTareas } from "./tareas.js";
+import { configDesdeOrigen } from "./webauthn.js";
 import { buscarTokenApi, crearLimiteFallosTokens, registrarRutasTokens } from "./tokens.js";
 
 export interface OpcionesApp {
@@ -28,6 +30,11 @@ export interface OpcionesApp {
   vapidPublicKey?: string | null;
   /** Si es false, /auth/registro responde 403. Por defecto, REGISTRO_ABIERTO distinto de "0". */
   registroAbierto?: boolean;
+  /** Si es false, /auth/login (correo) responde 403. Por defecto, ACCESO_CORREO distinto de "0". */
+  accesoCorreo?: boolean;
+  /** Origen público (https://dominio) que activa las passkeys. Por defecto, ORIGEN_PUBLICO. */
+  origenPublico?: string | null;
+  bloqueoPin?: ReturnType<typeof crearBloqueoGlobal>;
 }
 
 const MAX_POR_IP = 10;
@@ -176,12 +183,21 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
     }
   });
 
-  registrarRutasAuth(
-    app,
-    db,
-    limiteAuth,
-    opciones.registroAbierto ?? process.env.REGISTRO_ABIERTO !== "0",
-  );
+  const registroAbierto = opciones.registroAbierto ?? process.env.REGISTRO_ABIERTO !== "0";
+  const accesoCorreo = opciones.accesoCorreo ?? process.env.ACCESO_CORREO !== "0";
+  const origenPublico =
+    opciones.origenPublico !== undefined
+      ? opciones.origenPublico
+      : process.env.ORIGEN_PUBLICO || null;
+
+  registrarRutasAuth(app, db, limiteAuth, registroAbierto, accesoCorreo);
+  registrarRutasAcceso(app, db, {
+    limites: limiteAuth,
+    accesoCorreo,
+    registroAbierto,
+    webauthn: origenPublico ? configDesdeOrigen(origenPublico) : null,
+    ...(opciones.bloqueoPin ? { bloqueo: opciones.bloqueoPin } : {}),
+  });
   registrarRutasTokens(app, db);
   registrarRutasProyectos(app, db);
   registrarRutasColumnas(app, db);
