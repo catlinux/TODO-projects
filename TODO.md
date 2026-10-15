@@ -6,7 +6,7 @@
 - Revisión de seguridad de la autenticación por un modelo potente (el fallo del registro simultáneo ya está corregido).
 - Rediseño del aspecto de la web (tablero a ancho completo, columnas compactas, tarjetas limpias, color de acento); secundario frente a lo funcional.
 
-- Probar el despliegue de `docs/DESPLIEGUE.md` en un servidor con Docker (no probado todavía).
+- Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
 
 - Probar los avisos con un SMTP y claves VAPID reales (correo y Web Push) y configurar `.env` en producción.
 

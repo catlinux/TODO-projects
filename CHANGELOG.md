@@ -4,6 +4,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.5.1] - 2026-10-15
+
+### Añadido
+- `.env.example` con las variables de entorno del despliegue.
+- `deploy/backup-postgres.sh`: copia comprimida de PostgreSQL con validación y rotación.
+- `deploy/apache-todo-project.conf`: vhost de referencia para Apache como proxy inverso.
+
+### Cambiado
+- Los servicios del compose de producción rotan sus logs (10 MB × 3).
+- `deploy/Caddyfile`: Caddy confía en el proxy local y entrega a la API solo la IP real del cliente, para que el límite de intentos sea por IP y no se pueda falsear con `X-Forwarded-For`.
+- `docs/DESPLIEGUE.md`: instalación probada en el VPS con Apache y Certbot, copia de seguridad y explicación de la IP real.
+
+### Nota
+- El despliegue con Docker se ha probado ya en un VPS. Siguen sin probarse la restauración de una copia, los avisos con SMTP y claves VAPID reales y el reinicio completo del servidor.
+
 ## [0.5.0] - 2026-10-15
 
 ### Añadido

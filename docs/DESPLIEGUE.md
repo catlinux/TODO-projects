@@ -1,6 +1,6 @@
 # Despliegue en producción
 
-> **Esta configuración no se ha probado todavía en un servidor con Docker.** Está escrita y revisada, pero el equipo de desarrollo no dispone de Docker para ejecutarla de extremo a extremo. Revísala en tu servidor antes de confiar en ella.
+> **Probado en el VPS de producción (0.5.1):** arranque con Docker, Apache como proxy con HTTPS, registro, inicio de sesión, creación de proyectos, límite de intentos por IP real y copia de la base de datos. **No probado:** la restauración de una copia, los avisos con SMTP y claves VAPID reales, y el reinicio completo del servidor.
 
 ## Qué levanta
 
@@ -11,9 +11,11 @@
 - **web**: Caddy (imagen `web`) sirviendo la web estática y haciendo de proxy de `/api/*` hacia `api:3000`, quitando el prefijo `/api`.
 
 ```
-navegador ──► web (Caddy :80) ──► /api/* ──► api:3000 ──► postgres:5432
-                        └──► resto: ficheros estáticos de la SPA
+navegador ──► Apache (host, 443) ──► web (Caddy, 127.0.0.1:8083) ──► /api/* ──► api:3000 ──► postgres:5432
+                                                          └──► resto: ficheros estáticos de la SPA
 ```
+
+Los tres servicios llevan `restart: unless-stopped` y rotación de logs (10 MB × 3). Con Docker habilitado en el arranque (`systemctl is-enabled docker`) vuelven solos tras reiniciar el servidor; no hace falta ninguna unidad de systemd propia.
 
 ## Requisitos
 
@@ -34,7 +36,8 @@ navegador ──► web (Caddy :80) ──► /api/* ──► api:3000 ──�
 
    ```sh
    cp .env.example .env
-   # Edita .env: cambia POSTGRES_PASSWORD y, si quieres, POSTGRES_USER, POSTGRES_DB y WEB_PORT.
+   chmod 600 .env
+   # Edita .env: pon una POSTGRES_PASSWORD fuerte (por ejemplo `openssl rand -hex 24`) y, si quieres, POSTGRES_USER, POSTGRES_DB y WEB_PORT.
    ```
 
 3. Construye y levanta todo:
@@ -50,25 +53,48 @@ navegador ──► web (Caddy :80) ──► /api/* ──► api:3000 ──�
    docker compose -f docker-compose.prod.yml logs -f api
    ```
 
-Con `WEB_PORT=80` (valor por defecto) la web queda en `http://IP-del-servidor/`. La API aplica las migraciones automáticamente al arrancar.
+`WEB_PORT` es la dirección y el puerto donde publica el contenedor `web`. Con `WEB_PORT=80` (valor por defecto) la web queda en `http://IP-del-servidor/`; con `WEB_PORT=127.0.0.1:8083` solo es accesible desde el propio servidor, que es lo que se usa detrás de Apache. La API aplica las migraciones automáticamente al arrancar.
 
 ## Copia de seguridad y restauración de PostgreSQL
 
-Copia:
+[deploy/backup-postgres.sh](../deploy/backup-postgres.sh) hace un `pg_dump` comprimido en `backups/` (fuera de git, permisos 600), lo valida y borra las copias de más de 14 días (o los días que indiques como argumento):
 
 ```sh
-docker compose -f docker-compose.prod.yml exec -T postgres \
-  pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > copia-$(date +%F).sql
+deploy/backup-postgres.sh
 ```
 
-Restauración (sobre una base vacía o existente):
+Para programarla a diario, siguiendo la convención del servidor (timer de systemd), crea `/etc/systemd/system/todo-backup.service` y `todo-backup.timer`. **No está activado:**
+
+```ini
+# todo-backup.service
+[Unit]
+Description=Copia diaria de PostgreSQL de todo-project
+[Service]
+Type=oneshot
+User=sysmarc
+ExecStart=/opt/contabo-apps/todo-project/deploy/backup-postgres.sh
+
+# todo-backup.timer
+[Unit]
+Description=Copia diaria de todo-project
+[Timer]
+OnCalendar=*-*-* 04:30:00
+RandomizedDelaySec=15min
+Persistent=true
+[Install]
+WantedBy=timers.target
+```
+
+Con `sudo systemctl enable --now todo-backup.timer`. La alternativa con cron es la línea `30 4 * * * /opt/contabo-apps/todo-project/deploy/backup-postgres.sh`.
+
+La carpeta `backups/` está en el mismo disco que los datos: si necesitas protegerte de un fallo del disco, copia esos archivos a otro sitio.
+
+Restauración (sobre una base vacía; **sin probar**):
 
 ```sh
-cat copia-2026-01-01.sql | docker compose -f docker-compose.prod.yml exec -T postgres \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+gunzip -c backups/todo-AAAA-MM-DD-HHMM.sql.gz | docker compose -f docker-compose.prod.yml exec -T postgres \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
-
-Si no tienes las variables cargadas en la shell, usa los valores de `.env` (`POSTGRES_USER`, `POSTGRES_DB`) o pásalos a mano.
 
 ## Actualización
 
@@ -79,26 +105,48 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Las migraciones de la API se aplican solas al reiniciar el contenedor. No borres el volumen `postgres_data` salvo que quieras empezar de cero.
 
-## HTTPS
+## HTTPS y proxy con Apache (instalación del VPS)
 
-**HTTPS es obligatorio en producción.** Con `NODE_ENV=production` la cookie de sesión se marca `Secure`, y el navegador no la guarda si accedes por HTTP (salvo en `localhost`): nadie podría iniciar sesión. Pon HTTPS antes de usar la aplicación fuera de tu equipo.
+**HTTPS es obligatorio en producción.** Con `NODE_ENV=production` la cookie de sesión se marca `Secure`, y el navegador no la guarda si accedes por HTTP (salvo en `localhost`): nadie podría iniciar sesión.
 
-Tienes dos opciones:
+En el VPS el TLS lo termina Apache (como en el resto de servicios) y reenvía al contenedor `web`, que publica solo en `127.0.0.1:8083` (`WEB_PORT=127.0.0.1:8083` en `.env`). El vhost de referencia es [deploy/apache-todo-project.conf](../deploy/apache-todo-project.conf); `ProxyPreserveHost` y `X-Forwarded-Proto` son necesarios. Con los módulos `proxy`, `proxy_http` y `headers` ya activos:
 
-- **Proxy externo (recomendado si ya tienes Caddy/nginx con certificados en el VPS):** deja `web` escuchando en `127.0.0.1` o en la red interna y que el proxy del host termine el TLS y reenvíe a `web`. Con Compose puedes cambiar el mapeo a `"127.0.0.1:${WEB_PORT:-80}:80"` y configurar el proxy del host. Mantén `TRUST_PROXY=1` en la API para que use la IP real.
-- **Caddy con TLS automático:** edita `deploy/Caddyfile` y sustituye `:80` por tu dominio (por ejemplo `todo.midominio.com`), añade un mapeo de `443:443` a `web`, publica también el 80 para el reto ACME y monta volúmenes para los certificados:
+```sh
+sudo cp deploy/apache-todo-project.conf /etc/apache2/sites-available/todo-project.invierteconcriterio.es.conf
+sudo a2ensite todo-project.invierteconcriterio.es.conf
+sudo apachectl configtest && sudo systemctl reload apache2
+sudo certbot --apache -d todo-project.invierteconcriterio.es --redirect
+sudo certbot renew --dry-run
+```
 
-  ```yaml
-  web:
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
-  ```
+Certbot añade el vhost 443 y la redirección. La renovación la hace `certbot.timer`.
 
-  y en `volumes` añade `caddy_data:` y `caddy_config:`. Caddy pedirá y renovará el certificado solo.
+### IP real del cliente
+
+La API limita los intentos de acceso por IP y, con `TRUST_PROXY=1`, usa la **primera** IP de `X-Forwarded-For`. En la cadena Apache → Caddy → API eso exige que Caddy entregue solo la IP real:
+
+- Sin configuración, Caddy no confía en el `X-Forwarded-For` de Apache y lo sustituye por la IP de la pasarela de Docker: todos los usuarios compartirían IP y el límite sería global.
+- Confiar en el proxy sin más sería peor: la API recibiría `falsa, real` y cualquiera se saltaría el límite enviando su propia cabecera.
+
+[deploy/Caddyfile](../deploy/Caddyfile) usa `trusted_proxies static private_ranges` con `trusted_proxies_strict` (Caddy toma la IP más a la derecha que no es de confianza, la que añade Apache) y `header_up X-Forwarded-For {client_ip}` hacia la API. Comprobado en el VPS: 13 fallos de login con un `X-Forwarded-For` distinto en cada petición dan 429 desde el décimo, y una petición desde otra IP de origen sigue pasando.
+
+Si en el futuro hay un proxy delante de Apache (p. ej. Cloudflare), Apache debería usar `mod_remoteip` para exponer la IP real antes de reenviar.
+
+### Alternativa: Caddy con TLS automático
+
+Si no hay un proxy en el host, edita `deploy/Caddyfile` y sustituye `:80` por tu dominio, publica `80:80` y `443:443` en `web` y monta volúmenes para los certificados:
+
+```yaml
+web:
+  ports:
+    - "80:80"
+    - "443:443"
+  volumes:
+    - caddy_data:/data
+    - caddy_config:/config
+```
+
+(y `caddy_data:` y `caddy_config:` en `volumes`). Caddy pedirá y renovará el certificado solo. Esta variante no se ha probado.
 
 ## Avisos
 
@@ -112,5 +160,5 @@ Si no hay ningún canal configurado, la API no arranca el bucle y lo indica por 
 
 ## Notas
 
-- La API confía en el proxy (`TRUST_PROXY=1`) para calcular la IP real de los límites de intentos. No lo pongas a `0` si estás detrás de Caddy.
+- La API confía en el proxy (`TRUST_PROXY=1`) para calcular la IP real de los límites de intentos. No lo pongas a `0` si estás detrás de Caddy. Ver «IP real del cliente».
 - El contenedor `api` ejecuta TypeScript con `tsx` (por eso `tsx` es dependencia de producción de `apps/api`), ya que `@todo/shared` se consume como código fuente.
