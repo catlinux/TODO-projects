@@ -4,6 +4,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.7.0] - 2026-10-15
+
+### Añadido
+- Acceso personal con PIN de 6 a 12 dígitos (`POST /auth/pin`), con argon2, límite por IP y bloqueo global escalonado (cada 5 fallos seguidos: 1, 2, 4… minutos, hasta 24 h).
+- Entrada con huella, cara o Windows Hello mediante passkeys (WebAuthn), verificadas sin dependencias: ES256, RS256 y EdDSA. Las passkeys no pasan por el bloqueo del PIN.
+- `GET /auth/metodos` y pantalla de entrada adaptada a los métodos activos; aviso para activar la huella tras entrar con PIN; sección «Acceso» en Ajustes para ver, activar y borrar dispositivos.
+- `deploy/fijar-pin.sh`: fija o cambia el PIN y crea el propietario si no existe.
+- Variables `ACCESO_CORREO` (0 desactiva la entrada con correo) y `ORIGEN_PUBLICO` (activa las passkeys).
+
+### Cambiado
+- Tabla nueva `passkeys` y columna `usuarios.pin_hash` (migración compatible).
+
 ## [0.6.0] - 2026-10-15
 
 ### Añadido

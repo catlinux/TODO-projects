@@ -148,15 +148,27 @@ web:
 
 (y `caddy_data:` y `caddy_config:` en `volumes`). Caddy pedirá y renovará el certificado solo. Esta variante no se ha probado.
 
-## Registro de usuarios
+## Acceso personal: PIN y huella
 
-Por defecto cualquiera puede registrarse. Para un uso personal, pon `REGISTRO_ABIERTO=0` en `.env` (`/auth/registro` responde 403) y crea tu usuario desde el servidor:
+En producción se entra con un PIN y con la huella del dispositivo, sin correo ni contraseña. En `.env`:
 
 ```sh
-deploy/crear-usuario.sh correo@ejemplo.com "Tu nombre"
+REGISTRO_ABIERTO=0
+ACCESO_CORREO=0
+ORIGEN_PUBLICO=https://todo-project.invierteconcriterio.es
 ```
 
-El script pide la contraseña sin mostrarla. Tras cambiar `.env`: `docker compose -f docker-compose.prod.yml up -d`.
+Aplica los cambios con `docker compose -f docker-compose.prod.yml up -d` y fija el PIN (de 6 a 12 dígitos) desde el servidor:
+
+```sh
+deploy/fijar-pin.sh "Tu nombre" [correo-para-avisos]
+```
+
+El script pide el PIN dos veces sin mostrarlo. Si no hay usuarios, crea el propietario; si ya existe, solo cambia el PIN. Para cambiarlo más adelante, vuelve a ejecutarlo. El correo es opcional y solo sirve para los avisos por correo.
+
+La huella se activa desde cada dispositivo después de entrar con el PIN. **Las passkeys quedan atadas al dominio de `ORIGEN_PUBLICO`** y exigen HTTPS: si cambia el dominio, hay que borrarlas en Ajustes › Acceso y volver a activarlas.
+
+Si en algún momento se quiere volver al acceso con correo (`ACCESO_CORREO=1`), `deploy/crear-usuario.sh correo "Nombre"` crea usuarios con contraseña.
 
 ## Avisos
 

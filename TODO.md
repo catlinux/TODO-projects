@@ -2,7 +2,6 @@
 
 ## Prioridad alta
 
-- Acceso personal solo con PIN (6 a 12 dígitos) y huella (passkeys/WebAuthn), sin correo ni contraseña; el PIN con argon2, límite por IP y bloqueo escalonado, y la huella fuera de ese bloqueo (0.7.0).
 
 - Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
 - Revisión de seguridad de la autenticación por un modelo potente (el fallo del registro simultáneo ya está corregido).
@@ -13,6 +12,10 @@
 - Probar los avisos con un SMTP y claves VAPID reales (correo y Web Push) y configurar `.env` en producción.
 
 ## Prioridad media
+
+- El snapshot de drizzle-kit (`apps/api/drizzle/meta`) no refleja las migraciones escritas a mano (0002, 0009): `drizzle-kit generate` pide renombrados. Regenerarlo antes de volver a generar migraciones.
+- `pnpm test` en paralelo (web y API) hace fallar a veces el `beforeAll` de PGlite por tiempo de espera; por separado pasa siempre.
+- Prueba E2E de la huella con el autenticador virtual de Chromium (no hay Playwright en el proyecto).
 
 - Kanban con tarjetas arrastrables (0.2).
 - Calendario, agenda, recurrencias y exportación `.ics` (0.3).

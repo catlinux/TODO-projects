@@ -2,7 +2,7 @@
 
 Gestor de tareas, agenda y proyectos con esteroides: tablero Kanban con tarjetas arrastrables, calendario, avisos por correo y notificaciones, trabajo en equipo en el mismo proyecto y un conector para que una IA pueda gestionarlo.
 
-> **Estado: v0.6.0.** Registro e inicio de sesión, proyectos, tareas con fecha y recurrencia, tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
+> **Estado: v0.7.0.** Acceso personal con PIN y huella, proyectos, tareas con fecha y recurrencia, tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
 
 - **Autor y mantenedor:** CatLinux
 - **Idioma:** todo el proyecto (interfaz, documentación y commits) está en español.
@@ -57,7 +57,18 @@ Abre la web, crea una cuenta y un proyecto: arrastra las tarjetas entre columnas
 
 Comprobaciones: `pnpm lint`, `pnpm typecheck`, `pnpm test` (los tests de la API usan PGlite y no necesitan Docker) y `pnpm --filter @todo/web build`.
 
-Pendiente para producción: empaquetado con Docker, límite de intentos de acceso y revisión de seguridad (ver [TODO](TODO.md)).
+En desarrollo se entra con correo y contraseña. En producción el acceso es personal (ver más abajo) y la puesta en marcha está en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
+
+## Acceso y seguridad
+
+En producción la aplicación es de un solo usuario y se entra sin correo ni contraseña:
+
+- **PIN** de 6 a 12 dígitos, que se fija en el servidor con `deploy/fijar-pin.sh`. Se guarda con argon2. Además del límite de intentos por IP, cada 5 fallos seguidos (de cualquier IP) el PIN se bloquea para todos 1, 2, 4… minutos, hasta 24 horas.
+- **Huella** (o cara, o Windows Hello) mediante passkeys (WebAuthn). La huella nunca sale del dispositivo: el servidor solo guarda una clave pública y comprueba una firma. Se activa desde un dispositivo en el que ya se ha entrado con PIN, en el aviso que aparece al entrar o en Ajustes › Acceso. Las passkeys no pasan por el bloqueo del PIN, así que fallar el PIN a propósito no deja fuera al propietario.
+- Las passkeys quedan atadas al dominio (`ORIGEN_PUBLICO`): si cambia el dominio, hay que volver a activarlas.
+- La sesión es una cookie `HttpOnly`, `Secure` en producción y `SameSite=Lax`, de una semana.
+
+Configuración: `ACCESO_CORREO=0`, `REGISTRO_ABIERTO=0` y `ORIGEN_PUBLICO=https://tu-dominio` en `.env` (ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md)).
 
 ## Versionado
 
