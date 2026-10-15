@@ -4,6 +4,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.4.0] - 2026-10-15
+
+### Añadido
+- Recordatorios: cada tarea puede avisar con antelación («Avisar antes»), también cada ocurrencia de las recurrentes. Un proceso periódico del servidor envía los avisos una sola vez, con recuperación tras reinicios.
+- Canales de aviso: correo (SMTP configurable por variables de entorno) y Web Push del navegador (claves VAPID). Cada canal se activa solo si está configurado.
+- Web: activar o desactivar los avisos del navegador y service worker.
+- Límite de intentos en registro e inicio de sesión (por IP y por correo).
+- Empaquetado de producción: Dockerfile, Caddy, `docker-compose.prod.yml` y guía de despliegue (`docs/DESPLIEGUE.md`).
+
+### Cambiado
+- Las tareas guardan `recordatorio_min`; hay tablas nuevas `avisos_enviados` y `suscripciones_push` (migración compatible).
+
+### Nota
+- Los canales de correo y push se han probado con transportes simulados; falta probarlos con un SMTP y claves VAPID reales. El despliegue con Docker tampoco se ha probado todavía.
+
 ## [0.3.0] - 2026-10-15
 
 ### Añadido
