@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -10,8 +10,16 @@ import {
   type TokenCreadoApi,
 } from "../api";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
+import { registrarHuella, soportaHuella } from "../huella";
 
 const PERMISOS: PermisoTokenApi[] = ["lectura", "escritura", "calendario"];
+
+interface HuellaDispositivoApi {
+  id: string;
+  nombre: string;
+  createdAt: string;
+  ultimoUso: string | null;
+}
 
 export default function Ajustes() {
   const { t } = useTranslation();
@@ -23,6 +31,8 @@ export default function Ajustes() {
   const [creado, setCreado] = useState<TokenCreadoApi | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorActividad, setErrorActividad] = useState<string | null>(null);
+  const [soporta, setSoporta] = useState(false);
+  const [errorHuella, setErrorHuella] = useState<string | null>(null);
 
   const tokens = useQuery({
     queryKey: ["tokens"],
@@ -33,6 +43,15 @@ export default function Ajustes() {
     queryKey: ["actividad"],
     queryFn: () => peticion<ActividadApi[]>("/actividad"),
   });
+
+  const huellas = useQuery({
+    queryKey: ["huellas"],
+    queryFn: () => peticion<HuellaDispositivoApi[]>("/auth/huella"),
+  });
+
+  useEffect(() => {
+    void soportaHuella().then(setSoporta);
+  }, []);
 
   const crear = useMutation({
     mutationFn: async () => {
@@ -74,6 +93,24 @@ export default function Ajustes() {
     onError: (err: unknown) => {
       setErrorActividad(err instanceof Error ? err.message : t("auth.error"));
     },
+  });
+
+  const borrarHuella = useMutation({
+    mutationFn: async (id: string) => peticion(`/auth/huella/${id}`, { method: "DELETE" }),
+    onMutate: () => setErrorHuella(null),
+    onSuccess: async () => {
+      await cliente.invalidateQueries({ queryKey: ["huellas"] });
+    },
+    onError: (err) => setErrorHuella(err instanceof Error ? err.message : t("auth.error")),
+  });
+
+  const activarHuella = useMutation({
+    mutationFn: async () => registrarHuella(),
+    onMutate: () => setErrorHuella(null),
+    onSuccess: async () => {
+      await cliente.invalidateQueries({ queryKey: ["huellas"] });
+    },
+    onError: (err) => setErrorHuella(err instanceof Error ? err.message : t("auth.error")),
   });
 
   const urlSuscripcion =
@@ -200,6 +237,49 @@ export default function Ajustes() {
                   onClick={() => deshacer.mutate(registro.id)}
                 >
                   {registro.deshechoEn ? t("settings.undone") : t("settings.undo")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>{t("settings.access")}</h2>
+        <p>{t("settings.accessPinNote")}</p>
+        {soporta && (
+          <button
+            type="button"
+            disabled={activarHuella.isPending}
+            onClick={() => activarHuella.mutate()}
+          >
+            {t("settings.activateFingerprint")}
+          </button>
+        )}
+        {huellas.isLoading && <p>{t("app.loading")}</p>}
+        {huellas.isError && <p className="error">{t("auth.error")}</p>}
+        {errorHuella && <p className="error">{errorHuella}</p>}
+        {huellas.data && huellas.data.length === 0 && <p>{t("settings.accessEmpty")}</p>}
+        {huellas.data && huellas.data.length > 0 && (
+          <ul className="actividad">
+            {huellas.data.map((dispositivo) => (
+              <li key={dispositivo.id}>
+                <span>{dispositivo.nombre}</span>{" "}
+                <span>{formatearFechaHoraEs(dispositivo.createdAt) || dispositivo.createdAt}</span>{" "}
+                <span>
+                  {dispositivo.ultimoUso
+                    ? formatearFechaHoraEs(dispositivo.ultimoUso)
+                    : t("settings.never")}
+                </span>{" "}
+                <button
+                  type="button"
+                  disabled={borrarHuella.isPending}
+                  onClick={() => {
+                    if (!confirm(t("settings.deleteConfirm"))) return;
+                    borrarHuella.mutate(dispositivo.id);
+                  }}
+                >
+                  {t("settings.delete")}
                 </button>
               </li>
             ))}

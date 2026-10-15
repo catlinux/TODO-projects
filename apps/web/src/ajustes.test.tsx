@@ -289,4 +289,42 @@ describe("Ajustes", () => {
     const boton = screen.getByRole("button", { name: /deshecho/i }) as HTMLButtonElement;
     expect(boton.disabled).toBe(true);
   });
+
+  it("lista los dispositivos con huella y permite borrarlos", async () => {
+    let huellas = [
+      {
+        id: "h1",
+        nombre: "Android",
+        createdAt: "2026-10-15T08:00:00.000Z",
+        ultimoUso: null as string | null,
+      },
+    ];
+    const borrados: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/auth/huella/h1" && method === "DELETE") {
+          borrados.push("h1");
+          huellas = [];
+          return new Response(null, { status: 204 });
+        }
+        const cuerpo = url === "/api/auth/huella" ? huellas : [];
+        return new Response(JSON.stringify(cuerpo), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { user } = renderAjustes();
+    expect(await screen.findByText("Android")).toBeTruthy();
+    expect(screen.getByText("Nunca")).toBeTruthy();
+    expect(screen.getByText(/deploy\/fijar-pin\.sh/)).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Eliminar" }));
+    await waitFor(() => expect(borrados).toEqual(["h1"]));
+    expect(await screen.findByText(/no hay dispositivos con huella/i)).toBeTruthy();
+  });
 });

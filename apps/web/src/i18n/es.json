@@ -19,7 +19,12 @@
     "submitRegister": "Crear cuenta",
     "noAccount": "¿No tienes cuenta?",
     "hasAccount": "¿Ya tienes cuenta?",
-    "error": "No se pudo completar la acción"
+    "error": "No se pudo completar la acción",
+    "pin": "PIN",
+    "enterWithFingerprint": "Entrar con huella",
+    "askFingerprint": "¿Entrar con huella en este dispositivo?",
+    "activate": "Activar",
+    "notNow": "Ahora no"
   },
   "projects": {
     "title": "Proyectos",
@@ -145,6 +150,13 @@
       "crear": "Creó",
       "editar": "Editó",
       "borrar": "Borró"
-    }
+    },
+    "access": "Acceso",
+    "accessPinNote": "El PIN se cambia en el servidor con deploy/fijar-pin.sh",
+    "activateFingerprint": "Activar huella en este dispositivo",
+    "accessEmpty": "No hay dispositivos con huella registrados",
+    "never": "Nunca",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar este dispositivo?"
   }
 }
