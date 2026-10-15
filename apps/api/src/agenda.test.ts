@@ -55,6 +55,7 @@ interface DatosTarea {
   columnaId: string;
   venceEn?: string | null;
   recurrencia?: string | null;
+  zona?: string;
 }
 
 async function crearTarea(
@@ -425,6 +426,8 @@ describe("agenda", () => {
     expect(cuerpo).not.toContain("SUMMARY:Sin fecha");
     expect(cuerpo).toContain("RRULE:FREQ=WEEKLY;BYDAY=MO");
     expect(cuerpo).toContain("CATEGORIES:Ics");
+    expect(cuerpo).toContain("TZID:Europe/Madrid");
+    expect(cuerpo).toContain("DTSTART;TZID=Europe/Madrid:20260511T120000");
   });
 
   it("no exporta tareas de otro usuario", async () => {
@@ -446,5 +449,105 @@ describe("agenda", () => {
 
     expect(respuesta.statusCode).toBe(200);
     expect(respuesta.body).not.toContain("SUMMARY:Privada");
+  });
+
+  it("guarda la zona por defecto y la explícita", async () => {
+    const { cookie } = await registrar(app, "zona");
+    const proyecto = await crearProyecto(app, cookie, "Zona");
+
+    const porDefecto = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Sin zona",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+    });
+    expect(porDefecto.statusCode).toBe(201);
+    expect((porDefecto.json() as { zona: string }).zona).toBe("Europe/Madrid");
+
+    const explicita = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Con zona",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-10-26T13:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+      zona: "America/New_York",
+    });
+    expect(explicita.statusCode).toBe(201);
+    const tarea = explicita.json() as { id: string; zona: string };
+    expect(tarea.zona).toBe("America/New_York");
+
+    const patch = await app.inject({
+      method: "PATCH",
+      url: `/tareas/${tarea.id}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { zona: "UTC" },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect((patch.json() as { zona: string }).zona).toBe("UTC");
+  });
+
+  it("rechaza una zona horaria inválida", async () => {
+    const { cookie } = await registrar(app, "zona-invalida");
+    const proyecto = await crearProyecto(app, cookie, "Zona inválida");
+
+    const respuesta = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Mala zona",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+      zona: "Marte/Olympus",
+    });
+    expect(respuesta.statusCode).toBe(400);
+  });
+
+  it("expande la recurrencia en la zona de la tarea", async () => {
+    const { cookie } = await registrar(app, "agenda-zona");
+    const proyecto = await crearProyecto(app, cookie, "Agenda zona");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Nueva York",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-10-26T13:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+      zona: "America/New_York",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-10-01T00:00:00.000Z",
+      "2026-12-01T00:00:00.000Z",
+    );
+    const fechas = (respuesta.json() as Ocurrencia[]).map((ocurrencia) => ocurrencia.fecha);
+    expect(fechas).toEqual([
+      "2026-10-26T13:00:00.000Z",
+      "2026-11-02T14:00:00.000Z",
+      "2026-11-09T14:00:00.000Z",
+    ]);
+  });
+
+  it("conserva la hora local de Madrid al cruzar octubre", async () => {
+    const { cookie } = await registrar(app, "agenda-dst");
+    const proyecto = await crearProyecto(app, cookie, "Agenda DST");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Semanal local",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-10-05T02:17:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=5",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-10-01T00:00:00.000Z",
+      "2026-11-10T00:00:00.000Z",
+    );
+    const fechas = (respuesta.json() as Ocurrencia[]).map((ocurrencia) => ocurrencia.fecha);
+    expect(fechas).toEqual([
+      "2026-10-05T02:17:00.000Z",
+      "2026-10-12T02:17:00.000Z",
+      "2026-10-19T02:17:00.000Z",
+      "2026-10-26T03:17:00.000Z",
+      "2026-11-02T03:17:00.000Z",
+    ]);
   });
 });

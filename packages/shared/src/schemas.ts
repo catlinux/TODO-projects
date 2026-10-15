@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { esquemaRecurrencia } from "./recurrencia.js";
+import { esquemaRecurrencia, esquemaZona } from "./recurrencia.js";
 
 const esquemaVenceEn = z
   .union([z.string().datetime({ offset: true }), z.null()])
@@ -37,6 +37,7 @@ export const esquemaTareaBase = z.object({
   columnaId: z.string().uuid("Columna no válida").optional(),
   venceEn: esquemaVenceEn,
   recurrencia: esquemaRecurrencia.nullable().optional(),
+  zona: esquemaZona.optional(),
 });
 
 export const esquemaTarea = esquemaTareaBase.refine(

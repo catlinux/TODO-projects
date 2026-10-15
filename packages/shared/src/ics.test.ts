@@ -143,3 +143,77 @@ describe("generarCalendarioIcs", () => {
     );
   });
 });
+
+describe("generarCalendarioIcs con zona horaria", () => {
+  const inicio = new Date("2026-05-10T08:00:00.000Z");
+  const eventoBase = {
+    uid: "11111111-1111-1111-1111-111111111111",
+    titulo: "Semanal",
+    inicio,
+    recurrencia: "FREQ=WEEKLY;COUNT=3",
+  };
+
+  it("emite DTSTART;TZID con VTIMEZONE de la UE", () => {
+    const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "Europe/Madrid" }]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("BEGIN:VTIMEZONE");
+    expect(lineas).toContain("TZID:Europe/Madrid");
+    expect(lineas).toContain("BEGIN:DAYLIGHT");
+    expect(lineas).toContain("RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU");
+    expect(lineas).toContain("TZOFFSETTO:+0200");
+    expect(lineas).toContain("BEGIN:STANDARD");
+    expect(lineas).toContain("RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU");
+    expect(lineas).toContain("TZOFFSETTO:+0100");
+    expect(lineas).toContain("END:VTIMEZONE");
+
+    expect(lineas).toContain("DTSTART;TZID=Europe/Madrid:20260510T100000");
+    expect(lineas).toContain("DTEND;TZID=Europe/Madrid:20260510T110000");
+  });
+
+  it("mantiene UTC sin recurrencia aunque haya zona", () => {
+    const calendario = generarCalendarioIcs([
+      { uid: "x", titulo: "Puntual", inicio, zona: "Europe/Madrid" },
+    ]);
+    const lineas = lineasIcs(calendario);
+    expect(lineas).toContain("DTSTART:20260510T080000Z");
+    expect(lineas.some((linea) => linea.startsWith("BEGIN:VTIMEZONE"))).toBe(false);
+  });
+
+  it("genera un STANDARD para zonas sin horario de verano", () => {
+    const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "Asia/Tokyo" }]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("BEGIN:VTIMEZONE");
+    expect(lineas).toContain("TZID:Asia/Tokyo");
+    expect(lineas).toContain("BEGIN:STANDARD");
+    expect(lineas).toContain("TZOFFSETTO:+0900");
+    expect(lineas).not.toContain("BEGIN:DAYLIGHT");
+    expect(lineas).toContain("DTSTART;TZID=Asia/Tokyo:20260510T170000");
+  });
+
+  it("cae al fallback en UTC para zonas DST fuera de la UE", () => {
+    const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "America/New_York" }]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("DTSTART:20260510T080000Z");
+    expect(lineas.some((linea) => linea.startsWith("BEGIN:VTIMEZONE"))).toBe(false);
+    expect(lineas.some((linea) => linea.startsWith("DTSTART;TZID="))).toBe(false);
+  });
+
+  it("incluye un único VTIMEZONE por zona", () => {
+    const calendario = generarCalendarioIcs([
+      { ...eventoBase, zona: "Europe/Madrid" },
+      { ...eventoBase, uid: "22222222-2222-2222-2222-222222222222", zona: "Europe/Madrid" },
+    ]);
+    const lineas = lineasIcs(calendario);
+    expect(lineas.filter((linea) => linea === "TZID:Europe/Madrid")).toHaveLength(1);
+  });
+
+  it("mantiene UTC con zona UTC", () => {
+    const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "UTC" }]);
+    const lineas = lineasIcs(calendario);
+    expect(lineas).toContain("DTSTART:20260510T080000Z");
+    expect(lineas.some((linea) => linea.startsWith("BEGIN:VTIMEZONE"))).toBe(false);
+  });
+});

@@ -23,6 +23,7 @@ import {
   analizarRegla,
   construirRegla,
   formatearFechaHoraEs,
+  zonaNavegador,
 } from "../recurrencia-web";
 import { moverTareaEnLista } from "../tablero-utils";
 import { CamposTarea, type ValoresFormularioTarea } from "./CamposTarea";
@@ -197,6 +198,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
         descripcion: valores.descripcion,
         venceEn,
         recurrencia,
+        zona: zonaNavegador(),
       }),
     });
     await cliente.invalidateQueries({ queryKey });

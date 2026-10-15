@@ -437,6 +437,7 @@ describe("ProyectoDetalle", () => {
       titulo: "Reunión",
       venceEn: "2026-05-10T08:00:00.000Z",
       recurrencia: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;COUNT=10",
+      zona: "Europe/Madrid",
     });
   });
 
@@ -525,6 +526,10 @@ describe("ProyectoDetalle", () => {
     await user.click(screen.getByRole("button", { name: /guardar/i }));
 
     await waitFor(() => expect(cuerpoPatch).not.toBeNull());
-    expect(JSON.parse(String(cuerpoPatch))).toMatchObject({ venceEn: null, recurrencia: null });
+    expect(JSON.parse(String(cuerpoPatch))).toMatchObject({
+      venceEn: null,
+      recurrencia: null,
+      zona: "Europe/Madrid",
+    });
   });
 });

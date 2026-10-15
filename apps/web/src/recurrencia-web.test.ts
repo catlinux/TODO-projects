@@ -8,6 +8,7 @@ import {
   DIAS_SEMANA,
   formatearFechaHoraEs,
   recurrenciaPorDefecto,
+  zonaNavegador,
   type DatosRecurrencia,
 } from "./recurrencia-web";
 
@@ -144,5 +145,9 @@ describe("conversión con datetime-local", () => {
     const texto = formatearFechaHoraEs("2026-05-10T08:00:00.000Z");
     expect(texto).toContain("10/5/26");
     expect(texto).toContain("10:00");
+  });
+
+  it("detecta la zona del navegador", () => {
+    expect(zonaNavegador()).toBe("Europe/Madrid");
   });
 });

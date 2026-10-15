@@ -31,6 +31,7 @@ export interface TareaApi {
   posicion: number;
   venceEn?: string | null;
   recurrencia?: string | null;
+  zona?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -161,3 +161,12 @@ export function formatearFechaHoraEs(iso: string | null | undefined): string {
   }
   return fecha.toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
 }
+
+/** Zona IANA del navegador, con UTC como último recurso. */
+export function zonaNavegador(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}

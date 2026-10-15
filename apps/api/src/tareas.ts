@@ -2,7 +2,7 @@ import { type FastifyInstance } from "fastify";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { esquemaTarea, esquemaTareaParcial } from "@todo/shared";
+import { esquemaTarea, esquemaTareaParcial, ZONA_POR_DEFECTO } from "@todo/shared";
 
 import { columnas, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
@@ -16,6 +16,7 @@ type TaskChanges = {
   posicion?: number;
   venceEn?: Date | null;
   recurrencia?: string | null;
+  zona?: string;
   updatedAt: Date;
 };
 
@@ -149,6 +150,7 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
         posicion,
         venceEn: body.data.venceEn,
         recurrencia: body.data.recurrencia ?? null,
+        zona: body.data.zona ?? ZONA_POR_DEFECTO,
       })
       .returning();
 
@@ -252,6 +254,7 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     if (body.data.recurrencia !== undefined || body.data.venceEn === null) {
       cambios.recurrencia = recurrenciaResultante;
     }
+    if (body.data.zona !== undefined) cambios.zona = body.data.zona;
     if (moving) cambios.columnaId = columnaDestinoId;
 
     if (moving) {

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { Tablero } from "../componentes/Tablero";
-import { aIsoUtc, construirRegla, recurrenciaPorDefecto } from "../recurrencia-web";
+import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
 
 function valoresIniciales(): ValoresFormularioTarea {
   return {
@@ -66,6 +66,7 @@ export default function ProyectoDetalle() {
           columnaId: columnaSeleccionada || undefined,
           venceEn,
           recurrencia: venceEn ? construirRegla(valores.recurrencia) : null,
+          zona: zonaNavegador(),
         }),
       });
     },

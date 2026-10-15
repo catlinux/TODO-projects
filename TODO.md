@@ -13,6 +13,7 @@
 
 - Kanban con tarjetas arrastrables (0.2).
 - Calendario, agenda, recurrencias y exportación `.ics` (0.3).
+- `.ics` con recurrencia: las zonas con horario de verano fuera de la UE (p. ej. `America/New_York`) caen al fallback en UTC porque aún no se generan sus reglas de VTIMEZONE.
 - Recordatorios por correo y Web Push (0.4).
 
 ## Prioridad baja

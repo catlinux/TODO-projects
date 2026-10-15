@@ -64,6 +64,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
         columnaNombre: columnas.nombre,
         venceEn: tareas.venceEn,
         recurrencia: tareas.recurrencia,
+        zona: tareas.zona,
       })
       .from(tareas)
       .innerJoin(proyectos, eq(tareas.proyectoId, proyectos.id))
@@ -86,7 +87,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
       }
 
       const fechas = expandirOcurrencias(
-        { inicio: fila.venceEn, recurrencia: fila.recurrencia },
+        { inicio: fila.venceEn, recurrencia: fila.recurrencia, zona: fila.zona },
         desde,
         hasta,
       );
@@ -127,6 +128,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
         descripcion: tareas.descripcion,
         venceEn: tareas.venceEn,
         recurrencia: tareas.recurrencia,
+        zona: tareas.zona,
         proyectoNombre: proyectos.nombre,
       })
       .from(tareas)
@@ -143,6 +145,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
               descripcion: fila.descripcion,
               inicio: fila.venceEn,
               recurrencia: fila.recurrencia,
+              zona: fila.zona,
               proyecto: fila.proyectoNombre,
             },
           ]
