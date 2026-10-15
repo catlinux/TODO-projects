@@ -131,3 +131,46 @@ ul {
     max-width: none;
   }
 }
+
+.barra-navegacion {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.acciones {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+fieldset {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.tarjeta-kanban__fecha,
+.tarjeta-kanban__repite {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.tarjeta-kanban__edicion {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.agenda-lista h2 {
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.agenda-hora {
+  color: #4b5563;
+}

@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { peticion, type UsuarioApi } from "./api";
+import { BarraNavegacion } from "./componentes/BarraNavegacion";
 import Login from "./paginas/Login";
 import Registro from "./paginas/Registro";
 import Proyectos from "./paginas/Proyectos";
 import ProyectoDetalle from "./paginas/ProyectoDetalle";
+import Agenda from "./paginas/Agenda";
 
 function useSesion() {
   return useQuery({
@@ -21,7 +23,12 @@ function RutaProtegida({ children }: { children: React.ReactNode }) {
   const { isLoading, isError } = useSesion();
   if (isLoading) return <p>{t("app.loading")}</p>;
   if (isError) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  return (
+    <>
+      <BarraNavegacion />
+      {children}
+    </>
+  );
 }
 
 export default function App() {
@@ -43,6 +50,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <ProyectoDetalle />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/agenda"
+        element={
+          <RutaProtegida>
+            <Agenda />
           </RutaProtegida>
         }
       />

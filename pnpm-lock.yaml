@@ -72,6 +72,15 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.1)
+      '@fullcalendar/core':
+        specifier: ^6.1.21
+        version: 6.1.21
+      '@fullcalendar/daygrid':
+        specifier: 6.1.21
+        version: 6.1.21(@fullcalendar/core@6.1.21)
+      '@fullcalendar/react':
+        specifier: ^6.1.21
+        version: 6.1.21(@fullcalendar/core@6.1.21)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@tanstack/react-query':
         specifier: ^5.100.8
         version: 5.104.2(react@19.3.1)
@@ -753,6 +762,21 @@ packages:
 
   '@fastify/proxy-addr@5.1.2':
     resolution: {integrity: sha512-uqB4QsgVoro0XDC+DIftIMGXHdBPn+lK6Ek3xXAIxPMCJfqxnbtyEoMCm2KPUVOuIosd7Cyw9HawEqMFM/UA+g==}
+
+  '@fullcalendar/core@6.1.21':
+    resolution: {integrity: sha512-t3u/+sqh3Iq7TWtUnVLcGDUE6OWZh0UD3c04bI/l7lSLAgAKr3kngBmhHiQD1QXpwC8ZN5iNqG7a7gOVixhSKQ==}
+
+  '@fullcalendar/daygrid@6.1.21':
+    resolution: {integrity: sha512-QYb1y40RGYLlOxKpYWg8O+7njEnKnFG8Tt7qjnubJGR35s1phQg67E+81y2TyAbbm59p2JFOCXGDk9t6KDujIA==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.21
+
+  '@fullcalendar/react@6.1.21':
+    resolution: {integrity: sha512-TLpmGUd5k/PMdCh8XbeFC9PW9wuGvMms1oCxWgXyjK3EFPXAAd0PLfcvwKdyxoAS5eK1E4RJFkjMHvsYHpimcg==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.21
+      react: ^16.7.0 || ^17 || ^18 || ^19
+      react-dom: ^16.7.0 || ^17 || ^18 || ^19
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -1803,6 +1827,9 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
+  preact@10.12.1:
+    resolution: {integrity: sha512-l8386ixSsBdbreOAkqtrwqHwdvR35ID8c3rKPa8lCWuO86dBi32QWHV4vfsZK1utLLFMvw+Z5Ad4XLkZzchscg==}
+
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
@@ -2604,6 +2631,20 @@ snapshots:
     dependencies:
       '@fastify/forwarded': 3.1.1
       ipaddr.js: 2.5.0
+
+  '@fullcalendar/core@6.1.21':
+    dependencies:
+      preact: 10.12.1
+
+  '@fullcalendar/daygrid@6.1.21(@fullcalendar/core@6.1.21)':
+    dependencies:
+      '@fullcalendar/core': 6.1.21
+
+  '@fullcalendar/react@6.1.21(@fullcalendar/core@6.1.21)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+    dependencies:
+      '@fullcalendar/core': 6.1.21
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -3587,6 +3628,8 @@ snapshots:
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+
+  preact@10.12.1: {}
 
   prelude-ls@1.2.1: {}
 

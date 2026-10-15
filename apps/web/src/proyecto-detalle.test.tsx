@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -353,5 +353,178 @@ describe("ProyectoDetalle", () => {
     await user.click(boton);
 
     expect(await screen.findByText("La columna no está vacía")).toBeTruthy();
+  });
+
+  it("crea una tarea con fecha y recurrencia", async () => {
+    let cuerpoPost: string | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas" && method === "GET") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url === "/api/proyectos/p1/tareas" && method === "POST") {
+          cuerpoPost = String(init?.body ?? "");
+          return new Response(JSON.stringify({ id: "t1" }), {
+            status: 201,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await user.type(await screen.findByLabelText(/^título$/i), "Reunión");
+    fireEvent.change(screen.getByLabelText(/fecha y hora/i), {
+      target: { value: "2026-05-10T10:00" },
+    });
+    await user.selectOptions(screen.getByLabelText(/frecuencia/i), "semanal");
+    fireEvent.change(screen.getByLabelText(/cada/i), { target: { value: "2" } });
+    await user.click(screen.getByRole("checkbox", { name: "L" }));
+    await user.click(screen.getByRole("checkbox", { name: "X" }));
+    await user.selectOptions(screen.getByLabelText(/termina/i), "veces");
+    fireEvent.change(screen.getByLabelText(/número de veces/i), { target: { value: "10" } });
+    await user.click(screen.getByRole("button", { name: /crear tarea/i }));
+
+    await waitFor(() => expect(cuerpoPost).not.toBeNull());
+    expect(JSON.parse(String(cuerpoPost))).toMatchObject({
+      titulo: "Reunión",
+      venceEn: "2026-05-10T08:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;COUNT=10",
+    });
+  });
+
+  it("edita una tarea y quita la fecha", async () => {
+    let cuerpoPatch: string | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "t1",
+                proyectoId: "p1",
+                columnaId: "c1",
+                titulo: "Tarea con fecha",
+                posicion: 0,
+                venceEn: "2026-05-10T08:00:00.000Z",
+                recurrencia: "FREQ=WEEKLY;COUNT=3",
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/tareas/t1" && method === "PATCH") {
+          cuerpoPatch = String(init?.body ?? "");
+          return new Response(JSON.stringify({ id: "t1" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("Se repite")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /editar/i }));
+
+    const fecha = screen.getAllByLabelText(/fecha y hora/i).at(-1)!;
+    fireEvent.change(fecha, { target: { value: "" } });
+    await user.click(screen.getByRole("button", { name: /guardar/i }));
+
+    await waitFor(() => expect(cuerpoPatch).not.toBeNull());
+    expect(JSON.parse(String(cuerpoPatch))).toMatchObject({ venceEn: null, recurrencia: null });
   });
 });

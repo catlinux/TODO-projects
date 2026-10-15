@@ -4,7 +4,18 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
+import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { Tablero } from "../componentes/Tablero";
+import { aIsoUtc, construirRegla, recurrenciaPorDefecto } from "../recurrencia-web";
+
+function valoresIniciales(): ValoresFormularioTarea {
+  return {
+    titulo: "",
+    descripcion: "",
+    venceEnLocal: "",
+    recurrencia: recurrenciaPorDefecto(),
+  };
+}
 
 export default function ProyectoDetalle() {
   const { t } = useTranslation();
@@ -30,7 +41,7 @@ export default function ProyectoDetalle() {
     enabled: Boolean(proyectoId),
   });
 
-  const [titulo, setTitulo] = useState("");
+  const [valores, setValores] = useState<ValoresFormularioTarea>(valoresIniciales);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [nombreColumna, setNombreColumna] = useState("");
   const [columnaEditando, setColumnaEditando] = useState<{ id: string; nombre: string } | null>(
@@ -45,16 +56,25 @@ export default function ProyectoDetalle() {
   }, [columnas.data, columnaSeleccionada]);
 
   const crearTarea = useMutation({
-    mutationFn: async () =>
-      peticion(`/proyectos/${proyectoId}/tareas`, {
+    mutationFn: async () => {
+      const venceEn = aIsoUtc(valores.venceEnLocal);
+      return peticion(`/proyectos/${proyectoId}/tareas`, {
         method: "POST",
-        body: JSON.stringify({ titulo, columnaId: columnaSeleccionada || undefined }),
-      }),
+        body: JSON.stringify({
+          titulo: valores.titulo,
+          descripcion: valores.descripcion,
+          columnaId: columnaSeleccionada || undefined,
+          venceEn,
+          recurrencia: venceEn ? construirRegla(valores.recurrencia) : null,
+        }),
+      });
+    },
     onSuccess: async () => {
-      setTitulo("");
+      setValores(valoresIniciales());
       await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
     },
   });
+
   const crearColumna = useMutation({
     mutationFn: async () =>
       peticion(`/proyectos/${proyectoId}/columnas`, {
@@ -216,10 +236,7 @@ export default function ProyectoDetalle() {
             void crearTarea.mutate();
           }}
         >
-          <label>
-            {t("tasks.taskTitle")}
-            <input value={titulo} onChange={(e) => setTitulo(e.target.value)} required />
-          </label>
+          <CamposTarea valores={valores} onCambio={setValores} />
           <label>
             {t("columns.title")}
             <select

@@ -1,0 +1,146 @@
+import { useTranslation } from "react-i18next";
+
+import { DIAS_SEMANA, type DatosRecurrencia, type FrecuenciaRecurrencia } from "../recurrencia-web";
+
+export interface ValoresFormularioTarea {
+  titulo: string;
+  descripcion: string;
+  venceEnLocal: string;
+  recurrencia: DatosRecurrencia;
+}
+
+interface Propiedades {
+  valores: ValoresFormularioTarea;
+  onCambio: (valores: ValoresFormularioTarea) => void;
+}
+
+const FRECUENCIAS: FrecuenciaRecurrencia[] = ["ninguna", "diaria", "semanal", "mensual", "anual"];
+
+export function CamposTarea({ valores, onCambio }: Propiedades) {
+  const { t } = useTranslation();
+  const { recurrencia } = valores;
+
+  function cambiarRecurrencia(cambios: Partial<DatosRecurrencia>) {
+    onCambio({ ...valores, recurrencia: { ...recurrencia, ...cambios } });
+  }
+
+  function alternarDia(dia: string, activo: boolean) {
+    const dias = activo
+      ? [...recurrencia.dias, dia]
+      : recurrencia.dias.filter((actual) => actual !== dia);
+    cambiarRecurrencia({ dias });
+  }
+
+  return (
+    <>
+      <label>
+        {t("tasks.taskTitle")}
+        <input
+          value={valores.titulo}
+          onChange={(evento) => onCambio({ ...valores, titulo: evento.target.value })}
+          required
+        />
+      </label>
+      <label>
+        {t("tasks.description")}
+        <input
+          value={valores.descripcion}
+          onChange={(evento) => onCambio({ ...valores, descripcion: evento.target.value })}
+        />
+      </label>
+      <label>
+        {t("tasks.dueDate")}
+        <input
+          type="datetime-local"
+          value={valores.venceEnLocal}
+          onChange={(evento) => onCambio({ ...valores, venceEnLocal: evento.target.value })}
+        />
+      </label>
+
+      <fieldset disabled={!valores.venceEnLocal} className="recurrencia">
+        <legend>{t("tasks.recurrence")}</legend>
+        <label>
+          {t("tasks.frequency")}
+          <select
+            value={recurrencia.frecuencia}
+            onChange={(evento) =>
+              cambiarRecurrencia({ frecuencia: evento.target.value as FrecuenciaRecurrencia })
+            }
+          >
+            {FRECUENCIAS.map((frecuencia) => (
+              <option key={frecuencia} value={frecuencia}>
+                {t(`tasks.frequencyOptions.${frecuencia}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {recurrencia.frecuencia !== "ninguna" && (
+          <>
+            <label>
+              {t("tasks.every")}
+              <input
+                type="number"
+                min={1}
+                max={99}
+                value={recurrencia.intervalo}
+                onChange={(evento) =>
+                  cambiarRecurrencia({ intervalo: Number(evento.target.value) || 1 })
+                }
+              />
+            </label>
+
+            {recurrencia.frecuencia === "semanal" && (
+              <fieldset className="dias-semana">
+                <legend>{t("tasks.weekdays")}</legend>
+                {DIAS_SEMANA.map((dia) => (
+                  <label key={dia} className="dia-semana">
+                    <input
+                      type="checkbox"
+                      checked={recurrencia.dias.includes(dia)}
+                      onChange={(evento) => alternarDia(dia, evento.target.checked)}
+                    />
+                    {t(`tasks.weekdaysShort.${dia}`)}
+                  </label>
+                ))}
+              </fieldset>
+            )}
+
+            <label>
+              {t("tasks.ends")}
+              <select
+                value={recurrencia.fin.tipo}
+                onChange={(evento) => {
+                  const tipo = evento.target.value as "nunca" | "veces";
+                  cambiarRecurrencia({
+                    fin: tipo === "veces" ? { tipo, veces: recurrencia.fin.veces ?? 10 } : { tipo },
+                  });
+                }}
+              >
+                <option value="nunca">{t("tasks.endsNever")}</option>
+                <option value="veces">{t("tasks.endsAfter")}</option>
+              </select>
+            </label>
+
+            {recurrencia.fin.tipo === "veces" && (
+              <label>
+                {t("tasks.times")}
+                <input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={recurrencia.fin.veces ?? 10}
+                  onChange={(evento) =>
+                    cambiarRecurrencia({
+                      fin: { tipo: "veces", veces: Number(evento.target.value) || 1 },
+                    })
+                  }
+                />
+              </label>
+            )}
+          </>
+        )}
+      </fieldset>
+    </>
+  );
+}

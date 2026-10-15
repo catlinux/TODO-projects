@@ -5,7 +5,8 @@
   },
   "nav": {
     "projects": "Proyectos",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "agenda": "Agenda"
   },
   "auth": {
     "login": "Iniciar sesión",
@@ -33,7 +34,38 @@
     "moveTo": "Mover a",
     "create": "Crear tarea",
     "delete": "Eliminar",
-    "empty": "No hay tareas todavía"
+    "empty": "No hay tareas todavía",
+    "description": "Descripción",
+    "dueDate": "Fecha y hora",
+    "recurrence": "Recurrencia",
+    "frequency": "Frecuencia",
+    "frequencyOptions": {
+      "ninguna": "No se repite",
+      "diaria": "Diaria",
+      "semanal": "Semanal",
+      "mensual": "Mensual",
+      "anual": "Anual"
+    },
+    "every": "Cada",
+    "weekdays": "Días de la semana",
+    "weekdaysShort": {
+      "MO": "L",
+      "TU": "M",
+      "WE": "X",
+      "TH": "J",
+      "FR": "V",
+      "SA": "S",
+      "SU": "D"
+    },
+    "ends": "Termina",
+    "endsNever": "Nunca",
+    "endsAfter": "Tras N veces",
+    "times": "Número de veces",
+    "repeats": "Se repite",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "drag": "Arrastrar tarea"
   },
   "columns": {
     "title": "Columnas",
@@ -53,5 +85,12 @@
       "end": "Se soltó {{item}}",
       "cancel": "Se canceló el arrastre de {{item}}"
     }
+  },
+  "agenda": {
+    "title": "Agenda",
+    "list": "Lista",
+    "calendar": "Calendario",
+    "download": "Descargar calendario (.ics)",
+    "empty": "No hay eventos en los próximos 30 días"
   }
 }

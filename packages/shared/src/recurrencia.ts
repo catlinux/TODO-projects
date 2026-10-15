@@ -1,5 +1,12 @@
-import { RRule } from "rrule";
+import * as rruleModulo from "rrule";
 import { z } from "zod";
+
+// En Node (ESM) `rrule` es CommonJS y solo expone `default`; en Vite expone exportaciones con nombre.
+const { RRule } = (
+  "RRule" in rruleModulo
+    ? rruleModulo
+    : (rruleModulo as unknown as { default: typeof rruleModulo }).default
+) as typeof rruleModulo;
 
 const FRECUENCIAS_VALIDAS = new Set(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]);
 const DIAS_VALIDOS = new Set(["MO", "TU", "WE", "TH", "FR", "SA", "SU"]);

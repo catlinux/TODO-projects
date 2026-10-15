@@ -30,6 +30,7 @@ export interface TareaApi {
   descripcion?: string | null;
   posicion: number;
   venceEn?: string | null;
+  recurrencia?: string | null;
   createdAt: string;
   updatedAt: string;
 }
