@@ -1,6 +1,6 @@
 # Despliegue en producción
 
-> **Probado en el VPS de producción (0.5.1):** arranque con Docker, Apache como proxy con HTTPS, registro, inicio de sesión, creación de proyectos, límite de intentos por IP real y copia de la base de datos. **No probado:** la restauración de una copia, los avisos con SMTP y claves VAPID reales, y el reinicio completo del servidor.
+> **Probado en el VPS de producción (0.5.1 a 0.7.0):** arranque con Docker, Apache como proxy con HTTPS, registro, inicio de sesión, creación de proyectos, límite de intentos por IP real, copia de la base de datos y, en la 0.7.0, entrada con PIN (ordenador y móvil) y activación y entrada con huella en un móvil Android. **No probado:** la restauración de una copia, los avisos con SMTP y claves VAPID reales, y el reinicio completo del servidor.
 
 ## Qué levanta
 
