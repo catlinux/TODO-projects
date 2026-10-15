@@ -32,6 +32,7 @@ TypeScript en todo el proyecto, con monorepo pnpm: Fastify + Drizzle + PostgreSQ
 
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Hoja de ruta](docs/HOJA-DE-RUTA.md)
+- [Despliegue en producción](docs/DESPLIEGUE.md)
 - [Plan de trabajo ejecutable](.agents/plans/base/base.PLAN.md)
 - [Cambios](CHANGELOG.md) · [Pendiente](TODO.md)
 

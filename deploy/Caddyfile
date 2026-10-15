@@ -1,0 +1,22 @@
+# Sirve la SPA y hace de proxy hacia la API quitando el prefijo /api.
+:80 {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+
+	handle_path /api/* {
+		reverse_proxy api:3000
+	}
+
+	# Solo la web: fallback a index.html para las rutas de la SPA.
+	@web not path /api/*
+	handle @web {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

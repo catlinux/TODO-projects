@@ -5,8 +5,9 @@
 - Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
 - Revisión de seguridad de la autenticación por un modelo potente (el fallo del registro simultáneo ya está corregido).
 - Rediseño del aspecto de la web (tablero a ancho completo, columnas compactas, tarjetas limpias, color de acento); secundario frente a lo funcional.
-- Empaquetado de producción: Dockerfile de la API y la web (hoy se arranca con `tsx`).
 - Tests de la API: el de `updated_at` fija el valor a mano en lugar de comprobar que cambia solo.
+
+- Probar el despliegue de `docs/DESPLIEGUE.md` en un servidor con Docker (no probado todavía).
 
 ## Prioridad media
 
