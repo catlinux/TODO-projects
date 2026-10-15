@@ -56,6 +56,7 @@ interface DatosTarea {
   venceEn?: string | null;
   recurrencia?: string | null;
   zona?: string;
+  recordatorioMin?: number | null;
 }
 
 async function crearTarea(
@@ -551,5 +552,51 @@ describe("agenda", () => {
       "2026-10-26T03:17:00.000Z",
       "2026-11-02T03:17:00.000Z",
     ]);
+  });
+
+  it("guarda y borra el recordatorio de una tarea", async () => {
+    const { cookie } = await registrar(app, "recordatorio");
+    const proyecto = await crearProyecto(app, cookie, "Recordatorio");
+
+    const sinRecordatorio = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Sin recordatorio",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+    expect(
+      (sinRecordatorio.json() as { recordatorioMin: number | null }).recordatorioMin,
+    ).toBeNull();
+
+    const creada = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Con recordatorio",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+      recordatorioMin: 30,
+    });
+    expect(creada.statusCode).toBe(201);
+    const tarea = creada.json() as { id: string; recordatorioMin: number | null };
+    expect(tarea.recordatorioMin).toBe(30);
+
+    const borrado = await app.inject({
+      method: "PATCH",
+      url: `/tareas/${tarea.id}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { recordatorioMin: null },
+    });
+    expect(borrado.statusCode).toBe(200);
+    expect((borrado.json() as { recordatorioMin: number | null }).recordatorioMin).toBeNull();
+  });
+
+  it("rechaza un recordatorio fuera de rango", async () => {
+    const { cookie } = await registrar(app, "recordatorio-invalido");
+    const proyecto = await crearProyecto(app, cookie, "Recordatorio inválido");
+
+    const respuesta = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Mal recordatorio",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+      recordatorioMin: 10081,
+    });
+    expect(respuesta.statusCode).toBe(400);
   });
 });

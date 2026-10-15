@@ -7,6 +7,13 @@ const esquemaVenceEn = z
   .optional()
   .transform((valor) => (valor == null ? valor : new Date(valor)));
 
+const esquemaRecordatorioMin = z
+  .number()
+  .int("El recordatorio debe ser un número entero de minutos")
+  .min(0, "El recordatorio no puede ser negativo")
+  .max(10080, "El recordatorio no puede superar los 7 días")
+  .nullable();
+
 export const esquemaRegistro = z.object({
   email: z.string().trim().toLowerCase().email("Correo electrónico no válido"),
   nombre: z.string().trim().min(1, "Nombre obligatorio").max(100, "Nombre demasiado largo"),
@@ -38,6 +45,7 @@ export const esquemaTareaBase = z.object({
   venceEn: esquemaVenceEn,
   recurrencia: esquemaRecurrencia.nullable().optional(),
   zona: esquemaZona.optional(),
+  recordatorioMin: esquemaRecordatorioMin.optional(),
 });
 
 export const esquemaTarea = esquemaTareaBase.refine(

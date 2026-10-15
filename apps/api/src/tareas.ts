@@ -17,6 +17,7 @@ type TaskChanges = {
   venceEn?: Date | null;
   recurrencia?: string | null;
   zona?: string;
+  recordatorioMin?: number | null;
   updatedAt: Date;
 };
 
@@ -151,6 +152,7 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
         venceEn: body.data.venceEn,
         recurrencia: body.data.recurrencia ?? null,
         zona: body.data.zona ?? ZONA_POR_DEFECTO,
+        recordatorioMin: body.data.recordatorioMin ?? null,
       })
       .returning();
 
@@ -255,6 +257,8 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       cambios.recurrencia = recurrenciaResultante;
     }
     if (body.data.zona !== undefined) cambios.zona = body.data.zona;
+    if (body.data.recordatorioMin !== undefined)
+      cambios.recordatorioMin = body.data.recordatorioMin;
     if (moving) cambios.columnaId = columnaDestinoId;
 
     if (moving) {

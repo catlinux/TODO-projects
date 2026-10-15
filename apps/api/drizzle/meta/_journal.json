@@ -36,6 +36,13 @@
       "when": 1792023605604,
       "tag": "0004_zona",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792026035185,
+      "tag": "0005_avisos",
+      "breakpoints": true
     }
   ]
 }

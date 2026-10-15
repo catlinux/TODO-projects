@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -54,6 +54,7 @@ export const tareas = pgTable("tareas", {
   venceEn: timestamp("vence_en", { withTimezone: true }),
   recurrencia: text("recurrencia"),
   zona: text("zona").notNull().default("Europe/Madrid"),
+  recordatorioMin: integer("recordatorio_min"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -68,6 +69,45 @@ export const sesiones = pgTable("sesiones", {
     .references(() => usuarios.id, { onDelete: "cascade" }),
   tokenHash: text("token_hash").notNull().unique(),
   expiraEn: timestamp("expira_en", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const avisosEnviados = pgTable(
+  "avisos_enviados",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    ocurrencia: timestamp("ocurrencia", { withTimezone: true }).notNull(),
+    canal: text("canal").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (tabla) => [
+    uniqueIndex("avisos_enviados_tarea_ocurrencia_canal_idx").on(
+      tabla.tareaId,
+      tabla.ocurrencia,
+      tabla.canal,
+    ),
+  ],
+);
+
+export const suscripcionesPush = pgTable("suscripciones_push", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  usuarioId: uuid("usuario_id")
+    .notNull()
+    .references(() => usuarios.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
