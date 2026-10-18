@@ -35,12 +35,48 @@ export const esquemaPin = z.object({
 export type DatosRegistro = z.infer<typeof esquemaRegistro>;
 export type DatosLogin = z.infer<typeof esquemaLogin>;
 
+const esquemaColorHex = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "El color debe tener el formato #rrggbb");
+
+export const AMBIENTES_FONDO = ["bosque", "noche", "coral", "pizarra", "ciruela"] as const;
+
+export const esquemaFondoProyecto = z.discriminatedUnion("tipo", [
+  z.object({
+    tipo: z.literal("ambiente"),
+    ambiente: z.enum(AMBIENTES_FONDO, { message: "Ambiente no válido" }),
+  }),
+  z.object({
+    tipo: z.literal("color"),
+    color: esquemaColorHex,
+  }),
+  z.object({
+    tipo: z.literal("imagenes"),
+    ids: z
+      .array(z.string().uuid("Archivo no válido"))
+      .min(1, "Hace falta al menos una imagen")
+      .max(10, "Como máximo 10 imágenes"),
+    intervaloSeg: z
+      .number()
+      .int("El intervalo debe ser un número entero de segundos")
+      .min(10, "El intervalo mínimo es de 10 segundos")
+      .max(600, "El intervalo máximo es de 600 segundos")
+      .default(30),
+  }),
+]);
+
+export type AmbienteFondo = (typeof AMBIENTES_FONDO)[number];
+export type FondoProyecto = z.infer<typeof esquemaFondoProyecto>;
+
 export const esquemaProyecto = z.object({
   nombre: z.string().trim().min(1, "Nombre obligatorio").max(200, "Nombre demasiado largo"),
   descripcion: z.string().max(5000, "Descripción demasiado larga").optional(),
 });
 
-export const esquemaProyectoParcial = esquemaProyecto.partial();
+export const esquemaProyectoParcial = esquemaProyecto.partial().extend({
+  color: esquemaColorHex.nullable().optional(),
+  fondo: esquemaFondoProyecto.optional(),
+});
 
 export const esquemaTareaBase = z.object({
   titulo: z.string().trim().min(1, "Título obligatorio").max(300, "Título demasiado largo"),

@@ -71,6 +71,13 @@
       "when": 1792050000000,
       "tag": "0009_pin_passkeys",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792295813298,
+      "tag": "0010_proyectos_color_fondo",
+      "breakpoints": true
     }
   ]
 }

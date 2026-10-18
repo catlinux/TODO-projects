@@ -358,4 +358,108 @@ describe("proyectos y tareas", () => {
     });
     expect(tareaDespues.statusCode).toBe(404);
   });
+
+  it("guarda y devuelve el color y el fondo del proyecto", async () => {
+    const alice = await registrar(app, "apariencia");
+    const bob = await registrar(app, "apariencia-ajena");
+
+    const creacion = await app.inject({
+      method: "POST",
+      url: "/proyectos",
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: { nombre: "Proyecto con aspecto" },
+    });
+    const proyecto = creacion.json() as { id: string; color: string | null; fondo: unknown };
+    expect(proyecto.color).toBeNull();
+    expect(proyecto.fondo).toEqual({ tipo: "ambiente", ambiente: "bosque" });
+
+    const consulta = await app.inject({
+      method: "GET",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+    });
+    expect(consulta.json()).toMatchObject({
+      color: null,
+      fondo: { tipo: "ambiente", ambiente: "bosque" },
+    });
+
+    const edicion = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: { color: "#5B5BD6", fondo: { tipo: "ambiente", ambiente: "noche" } },
+    });
+    expect(edicion.statusCode).toBe(200);
+    expect(edicion.json()).toMatchObject({
+      color: "#5B5BD6",
+      fondo: { tipo: "ambiente", ambiente: "noche" },
+    });
+
+    const liso = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: { fondo: { tipo: "color", color: "#123456" } },
+    });
+    expect(liso.statusCode).toBe(200);
+    expect(liso.json()).toMatchObject({ fondo: { tipo: "color", color: "#123456" } });
+
+    const listado = await app.inject({
+      method: "GET",
+      url: "/proyectos",
+      headers: { cookie: `sesion=${alice.cookie}` },
+    });
+    expect(listado.json()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: proyecto.id,
+          color: "#5B5BD6",
+          fondo: { tipo: "color", color: "#123456" },
+        }),
+      ]),
+    );
+
+    const anulado = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: { color: null },
+    });
+    expect(anulado.statusCode).toBe(200);
+    expect(anulado.json()).toMatchObject({ color: null });
+
+    const ambienteInvalido = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: { fondo: { tipo: "ambiente", ambiente: "desierto" } },
+    });
+    expect(ambienteInvalido.statusCode).toBe(400);
+
+    const colorInvalido = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: { color: "azul" },
+    });
+    expect(colorInvalido.statusCode).toBe(400);
+
+    const imagenes = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${alice.cookie}` },
+      payload: {
+        fondo: { tipo: "imagenes", ids: ["11111111-1111-1111-1111-111111111111"] },
+      },
+    });
+    expect(imagenes.statusCode).toBe(400);
+
+    const ajeno = await app.inject({
+      method: "PATCH",
+      url: `/proyectos/${proyecto.id}`,
+      headers: { cookie: `sesion=${bob.cookie}` },
+      payload: { color: "#123456" },
+    });
+    expect(ajeno.statusCode).toBe(404);
+  });
 });

@@ -28,6 +28,10 @@ export const proyectos = pgTable("proyectos", {
   id: uuid("id").primaryKey().defaultRandom(),
   nombre: text("nombre").notNull(),
   descripcion: text("descripcion"),
+  // Color propio del proyecto (#rrggbb); nulo = color de la paleta por orden.
+  color: text("color"),
+  // Aspecto de fondo del proyecto (ambiente, color liso o imágenes).
+  fondo: jsonb("fondo").notNull().default({ tipo: "ambiente", ambiente: "bosque" }),
   propietarioId: uuid("propietario_id")
     .notNull()
     .references(() => usuarios.id),

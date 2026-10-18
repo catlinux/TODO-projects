@@ -2,7 +2,7 @@ import { type FastifyInstance, type FastifyReply } from "fastify";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { esquemaProyecto, esquemaProyectoParcial } from "@todo/shared";
+import { esquemaProyecto, esquemaProyectoParcial, type FondoProyecto } from "@todo/shared";
 
 import { columnas, proyectos } from "./db/schema.js";
 import type { Database } from "./db/index.js";
@@ -129,9 +129,16 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
       return;
     }
 
+    if (body.data.fondo?.tipo === "imagenes") {
+      responderValidacion(reply, "Todavía no se admiten imágenes de fondo");
+      return;
+    }
+
     const cambios: {
       nombre?: string;
       descripcion?: string;
+      color?: string | null;
+      fondo?: FondoProyecto;
       updatedAt: Date;
     } = { updatedAt: new Date() };
 
@@ -140,6 +147,12 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
     }
     if (body.data.descripcion !== undefined) {
       cambios.descripcion = body.data.descripcion;
+    }
+    if (body.data.color !== undefined) {
+      cambios.color = body.data.color;
+    }
+    if (body.data.fondo !== undefined) {
+      cambios.fondo = body.data.fondo;
     }
 
     const [proyecto] = await db
