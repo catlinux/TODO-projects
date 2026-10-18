@@ -6,6 +6,8 @@ import "@fontsource-variable/inter";
 
 import "./i18n";
 import App from "./App";
+import "./temas/sobrio.css";
+import "./temas/sereno.css";
 import "./estilos.css";
 
 const cliente = new QueryClient({

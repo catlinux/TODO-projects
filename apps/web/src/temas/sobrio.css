@@ -1,0 +1,152 @@
+/*
+ * Tema «Sobrio» (v4, 0.15.0): neutros fríos, menú lateral oscuro en los dos modos y
+ * contenido en un panel encajado. Es el tema por defecto (sin data-estilo).
+ * Cada tema define TODOS los tokens de abajo, en claro y en oscuro; los nombres
+ * heredados (--menu, --borde, --texto-secundario…) son alias y no se tocan.
+ */
+:root,
+:root[data-estilo="sobrio"] {
+  color-scheme: light;
+
+  /* Marco y menú lateral (oscuro en los dos temas). */
+  --marco: #17191e;
+  --menu-texto: #a7adb9;
+  --menu-texto-fuerte: #eceef2;
+  --menu-tenue: #8a909c;
+  --menu-hover: rgba(255, 255, 255, 0.06);
+  --menu-activo: rgba(255, 255, 255, 0.1);
+  --menu-lineas: rgba(255, 255, 255, 0.08);
+  --menu-acento: #8b8cf6;
+  --menu-campo: rgba(255, 255, 255, 0.05);
+  --menu-campo-hover: rgba(255, 255, 255, 0.08);
+  --menu-chip: rgba(255, 255, 255, 0.09);
+  --menu-seleccion: rgba(255, 255, 255, 0.12);
+  --menu-seleccion-sombra: none;
+  --menu-scroll: rgba(255, 255, 255, 0.15);
+  --menu-marca: #5b5bd6;
+  --menu-marca-texto: #ffffff;
+  --panel-contorno: 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  /* Contenido. */
+  --panel: #f7f8fa;
+  --superficie: #ffffff;
+  --superficie-2: #f2f3f6;
+  --lineas: #e4e6eb;
+  --lineas-fuertes: #d3d7de;
+  --texto: #16181d;
+  --secundario: #5d6370;
+  --chip: #eff1f4;
+  --columna: rgba(247, 248, 250, 0.94);
+
+  --acento: #5b5bd6;
+  --acento-hover: #4a4ac4;
+  --acento-suave: #eeeefc;
+  --acento-texto: #4a4ac4;
+  --texto-sobre-acento: #ffffff;
+  --velo: rgba(16, 18, 24, 0.5);
+
+  /* Estados en tinta suave. */
+  --fecha-proxima-fondo: #fff3e0;
+  --fecha-proxima-texto: #9a4a00;
+  --fecha-atrasada-fondo: #fdecec;
+  --fecha-atrasada-texto: #b42318;
+  --fecha-normal-fondo: var(--chip);
+  --fecha-normal-texto: #4a505c;
+  --hecho: #18794e;
+  --hecho-fondo: #e6f4ec;
+  --hecho-texto: #146c43;
+  --error: #b42318;
+
+  /* Etiquetas: color base; la pastilla se tiñe con color-mix (ver .etiqueta). */
+  --etiqueta-violeta: #6e4fe6;
+  --etiqueta-rojo: #c8303a;
+  --etiqueta-azul: #2563d9;
+  --etiqueta-verde: #18794e;
+  --etiqueta-naranja: #b4530a;
+  --etiqueta-turquesa: #0e7490;
+  --etiqueta-magenta: #a21caf;
+  --etiqueta-gris: #4b5563;
+  --etiqueta-texto: #ffffff;
+  --etiqueta-mezcla-fondo: 16%;
+  --etiqueta-mezcla-texto: black 28%;
+
+  --radio-control: 8px;
+  --radio-control-grande: 8px;
+  --radio-tarjeta: 10px;
+  --radio-columna: 12px;
+  --radio-panel: 12px;
+  --radio-dialogo: 14px;
+  --objetivo-tactil: 40px;
+  --ancho-menu: 248px;
+
+  --sombra-1: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sombra-2: 0 2px 6px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sombra-3: 0 10px 24px rgba(16, 24, 40, 0.1), 0 2px 6px rgba(16, 24, 40, 0.05);
+  --sombra-dialogo: 0 24px 56px rgba(16, 24, 40, 0.22), 0 4px 12px rgba(16, 24, 40, 0.08);
+
+  --texto-xs: 0.75rem;
+  --texto-sm: 0.8125rem;
+  --texto-base: 0.875rem;
+  --texto-md: 0.9375rem;
+  --texto-lg: 1.125rem;
+  --texto-xl: 1.375rem;
+  --texto-2xl: 1.75rem;
+
+  --fuente: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Alias heredados. */
+  --menu: var(--marco);
+  --activo: var(--menu-activo);
+  --tarjeta: var(--superficie);
+  --fondo: var(--panel);
+  --borde: var(--lineas);
+  --texto-secundario: var(--secundario);
+
+  font-family: var(--fuente);
+  font-feature-settings: "cv11", "ss01";
+}
+
+:root[data-tema="oscuro"],
+:root[data-estilo="sobrio"][data-tema="oscuro"] {
+  color-scheme: dark;
+
+  --marco: #0c0d10;
+  --menu-hover: rgba(255, 255, 255, 0.05);
+  --menu-activo: rgba(255, 255, 255, 0.09);
+
+  --panel: #141519;
+  --superficie: #1b1c21;
+  --superficie-2: #202127;
+  --lineas: #2a2c33;
+  --lineas-fuertes: #383b44;
+  --texto: #e8e9ed;
+  --secundario: #9da2ae;
+  --chip: #25272e;
+  --columna: rgba(20, 21, 25, 0.9);
+
+  --acento: #8b8cf6;
+  --acento-hover: #a3a4f8;
+  --acento-suave: #24253b;
+  --acento-texto: #a9aaf9;
+  --texto-sobre-acento: #111218;
+  --velo: rgba(0, 0, 0, 0.62);
+
+  --fecha-proxima-fondo: rgba(255, 166, 52, 0.15);
+  --fecha-proxima-texto: #ffbd6b;
+  --fecha-atrasada-fondo: rgba(240, 82, 82, 0.16);
+  --fecha-atrasada-texto: #ff9a90;
+  --fecha-normal-texto: #c3c7d0;
+  --hecho: #2f9e69;
+  --hecho-fondo: rgba(56, 196, 122, 0.15);
+  --hecho-texto: #74d6a0;
+  --error: #ff8a80;
+
+  --etiqueta-mezcla-fondo: 26%;
+  --etiqueta-mezcla-texto: white 45%;
+
+  --sombra-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sombra-2: 0 2px 6px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sombra-3: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sombra-dialogo: 0 24px 56px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+}

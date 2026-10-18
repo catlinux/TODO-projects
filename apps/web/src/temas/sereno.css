@@ -1,0 +1,150 @@
+/*
+ * Tema «Sereno» (0.16.0): grises cálidos poco saturados, menú lateral en la misma
+ * familia que el contenido pero unos tonos más tenue, separadores escasos y suaves.
+ * Principios: la navegación no compite con el contenido; la estructura se nota sin
+ * verse. Define todos los tokens en claro y en oscuro (ver temas/sobrio.css): su
+ * selector claro pesa lo mismo que el oscuro de Sobrio, así que no puede dejar
+ * ninguno sin redefinir. Se carga después de sobrio.css.
+ */
+:root[data-estilo="sereno"] {
+  color-scheme: light;
+
+  --marco: #f3f2f0;
+  --menu-texto: #5f5c57;
+  --menu-texto-fuerte: #1f1e1c;
+  --menu-tenue: #6f6c66;
+  --menu-hover: rgba(31, 30, 28, 0.05);
+  --menu-activo: rgba(31, 30, 28, 0.07);
+  --menu-lineas: rgba(31, 30, 28, 0.08);
+  --menu-acento: #5a5fcf;
+  --menu-campo: #fbfbfa;
+  --menu-campo-hover: #ffffff;
+  --menu-chip: rgba(31, 30, 28, 0.07);
+  --menu-seleccion: #ffffff;
+  --menu-seleccion-sombra: 0 1px 2px rgba(31, 30, 28, 0.1);
+  --menu-scroll: rgba(31, 30, 28, 0.18);
+  --menu-marca: #5a5fcf;
+  --menu-marca-texto: #ffffff;
+  --panel-contorno: 0 0 0 1px rgba(31, 30, 28, 0.07), 0 1px 3px rgba(31, 30, 28, 0.04);
+
+  --panel: #fdfdfc;
+  --superficie: #ffffff;
+  --superficie-2: #f7f6f4;
+  --lineas: #ebe9e6;
+  --lineas-fuertes: #dcd9d4;
+  --texto: #1f1e1c;
+  --secundario: #6b6862;
+  --chip: #f1efec;
+  --columna: rgba(250, 249, 248, 0.95);
+
+  --acento: #5a5fcf;
+  --acento-hover: #4a4fbd;
+  --acento-suave: #efeffb;
+  --acento-texto: #4a4fbd;
+  --texto-sobre-acento: #ffffff;
+  --velo: rgba(20, 19, 18, 0.45);
+
+  --fecha-proxima-fondo: #fdf1e0;
+  --fecha-proxima-texto: #8f4a07;
+  --fecha-atrasada-fondo: #fbeceb;
+  --fecha-atrasada-texto: #b0291f;
+  --fecha-normal-fondo: var(--chip);
+  --fecha-normal-texto: #55524c;
+  --hecho: #2f7d55;
+  --hecho-fondo: #e8f3ec;
+  --hecho-texto: #1f6b45;
+  --error: #b0291f;
+
+  --etiqueta-mezcla-fondo: 15%;
+  --etiqueta-mezcla-texto: black 28%;
+
+  --radio-control: 7px;
+  --radio-control-grande: 7px;
+  --radio-tarjeta: 9px;
+  --radio-columna: 11px;
+  --radio-panel: 10px;
+  --radio-dialogo: 13px;
+  --ancho-menu: 240px;
+
+  --sombra-1: 0 1px 2px rgba(31, 30, 28, 0.05);
+  --sombra-2: 0 2px 6px rgba(31, 30, 28, 0.06), 0 1px 2px rgba(31, 30, 28, 0.04);
+  --sombra-3: 0 10px 24px rgba(31, 30, 28, 0.09), 0 2px 6px rgba(31, 30, 28, 0.04);
+  --sombra-dialogo: 0 20px 50px rgba(31, 30, 28, 0.18), 0 4px 12px rgba(31, 30, 28, 0.06);
+}
+
+:root[data-estilo="sereno"][data-tema="oscuro"] {
+  color-scheme: dark;
+
+  --marco: #121211;
+  --menu-texto: #96938d;
+  --menu-texto-fuerte: #e8e6e3;
+  --menu-tenue: #85827c;
+  --menu-hover: rgba(255, 255, 255, 0.04);
+  --menu-activo: rgba(255, 255, 255, 0.07);
+  --menu-lineas: rgba(255, 255, 255, 0.06);
+  --menu-acento: #9095f2;
+  --menu-campo: rgba(255, 255, 255, 0.04);
+  --menu-campo-hover: rgba(255, 255, 255, 0.07);
+  --menu-chip: rgba(255, 255, 255, 0.07);
+  --menu-seleccion: rgba(255, 255, 255, 0.1);
+  --menu-seleccion-sombra: none;
+  --menu-scroll: rgba(255, 255, 255, 0.14);
+  --menu-marca: #5a5fcf;
+  --menu-marca-texto: #ffffff;
+  --panel-contorno: 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  --panel: #181817;
+  --superficie: #1f1e1d;
+  --superficie-2: #242322;
+  --lineas: #2c2b29;
+  --lineas-fuertes: #3a3936;
+  --texto: #ecebe8;
+  --secundario: #a29f99;
+  --chip: #292826;
+  --columna: rgba(24, 24, 23, 0.9);
+
+  --acento: #9095f2;
+  --acento-hover: #a6aaf5;
+  --acento-suave: #25253a;
+  --acento-texto: #a9acf6;
+  --texto-sobre-acento: #121218;
+  --velo: rgba(0, 0, 0, 0.6);
+
+  --fecha-proxima-fondo: rgba(255, 166, 52, 0.14);
+  --fecha-proxima-texto: #f5b569;
+  --fecha-atrasada-fondo: rgba(240, 82, 82, 0.15);
+  --fecha-atrasada-texto: #f59a90;
+  --fecha-normal-fondo: var(--chip);
+  --fecha-normal-texto: #c6c3bd;
+  --hecho: #3a9a68;
+  --hecho-fondo: rgba(56, 196, 122, 0.14);
+  --hecho-texto: #7fd3a5;
+  --error: #f59a90;
+
+  --etiqueta-mezcla-fondo: 24%;
+  --etiqueta-mezcla-texto: white 45%;
+
+  --sombra-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --sombra-2: 0 2px 6px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sombra-3: 0 10px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sombra-dialogo: 0 20px 50px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Ajustes de forma propios de Sereno: iconos del menú más pequeños y sin el
+   separador del pie; las tarjetas se distinguen por la sombra, no por el borde. */
+:root[data-estilo="sereno"] .menu-lateral .icono {
+  width: 16px;
+  height: 16px;
+}
+
+:root[data-estilo="sereno"] .menu-lateral__pie {
+  border-top-color: transparent;
+}
+
+:root[data-estilo="sereno"] .tarjeta-kanban {
+  border-color: transparent;
+}
+
+:root[data-estilo="sereno"] .tarjeta-kanban:hover {
+  border-color: var(--lineas);
+}

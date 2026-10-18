@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TODO-projects</title>
     <script>
-      // Aplica el tema antes de pintar para evitar el destello de tema equivocado.
+      // Aplica el estilo y el modo antes de pintar para evitar el destello de tema equivocado.
       (function () {
+        try {
+          var estilo = localStorage.getItem("todo.estilo");
+          if (estilo === "sobrio" || estilo === "sereno") {
+            document.documentElement.dataset.estilo = estilo;
+          }
+        } catch (error) {
+          // Sin almacenamiento: estilo por defecto.
+        }
         try {
           var tema = localStorage.getItem("todo.tema");
           if (tema !== "claro" && tema !== "oscuro" && tema !== "sistema") {
