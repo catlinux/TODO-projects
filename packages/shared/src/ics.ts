@@ -1,9 +1,6 @@
-import {
-  aHoraPared,
-  desfaseEnMinutos,
-  esReglaRecurrenciaValida,
-  esZonaValida,
-} from "./recurrencia.js";
+import { tzlib_get_ical_block, tzlib_get_timezones } from "timezones-ical-library";
+
+import { aHoraPared, esReglaRecurrenciaValida, esZonaValida } from "./recurrencia.js";
 
 export interface EventoIcs {
   uid: string;
@@ -22,7 +19,11 @@ export interface OpcionesIcs {
 const LIMITE_OCTETOS = 75;
 const UNA_HORA_EN_MILISEGUNDOS = 60 * 60 * 1000;
 
-const ZONAS_SIN_REGLAS_UE = new Set(["Europe/Moscow", "Europe/Istanbul", "Europe/Minsk"]);
+/**
+ * Zonas para las que la librería puede generar el bloque VTIMEZONE. Las que no
+ * estén aquí (cadena inválida o zona desconocida) caen al fallback en UTC.
+ */
+const ZONAS_CON_VTIMEZONE = new Set<string>(tzlib_get_timezones() as string[]);
 
 function bytesUtf8(caracter: string): number {
   const punto = caracter.codePointAt(0);
@@ -89,36 +90,13 @@ function formatearCamposUtc(fecha: Date): string {
   return `${anio}${mes}${dia}T${hora}${minuto}${segundo}`;
 }
 
-function formatearDesfase(minutos: number): string {
-  const signo = minutos < 0 ? "-" : "+";
-  const absoluto = Math.abs(minutos);
-  const horas = String(Math.floor(absoluto / 60)).padStart(2, "0");
-  const resto = String(absoluto % 60).padStart(2, "0");
-  return `${signo}${horas}${resto}`;
-}
-
-function esZonaSinHorarioDeVerano(zona: string): boolean {
-  const invierno = desfaseEnMinutos(new Date("2026-01-15T12:00:00.000Z"), zona);
-  const verano = desfaseEnMinutos(new Date("2026-07-15T12:00:00.000Z"), zona);
-  return invierno === verano;
-}
-
-function esZonaConReglasUnionEuropea(zona: string): boolean {
-  return zona.startsWith("Europe/") && !ZONAS_SIN_REGLAS_UE.has(zona);
-}
-
 /**
- * Solo se emite TZID para zonas sin horario de verano o con las reglas de la
- * UE. Otras zonas con DST caen al fallback en UTC (limitación documentada en
- * TODO.md).
+ * Una zona usa TZID si es una zona IANA válida distinta de UTC y la librería
+ * puede generar su bloque VTIMEZONE. Las desconocidas (cadena inválida) caen
+ * al fallback en UTC.
  */
 function zonaUsaTzid(zona: string | null | undefined): zona is string {
-  return Boolean(
-    zona &&
-    zona !== "UTC" &&
-    esZonaValida(zona) &&
-    (esZonaSinHorarioDeVerano(zona) || esZonaConReglasUnionEuropea(zona)),
-  );
+  return Boolean(zona && zona !== "UTC" && esZonaValida(zona) && ZONAS_CON_VTIMEZONE.has(zona));
 }
 
 function eventoUsaTzid(evento: EventoIcs): boolean {
@@ -127,41 +105,11 @@ function eventoUsaTzid(evento: EventoIcs): boolean {
   );
 }
 
+/** Líneas (sin CRLF) del bloque VTIMEZONE que la librería genera para la zona. */
 function generarVtimezone(zona: string): string[] {
-  const invierno = desfaseEnMinutos(new Date("2026-01-15T12:00:00.000Z"), zona);
-  const verano = desfaseEnMinutos(new Date("2026-07-15T12:00:00.000Z"), zona);
-  const lineas = ["BEGIN:VTIMEZONE", `TZID:${zona}`];
-
-  if (invierno === verano) {
-    const desfase = formatearDesfase(invierno);
-    lineas.push(
-      "BEGIN:STANDARD",
-      "DTSTART:19700101T000000",
-      `TZOFFSETFROM:${desfase}`,
-      `TZOFFSETTO:${desfase}`,
-      "END:STANDARD",
-    );
-  } else {
-    lineas.push(
-      "BEGIN:DAYLIGHT",
-      "DTSTART:19700329T020000",
-      "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
-      `TZOFFSETFROM:${formatearDesfase(invierno)}`,
-      `TZOFFSETTO:${formatearDesfase(verano)}`,
-      "END:DAYLIGHT",
-    );
-    lineas.push(
-      "BEGIN:STANDARD",
-      "DTSTART:19701025T030000",
-      "RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU",
-      `TZOFFSETFROM:${formatearDesfase(verano)}`,
-      `TZOFFSETTO:${formatearDesfase(invierno)}`,
-      "END:STANDARD",
-    );
-  }
-
-  lineas.push("END:VTIMEZONE");
-  return lineas;
+  const bloque = tzlib_get_ical_block(zona);
+  const texto = Array.isArray(bloque) ? (bloque[0] ?? "") : bloque;
+  return texto.split(/\r?\n/).filter((linea) => linea.length > 0);
 }
 
 export function generarCalendarioIcs(

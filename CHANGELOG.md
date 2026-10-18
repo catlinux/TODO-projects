@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.17.1] - 2026-10-18
+
+### Corregido
+- El `.ics` incluye ahora el `VTIMEZONE` correcto de cualquier zona horaria IANA (antes solo las de la UE; el resto caía a UTC y las series recurrentes cambiaban de hora local con el horario de verano). Usa `timezones-ical-library` (Apache-2.0); una zona desconocida sigue cayendo a UTC.
+
 ## [0.17.0] - 2026-10-18
 
 ### Añadido

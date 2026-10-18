@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { aHoraPared, expandirOcurrencias } from "./recurrencia.js";
 import { escaparTextoIcs, generarCalendarioIcs, plegarLineaIcs } from "./ics.js";
 
 function octetosUtf8(valor: string): number {
@@ -153,7 +154,7 @@ describe("generarCalendarioIcs con zona horaria", () => {
     recurrencia: "FREQ=WEEKLY;COUNT=3",
   };
 
-  it("emite DTSTART;TZID con VTIMEZONE de la UE", () => {
+  it("emite DTSTART;TZID con VTIMEZONE de Europe/Madrid", () => {
     const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "Europe/Madrid" }]);
     const lineas = lineasIcs(calendario);
 
@@ -192,8 +193,77 @@ describe("generarCalendarioIcs con zona horaria", () => {
     expect(lineas).toContain("DTSTART;TZID=Asia/Tokyo:20260510T170000");
   });
 
-  it("cae al fallback en UTC para zonas DST fuera de la UE", () => {
+  it("emite DAYLIGHT y STANDARD de America/New_York", () => {
     const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "America/New_York" }]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("BEGIN:VTIMEZONE");
+    expect(lineas).toContain("TZID:America/New_York");
+    expect(lineas).toContain("BEGIN:DAYLIGHT");
+    expect(lineas).toContain("TZOFFSETFROM:-0500");
+    expect(lineas).toContain("TZOFFSETTO:-0400");
+    expect(lineas).toContain("RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU");
+    expect(lineas).toContain("BEGIN:STANDARD");
+    expect(lineas).toContain("TZOFFSETFROM:-0400");
+    expect(lineas).toContain("TZOFFSETTO:-0500");
+    expect(lineas).toContain("RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU");
+    expect(lineas).toContain("END:VTIMEZONE");
+
+    // 2026-05-10T08:00Z son las 04:00 en Nueva York (EDT, -04:00).
+    expect(lineas).toContain("DTSTART;TZID=America/New_York:20260510T040000");
+    expect(lineas).toContain("DTEND;TZID=America/New_York:20260510T050000");
+  });
+
+  it("mantiene la hora local de una serie semanal que cruza los cambios de hora de Nueva York", () => {
+    // Lunes a las 10:00 locales: 15:00Z con EST, 14:00Z con EDT en verano.
+    const inicio = new Date("2026-03-02T15:00:00.000Z");
+    const recurrencia = "FREQ=WEEKLY;UNTIL=20261116T150000Z";
+    const calendario = generarCalendarioIcs([
+      { ...eventoBase, inicio, recurrencia, zona: "America/New_York" },
+    ]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("DTSTART;TZID=America/New_York:20260302T100000");
+    expect(lineas).toContain(`RRULE:${recurrencia}`);
+
+    const ocurrencias = expandirOcurrencias(
+      { inicio, recurrencia, zona: "America/New_York" },
+      new Date("2026-03-01T00:00:00.000Z"),
+      new Date("2026-11-20T00:00:00.000Z"),
+    );
+
+    // Cruza el cambio de marzo (adelanto) y el de noviembre (atraso).
+    expect(ocurrencias.length).toBeGreaterThan(30);
+    for (const ocurrencia of ocurrencias) {
+      expect(aHoraPared(ocurrencia, "America/New_York").getUTCHours()).toBe(10);
+    }
+    expect(ocurrencias[0]!.toISOString()).toBe("2026-03-02T15:00:00.000Z");
+    expect(
+      ocurrencias.some((ocurrencia) => ocurrencia.toISOString() === "2026-07-06T14:00:00.000Z"),
+    ).toBe(true);
+    expect(ocurrencias[ocurrencias.length - 1]!.toISOString()).toBe("2026-11-16T15:00:00.000Z");
+  });
+
+  it("emite DAYLIGHT y STANDARD de Australia/Sydney (hemisferio sur)", () => {
+    const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "Australia/Sydney" }]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("TZID:Australia/Sydney");
+    expect(lineas).toContain("BEGIN:DAYLIGHT");
+    expect(lineas).toContain("TZOFFSETFROM:+1000");
+    expect(lineas).toContain("TZOFFSETTO:+1100");
+    expect(lineas).toContain("RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=1SU");
+    expect(lineas).toContain("BEGIN:STANDARD");
+    expect(lineas).toContain("TZOFFSETFROM:+1100");
+    expect(lineas).toContain("TZOFFSETTO:+1000");
+    expect(lineas).toContain("RRULE:FREQ=YEARLY;BYMONTH=4;BYDAY=1SU");
+
+    // 2026-05-10T08:00Z son las 18:00 en Sídney (AEST, +10:00).
+    expect(lineas).toContain("DTSTART;TZID=Australia/Sydney:20260510T180000");
+  });
+
+  it("cae al fallback en UTC para una zona desconocida sin lanzar", () => {
+    const calendario = generarCalendarioIcs([{ ...eventoBase, zona: "Marte/Olympus" }]);
     const lineas = lineasIcs(calendario);
 
     expect(lineas).toContain("DTSTART:20260510T080000Z");

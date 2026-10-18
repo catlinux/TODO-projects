@@ -154,6 +154,9 @@ importers:
       rrule:
         specifier: ^2.8.1
         version: 2.8.1
+      timezones-ical-library:
+        specifier: ^2.3.2
+        version: 2.3.2
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -2092,6 +2095,9 @@ packages:
     resolution: {integrity: sha512-e2zZ96wSChazBsbENf/Pcm/4swHt2cEKQ92rhUjkL9GCKiTDJIaTBenjE/m9DXi0QBmTMDkFDdOomUy20A1tDQ==}
     engines: {node: '>=20'}
 
+  timezones-ical-library@2.3.2:
+    resolution: {integrity: sha512-AEhFhnhx6jI40kbcZ+rnpDnvb9raIvkyJGuBJvr6a1tfsbHWVM0oIqxbDZ3h8o/4m/x7lAXW9z+Abahdrlwn3Q==}
+
   tinybench@6.2.2:
     resolution: {integrity: sha512-nIZ2N2dFpjBsg2hgitKu7mA+FvsIJuGJOwysRngmVRRmWgR/UyPjwJj8c/fT/dhm8EkHnF5EOogRf+0Z2qrimA==}
     engines: {node: '>=20.0.0'}
@@ -3951,6 +3957,8 @@ snapshots:
   thread-stream@4.2.0:
     dependencies:
       real-require: 1.0.0
+
+  timezones-ical-library@2.3.2: {}
 
   tinybench@6.2.2: {}
 

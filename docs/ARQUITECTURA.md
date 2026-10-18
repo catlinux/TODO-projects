@@ -35,4 +35,4 @@ Límite conocido de «deshacer»: al borrar una tarea se borran también del dis
 
 ## Interoperabilidad
 
-Exportación del calendario en `.ics`; exportación e importación en JSON y CSV.
+Exportación del calendario en `.ics`; exportación e importación en JSON y CSV. El bloque `VTIMEZONE` del `.ics` lo genera `timezones-ical-library` (licencia Apache-2.0) para cualquier zona IANA; las zonas desconocidas caen al fallback en UTC.

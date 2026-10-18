@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "rrule": "^2.8.1",
+    "timezones-ical-library": "^2.3.2",
     "zod": "^4.6.7"
   }
 }
