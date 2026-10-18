@@ -5,6 +5,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { peticion, type ColumnaApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
+import { Checklist } from "../componentes/Checklist";
+import { SelectorEtiquetas } from "../componentes/SelectorEtiquetas";
 import { formatearTexto } from "../formato";
 import {
   aIsoUtc,
@@ -338,6 +340,12 @@ export default function TarjetaDetalle() {
               </form>
             </section>
 
+            <SelectorEtiquetas
+              tareaId={tareaId ?? ""}
+              proyectoId={proyectoId}
+              asignadas={tareaActual.etiquetas ?? []}
+            />
+
             <section className="tarjeta-detalle__seccion">
               <div className="tarjeta-detalle__seccion-cabecera">
                 <h3>{t("tasks.description")}</h3>
@@ -396,6 +404,8 @@ export default function TarjetaDetalle() {
                 </button>
               )}
             </section>
+
+            <Checklist tareaId={tareaId ?? ""} proyectoId={proyectoId} />
           </div>
         </div>
       )}

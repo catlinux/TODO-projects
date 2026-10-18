@@ -260,6 +260,65 @@ a:hover {
   gap: 0.5rem;
 }
 
+.cabecera-proyecto__filtro-contador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  margin-left: 0.4rem;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+
+/* Panel de filtro por etiqueta de la cabecera del proyecto. */
+.filtro-etiquetas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-columna);
+  box-shadow: var(--sombra-1);
+}
+
+.filtro-etiquetas__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.filtro-etiquetas__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  padding: 0 0.5rem;
+  cursor: pointer;
+  border: 1px solid var(--lineas);
+  border-radius: 999px;
+}
+
+.filtro-etiquetas__opcion input {
+  width: 16px;
+  min-height: 0;
+  height: 16px;
+  margin: 0;
+}
+
+.filtro-etiquetas__vacia {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
 .boton-cabecera {
   min-height: 34px;
   padding: 0 0.9rem;
@@ -534,6 +593,281 @@ a:hover {
 .tarjeta-detalle__descripcion-textarea {
   width: 100%;
   resize: vertical;
+}
+
+/* Pastillas de etiqueta: color + nombre, nunca solo color. */
+.pastilla-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--etiqueta-texto);
+  border-radius: 999px;
+  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.tarjeta-detalle .pastilla-etiqueta {
+  min-height: 24px;
+  font-size: 0.8rem;
+}
+
+.selector-etiquetas__asignadas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.selector-etiquetas__vacia {
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.selector-etiquetas {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control-grande);
+  box-shadow: var(--sombra-2);
+}
+
+.selector-etiquetas__busqueda {
+  width: 100%;
+}
+
+.selector-etiquetas__sugerencia {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.selector-etiquetas__lista {
+  display: grid;
+  gap: 2px;
+  max-height: 260px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.selector-etiquetas__fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+}
+
+.selector-etiquetas__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.selector-etiquetas__opcion input {
+  width: 18px;
+  min-height: 0;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.selector-etiquetas__edicion {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+}
+
+.selector-etiquetas__edicion input {
+  flex: 1 1 120px;
+}
+
+.selector-etiquetas__accion,
+.selector-etiquetas__accion--peligro {
+  min-height: 32px;
+  padding: 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+  background: transparent;
+  border-color: transparent;
+}
+
+.selector-etiquetas__accion:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.selector-etiquetas__accion--peligro {
+  color: var(--error);
+}
+
+.selector-etiquetas__confirmar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.selector-etiquetas__nueva {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--lineas);
+}
+
+.selector-etiquetas__nueva input {
+  flex: 1 1 140px;
+}
+
+/* Muestras de color: cada opción lleva su nombre accesible. */
+.paleta-color {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.paleta-color__opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.paleta-color__opcion input {
+  width: 16px;
+  min-height: 0;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--etiqueta-texto);
+}
+
+/* Checklist de la tarea. */
+.checklist__progreso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.checklist__barra {
+  flex: 1 1 auto;
+  height: 8px;
+  overflow: hidden;
+  background: var(--chip);
+  border-radius: 999px;
+}
+
+.checklist__barra-relleno {
+  display: block;
+  height: 100%;
+  background: var(--hecho);
+  border-radius: inherit;
+}
+
+.checklist__contador {
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+.checklist__lista {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.checklist__item input[type="checkbox"] {
+  width: 18px;
+  min-height: 0;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.checklist__texto,
+.checklist__texto-boton {
+  flex: 1 1 auto;
+  min-height: 32px;
+  padding: 0 0.4rem;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.checklist__texto-boton {
+  justify-content: flex-start;
+  background: transparent;
+  border-color: transparent;
+  overflow-wrap: anywhere;
+}
+
+.checklist__texto-boton:hover:not(:disabled) {
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.checklist__texto-boton--hecho {
+  color: var(--texto-secundario);
+  text-decoration: line-through;
+}
+
+.checklist__accion {
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+  background: transparent;
+  border-color: transparent;
+}
+
+.checklist__accion:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.checklist__vacia {
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.checklist__anadir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.checklist__anadir input {
+  flex: 1 1 auto;
 }
 
 /* Subconjunto de formato de las descripciones (formato.tsx). */
@@ -1381,6 +1715,28 @@ fieldset {
   padding: 1px 6px;
   font-size: 12px;
   border-radius: 5px;
+}
+
+/* Etiquetas de la tarjeta: pastillas de 20 px que envuelven si hay muchas. */
+.tarjeta-kanban__etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tarjeta-kanban__insignia {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+  background: var(--chip);
+  border-radius: 5px;
+}
+
+.tarjeta-kanban__insignia--hecha {
+  color: #fff;
+  background: var(--hecho);
 }
 
 .tarjeta-kanban__icono {

@@ -17,14 +17,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import { peticion, type ColumnaApi, type TareaApi } from "../api";
+import { peticion, type ColumnaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
 import { moverTareaEnLista } from "../tablero-utils";
+import { PastillaEtiqueta } from "./SelectorEtiquetas";
 
 export interface PropiedadesTablero {
   proyectoId: string;
   columnas: ColumnaApi[];
   tareas: TareaApi[];
+  /** Etiquetas del proyecto; sin ellas las tarjetas no pintan pastillas. */
+  etiquetas?: EtiquetaApi[];
   onCrearTarea(columnaId: string, titulo: string): void;
   onCrearColumna(nombre: string): void;
   onRenombrarColumna(columnaId: string, nombre: string): void;
@@ -40,6 +43,7 @@ interface TarjetaProps {
   tarea: TareaApi;
   proyectoId: string;
   columnas: ColumnaApi[];
+  etiquetas: EtiquetaApi[];
   hecha: boolean;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
@@ -98,6 +102,7 @@ function TarjetaArrastrable({
   tarea,
   proyectoId,
   columnas,
+  etiquetas,
   hecha,
   borrarTarea,
   moverTarea,
@@ -132,6 +137,12 @@ function TarjetaArrastrable({
   const tieneAviso = tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined;
   const tieneRecurrencia = Boolean(tarea.recurrencia);
   const colorPortada = colorDePortada(tarea);
+
+  const asignadas = tarea.etiquetas ?? [];
+  const etiquetasDeTarea = etiquetas.filter((etiqueta) => asignadas.includes(etiqueta.id));
+  const checklist = tarea.checklist;
+  const tieneChecklist = Boolean(checklist && checklist.total > 0);
+  const checklistCompleto = Boolean(checklist && checklist.total > 0 && checklist.hechos === checklist.total);
 
   return (
     <li
@@ -189,13 +200,33 @@ function TarjetaArrastrable({
         onClick={() => cerrarMenu(false)}
       >
         <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
-        {(chip || tieneAviso || tieneRecurrencia) && (
+        {etiquetasDeTarea.length > 0 && (
+          <span className="tarjeta-kanban__etiquetas">
+            {etiquetasDeTarea.map((etiqueta) => (
+              <PastillaEtiqueta key={etiqueta.id} etiqueta={etiqueta} />
+            ))}
+          </span>
+        )}
+        {(chip || tieneAviso || tieneRecurrencia || tieneChecklist) && (
           <span className="tarjeta-kanban__indicadores">
             {chip && (
               <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
             )}
             {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
             {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
+            {tieneChecklist && checklist && (
+              <span
+                className={`tarjeta-kanban__insignia mono${
+                  checklistCompleto ? " tarjeta-kanban__insignia--hecha" : ""
+                }`}
+                aria-label={t("tasks.checklistBadge", {
+                  hechos: checklist.hechos,
+                  total: checklist.total,
+                })}
+              >
+                {checklist.hechos}/{checklist.total}
+              </span>
+            )}
           </span>
         )}
       </Link>
@@ -256,6 +287,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     proyectoId,
     columnas,
     tareas,
+    etiquetas = [],
     onCrearTarea,
     onCrearColumna,
     onRenombrarColumna,
@@ -542,6 +574,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                           tarea={tarea}
                           proyectoId={proyectoId}
                           columnas={columnas}
+                          etiquetas={etiquetas}
                           hecha={indice === columnasOrdenadas.length - 1}
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}

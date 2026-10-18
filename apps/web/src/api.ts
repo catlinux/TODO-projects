@@ -55,6 +55,24 @@ export interface TareaApi {
   updatedAt: string;
 }
 
+export interface EtiquetaApi {
+  id: string;
+  proyectoId: string;
+  nombre: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChecklistItemApi {
+  id: string;
+  tareaId: string;
+  texto: string;
+  hecho: boolean;
+  posicion: number;
+  createdAt: string;
+}
+
 export interface OcurrenciaAgenda {
   tareaId: string;
   titulo: string;

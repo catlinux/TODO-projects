@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Link, Outlet, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
-import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
+import { peticion, type ColumnaApi, type EtiquetaApi, type ProyectoApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { FondoProyecto } from "../componentes/FondoProyecto";
 import { PersonalizarProyecto } from "../componentes/PersonalizarProyecto";
+import { PastillaEtiqueta } from "../componentes/SelectorEtiquetas";
 import { Tablero } from "../componentes/Tablero";
 import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
 
@@ -73,9 +74,17 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     enabled: Boolean(proyectoId),
   });
 
+  const etiquetas = useQuery({
+    queryKey: ["etiquetas", proyectoId],
+    queryFn: () => peticion<EtiquetaApi[]>(`/proyectos/${proyectoId}/etiquetas`),
+    enabled: Boolean(proyectoId),
+  });
+
   const [valores, setValores] = useState<ValoresFormularioTarea>(valoresIniciales);
   const [dialogoTareaAbierto, setDialogoTareaAbierto] = useState(false);
   const [personalizarAbierto, setPersonalizarAbierto] = useState(false);
+  const [filtroEtiquetas, setFiltroEtiquetas] = useState<string[]>([]);
+  const [filtroAbierto, setFiltroAbierto] = useState(false);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
   const refDialogo = useRef<HTMLDialogElement>(null);
@@ -207,7 +216,20 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   }
 
   const listaColumnas = (columnas.data ?? []).slice().sort((a, b) => a.posicion - b.posicion);
+  const listaEtiquetas = etiquetas.data ?? [];
   const listaTareas = tareas.data ?? [];
+  const tareasFiltradas =
+    filtroEtiquetas.length === 0
+      ? listaTareas
+      : listaTareas.filter((tarea) =>
+          (tarea.etiquetas ?? []).some((id) => filtroEtiquetas.includes(id)),
+        );
+
+  function alternarFiltro(etiquetaId: string, activa: boolean) {
+    setFiltroEtiquetas((actuales) =>
+      activa ? [...new Set([...actuales, etiquetaId])] : actuales.filter((id) => id !== etiquetaId),
+    );
+  }
 
   return (
     <main className="contenedor contenedor--tablero">
@@ -237,6 +259,19 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
               <button
                 type="button"
                 className="boton-cabecera"
+                aria-expanded={filtroAbierto}
+                onClick={() => setFiltroAbierto((abierto) => !abierto)}
+              >
+                {t("projects.filter")}
+                {filtroEtiquetas.length > 0 && (
+                  <span className="cabecera-proyecto__filtro-contador">
+                    {filtroEtiquetas.length}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                className="boton-cabecera"
                 aria-haspopup="dialog"
                 onClick={onAbrirFondo ?? (() => setPersonalizarAbierto(true))}
               >
@@ -253,10 +288,51 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
             </div>
           </header>
 
+          {filtroAbierto && (
+            <section
+              className="filtro-etiquetas"
+              aria-label={t("projects.filterPanel")}
+              onKeyDown={(evento) => {
+                if (evento.key === "Escape") {
+                  evento.preventDefault();
+                  setFiltroAbierto(false);
+                }
+              }}
+            >
+              {listaEtiquetas.length === 0 ? (
+                <p className="filtro-etiquetas__vacia">{t("projects.filterEmpty")}</p>
+              ) : (
+                <ul className="filtro-etiquetas__lista">
+                  {listaEtiquetas.map((etiqueta) => (
+                    <li key={etiqueta.id}>
+                      <label className="filtro-etiquetas__opcion">
+                        <input
+                          type="checkbox"
+                          checked={filtroEtiquetas.includes(etiqueta.id)}
+                          onChange={(evento) => alternarFiltro(etiqueta.id, evento.target.checked)}
+                        />
+                        <PastillaEtiqueta etiqueta={etiqueta} />
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button
+                type="button"
+                className="boton-texto"
+                onClick={() => setFiltroEtiquetas([])}
+                disabled={filtroEtiquetas.length === 0}
+              >
+                {t("projects.filterClear")}
+              </button>
+            </section>
+          )}
+
           <Tablero
             proyectoId={proyectoId}
             columnas={listaColumnas}
-            tareas={listaTareas}
+            tareas={tareasFiltradas}
+            etiquetas={listaEtiquetas}
             onCrearTarea={(columnaId, titulo) => crearTareaRapida.mutate({ columnaId, titulo })}
             onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
             onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}

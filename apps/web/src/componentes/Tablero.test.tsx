@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
-import { type ColumnaApi, type TareaApi } from "../api";
+import { type ColumnaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { Tablero, type ControlTablero } from "./Tablero";
 
 const columnas: ColumnaApi[] = [
@@ -298,5 +298,64 @@ describe("Tablero", () => {
     expect(conColor?.querySelector(".tarjeta-kanban__portada")).not.toBeNull();
     const conImagen = screen.getByText("Otra").closest("li");
     expect(conImagen?.querySelector(".tarjeta-kanban__portada")).toBeNull();
+  });
+
+  function renderConEtiquetas(tareas: TareaApi[], etiquetas: EtiquetaApi[]) {
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    cliente.setQueryData(["tareas", "p1"], tareas);
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter>
+          <Tablero
+            proyectoId="p1"
+            columnas={columnas}
+            tareas={tareas}
+            etiquetas={etiquetas}
+            {...accionesColumnas}
+          />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("pinta las etiquetas de la tarjeta y la insignia del checklist", () => {
+    const etiquetas: EtiquetaApi[] = [
+      { id: "e1", proyectoId: "p1", nombre: "Casa", color: "#6E4FE6", createdAt: "", updatedAt: "" },
+      { id: "e2", proyectoId: "p1", nombre: "Urgente", color: "#C8303A", createdAt: "", updatedAt: "" },
+    ];
+    renderConEtiquetas(
+      [
+        {
+          ...tareasIniciales[0]!,
+          etiquetas: ["e1", "e2"],
+          checklist: { hechos: 1, total: 3 },
+        },
+      ],
+      etiquetas,
+    );
+
+    const tarjeta = screen.getByText("Tarea inicial").closest("li");
+    expect(tarjeta?.querySelectorAll(".tarjeta-kanban__etiquetas .pastilla-etiqueta")).toHaveLength(2);
+    expect(tarjeta?.querySelector(".tarjeta-kanban__insignia")?.textContent).toBe("1/3");
+    expect(tarjeta?.querySelector(".tarjeta-kanban__insignia--hecha")).toBeNull();
+  });
+
+  it("marca la insignia como hecha cuando el checklist está completo", () => {
+    renderConEtiquetas(
+      [{ ...tareasIniciales[0]!, checklist: { hechos: 2, total: 2 } }],
+      [],
+    );
+
+    const insignia = screen
+      .getByText("Tarea inicial")
+      .closest("li")
+      ?.querySelector(".tarjeta-kanban__insignia--hecha");
+    expect(insignia?.textContent).toBe("2/2");
+  });
+
+  it("no pinta insignia si el checklist está vacío", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, checklist: { hechos: 0, total: 0 } }], []);
+
+    expect(screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__insignia")).toBeNull();
   });
 });

@@ -807,6 +807,120 @@ describe("ProyectoDetalle", () => {
     expect(JSON.parse(String(cuerpoPatch))).toMatchObject({ recordatorioMin: null });
   });
 
+  it("filtra las tarjetas por etiqueta y limpia el filtro", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/etiquetas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "e1",
+                proyectoId: "p1",
+                nombre: "Casa",
+                color: "#6E4FE6",
+                createdAt: "",
+                updatedAt: "",
+              },
+              {
+                id: "e2",
+                proyectoId: "p1",
+                nombre: "Urgente",
+                color: "#C8303A",
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "t1",
+                proyectoId: "p1",
+                columnaId: "c1",
+                titulo: "Con casa",
+                posicion: 0,
+                etiquetas: ["e1"],
+                createdAt: "",
+                updatedAt: "",
+              },
+              {
+                id: "t2",
+                proyectoId: "p1",
+                columnaId: "c1",
+                titulo: "Con urgente",
+                posicion: 1,
+                etiquetas: ["e2"],
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("Con casa")).toBeTruthy();
+    expect(screen.getByText("Con urgente")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: /filtrar/i }));
+    await user.click(screen.getByRole("checkbox", { name: "Casa" }));
+
+    await waitFor(() => expect(screen.queryByText("Con urgente")).toBeNull());
+    expect(screen.getByText("Con casa")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /filtrar/i }).textContent).toContain("1");
+
+    await user.click(screen.getByRole("button", { name: /limpiar/i }));
+    expect(await screen.findByText("Con urgente")).toBeTruthy();
+  });
+
   it("abre el diálogo de personalizar con el botón Fondo", async () => {
     vi.stubGlobal(
       "fetch",
