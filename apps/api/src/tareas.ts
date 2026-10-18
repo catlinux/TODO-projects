@@ -1,10 +1,10 @@
 import { type FastifyInstance } from "fastify";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { esquemaTarea, esquemaTareaParcial, ZONA_POR_DEFECTO } from "@todo/shared";
 
-import { columnas, proyectos, tareas, tareasEtiquetas } from "./db/schema.js";
+import { checklistItems, columnas, proyectos, tareas, tareasEtiquetas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 import { instantaneaTarea, registrarActividad } from "./actividad.js";
 import { colocarTareaEnColumna, reindexarColumna } from "./tablero-posiciones.js";
@@ -55,6 +55,33 @@ async function etiquetasPorTarea(db: Database, tareaIds: string[]): Promise<Map<
   return porTarea;
 }
 
+/** Resumen {hechos, total} del checklist de varias tareas en una sola consulta agregada. */
+async function checklistPorTarea(
+  db: Database,
+  tareaIds: string[],
+): Promise<Map<string, { hechos: number; total: number }>> {
+  const porTarea = new Map<string, { hechos: number; total: number }>();
+  if (tareaIds.length === 0) {
+    return porTarea;
+  }
+
+  const filas = await db
+    .select({
+      tareaId: checklistItems.tareaId,
+      total: count(),
+      hechos: sql<number>`count(*) filter (where ${checklistItems.hecho})`.mapWith(Number),
+    })
+    .from(checklistItems)
+    .where(inArray(checklistItems.tareaId, tareaIds))
+    .groupBy(checklistItems.tareaId);
+
+  for (const fila of filas) {
+    porTarea.set(fila.tareaId, { hechos: fila.hechos, total: fila.total });
+  }
+
+  return porTarea;
+}
+
 export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
   app.get("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
     const usuario = request.usuario;
@@ -92,9 +119,15 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       filas.map((fila) => fila.tareas.id),
     );
 
+    const checklist = await checklistPorTarea(
+      db,
+      filas.map((fila) => fila.tareas.id),
+    );
+
     return filas.map((fila) => ({
       ...fila.tareas,
       etiquetas: etiquetas.get(fila.tareas.id) ?? [],
+      checklist: checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 },
     }));
   });
 
@@ -221,8 +254,13 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     }
 
     const etiquetas = await etiquetasPorTarea(db, [fila.tarea.id]);
+    const checklist = await checklistPorTarea(db, [fila.tarea.id]);
 
-    return { ...fila.tarea, etiquetas: etiquetas.get(fila.tarea.id) ?? [] };
+    return {
+      ...fila.tarea,
+      etiquetas: etiquetas.get(fila.tarea.id) ?? [],
+      checklist: checklist.get(fila.tarea.id) ?? { hechos: 0, total: 0 },
+    };
   });
 
   app.patch("/tareas/:id", { preHandler: app.requireAuth }, async (request, reply) => {

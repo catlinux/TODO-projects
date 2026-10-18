@@ -11,6 +11,7 @@ import { registrarRutasAgenda } from "./agenda.js";
 import { registrarRutasActividad } from "./actividad.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasColumnas } from "./columnas.js";
+import { registrarRutasChecklist } from "./checklist.js";
 import { registrarRutasEtiquetas } from "./etiquetas.js";
 import { registrarRutasOcurrencias } from "./ocurrencias.js";
 import { registrarRutasProyectos } from "./proyectos.js";
@@ -221,6 +222,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   registrarRutasColumnas(app, db);
   registrarRutasTareas(app, db);
   registrarRutasEtiquetas(app, db);
+  registrarRutasChecklist(app, db);
   registrarRutasOcurrencias(app, db);
   registrarRutasAgenda(app, db);
   registrarRutasActividad(app, db);

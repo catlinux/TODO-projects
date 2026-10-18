@@ -124,6 +124,16 @@ export const esquemaEtiquetasTarea = z.object({
   ids: z.array(z.string().uuid("Etiqueta no válida")),
 });
 
+export const esquemaChecklistItem = z.object({
+  texto: z.string().trim().min(1, "Texto obligatorio").max(300, "Texto demasiado largo"),
+});
+
+export const esquemaChecklistItemParcial = z.object({
+  texto: z.string().trim().min(1, "Texto obligatorio").max(300, "Texto demasiado largo").optional(),
+  hecho: z.boolean().optional(),
+  posicion: z.number().int().min(0, "Posición no válida").optional(),
+});
+
 export const PERMISOS_TOKEN = ["lectura", "escritura", "calendario"] as const;
 
 export const esquemaTokenApi = z.object({

@@ -1,5 +1,6 @@
 import {
   bigint,
+  boolean,
   index,
   integer,
   jsonb,
@@ -109,6 +110,21 @@ export const tareasEtiquetas = pgTable(
       .references(() => etiquetas.id, { onDelete: "cascade" }),
   },
   (tabla) => [primaryKey({ columns: [tabla.tareaId, tabla.etiquetaId] })],
+);
+
+export const checklistItems = pgTable(
+  "checklist_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    texto: text("texto").notNull(),
+    hecho: boolean("hecho").notNull().default(false),
+    posicion: integer("posicion").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [index("checklist_items_tarea_idx").on(tabla.tareaId)],
 );
 
 export const sesiones = pgTable("sesiones", {
