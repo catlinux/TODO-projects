@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.9.0] - 2026-10-18
+
+### Añadido
+- Vista «Hoy», nueva página de inicio: atrasadas, hoy y próximos 7 días, con casilla para marcar como hecha y contador en el menú.
+- Panel «Próximos avisos» en la agenda (avisos de los próximos 7 días); `GET /agenda` incluye `recordatorioMin` en cada ocurrencia.
+- «Cerrar sesión» en Ajustes, para el móvil.
+
+### Cambiado
+- Rediseño completo de la web: menú lateral con los proyectos y su color (barra inferior en el móvil), tipografías Plus Jakarta Sans e IBM Plex Mono autoalojadas, tablero a todo el ancho con columnas compactas, tarjetas con chip de fecha (atrasada, próxima o normal) e iconos de aviso y repetición, «Nueva tarea» en un diálogo, gestión de columnas en un menú de cada columna, agenda con el tema nuevo, Ajustes en tarjetas y entrada con la tarjeta centrada.
+
 ## [0.8.1] - 2026-10-18
 
 ### Añadido

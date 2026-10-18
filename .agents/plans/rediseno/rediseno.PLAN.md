@@ -34,6 +34,6 @@ Maqueta aprobada por el usuario: https://claude.ai/artifact/UneU1zYrzgqnNWkwrgJs
 - Archivos: `paginas/ProyectoDetalle.tsx` (+ test), `componentes/Tablero.tsx`, `componentes/CamposTarea.tsx`, `estilos.css`, `i18n/es.json`.
 - El tablero arriba y a todo el ancho (sin `max-width` de formulario). «Nueva tarea» abre un `<dialog>` con el formulario actual. La gestión de columnas (renombrar, mover, eliminar) pasa a un menú «⋯» en la cabecera de cada columna; «+ Columna» al final del tablero. Desaparecen las secciones «Columnas» y «Tareas del proyecto» como formularios sueltos.
 
-### Paso 6 — Pulido y versión · AgentRelay (esfuerzo bajo) + revisión de la sesión · [ ]
+### Paso 6 — Pulido y versión · AgentRelay (esfuerzo bajo) + revisión de la sesión · [x]
 - Login y Ajustes con el nuevo estilo: Ajustes en tarjetas por sección (Acceso, Tokens de API, Actividad del conector) y botón «Cerrar sesión» en Ajustes (en el móvil no está en la barra inferior). Revisión a 390 px.
 - Versión 0.9.0 (menor: vista nueva y rediseño compatible), CHANGELOG, README (estado) y `docs/HOJA-DE-RUTA.md` (las versiones de la tabla se desplazan una posición).
