@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.8.1] - 2026-10-18
+
+### Añadido
+- Licencia WNCL-1.0 (uso no comercial) con titular CatLinux: `LICENSE`, sección «Créditos y licencia» en el README y `author`/`license` en `package.json`.
+
 ## [0.8.0] - 2026-10-18
 
 ### Añadido

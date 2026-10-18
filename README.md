@@ -2,11 +2,11 @@
 
 Gestor de tareas, agenda y proyectos con esteroides: tablero Kanban con tarjetas arrastrables, calendario, avisos por correo y notificaciones, trabajo en equipo en el mismo proyecto y un conector para que una IA pueda gestionarlo.
 
-> **Estado: v0.8.0.** Acceso personal con PIN y huella, proyectos, tareas con fecha y recurrencia, tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
+> **Estado: v0.8.1.** Acceso personal con PIN y huella, proyectos, tareas con fecha y recurrencia, tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
 
 - **Autor y mantenedor:** CatLinux
 - **Idioma:** todo el proyecto (interfaz, documentación y commits) está en español.
-- **Licencia:** pendiente de decidir. Hasta entonces, todos los derechos reservados.
+- **Licencia:** [WNCL-1.0](LICENSE), uso no comercial (ver [Créditos y licencia](#créditos-y-licencia)).
 
 ## Qué quiere ser
 
@@ -74,3 +74,16 @@ Configuración: `ACCESO_CORREO=0`, `REGISTRO_ABIERTO=0` y `ORIGEN_PUBLICO=https:
 ## Versionado
 
 [SemVer](https://semver.org/lang/es/) `x.y.z`. La versión actual está en el archivo [VERSION](VERSION). Antes de la `1.0.0`, un cambio incompatible sube la versión menor.
+
+## Créditos y licencia
+
+**TODO-projects** está desarrollado y mantenido por **CatLinux**.
+Copyright (C) 2026 CatLinux.
+
+Licencia [WNCL-1.0](LICENSE): puedes usarlo, estudiarlo, modificarlo y compartirlo gratis con fines no comerciales. Venderlo o cualquier uso comercial requiere permiso por escrito.
+
+Las copias y los forks deben conservar esta atribución y enlazar a https://github.com/catlinux/TODO-projects.
+
+### Material de terceros
+
+Este proyecto no contiene material de terceros. Las dependencias que se instalan con pnpm conservan sus propias licencias.

@@ -3,7 +3,6 @@
 ## Prioridad alta
 
 
-- Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
 - Añadir `Strict-Transport-Security` en el vhost 443 de Apache (configuración del sistema: requiere aprobación).
 - Rediseño del aspecto de la web (tablero a ancho completo, columnas compactas, tarjetas limpias, color de acento); secundario frente a lo funcional.
 

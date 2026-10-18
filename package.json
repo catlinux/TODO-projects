@@ -1,6 +1,8 @@
 {
   "name": "todo-projects",
   "private": true,
+  "author": "CatLinux <marc.catlinux@gmail.com>",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "scripts": {
