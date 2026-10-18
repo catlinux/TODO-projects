@@ -14,6 +14,9 @@ interface DbFalso {
 function crearDbFalso(respuesta: () => Promise<unknown>): DbFalso {
   const estado: DbFalso = { llamadas: 0, db: null as unknown as Database };
   estado.db = {
+    selectDistinct: () => ({
+      from: () => ({ where: async () => [] }),
+    }),
     select: () => ({
       from: () => ({
         innerJoin: () => ({

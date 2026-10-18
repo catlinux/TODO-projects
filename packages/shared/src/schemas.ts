@@ -134,6 +134,35 @@ export const esquemaMoverTarea = z.object({
   columnaId: z.string().uuid("Columna no válida"),
 });
 
+/**
+ * Excepción de una sola ocurrencia de una serie recurrente: moverla, omitirla
+ * o cambiarle el título. `fechaOriginal` es la clave (la fecha de la serie).
+ */
+export const esquemaExcepcionOcurrencia = z
+  .object({
+    fechaOriginal: z.string().datetime({ offset: true }),
+    fechaNueva: z.string().datetime({ offset: true }).optional(),
+    omitida: z.boolean().optional(),
+    titulo: z
+      .string()
+      .trim()
+      .min(1, "Título obligatorio")
+      .max(300, "Título demasiado largo")
+      .optional(),
+  })
+  .refine(
+    (datos) =>
+      datos.fechaNueva !== undefined || datos.omitida === true || datos.titulo !== undefined,
+    { message: "Hace falta mover, omitir o renombrar la ocurrencia" },
+  )
+  .refine(
+    (datos) =>
+      !(datos.omitida === true && (datos.fechaNueva !== undefined || datos.titulo !== undefined)),
+    { message: "Una ocurrencia omitida no puede moverse ni renombrarse" },
+  );
+
+export type DatosExcepcionOcurrencia = z.infer<typeof esquemaExcepcionOcurrencia>;
+
 /** Paleta fija de etiquetas (texto blanco, contraste ≥ 4.5:1). */
 export const COLORES_ETIQUETA = [
   "#6E4FE6",

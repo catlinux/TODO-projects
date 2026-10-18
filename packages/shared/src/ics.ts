@@ -2,6 +2,14 @@ import { tzlib_get_ical_block, tzlib_get_timezones } from "timezones-ical-librar
 
 import { aHoraPared, esReglaRecurrenciaValida, esZonaValida } from "./recurrencia.js";
 
+export interface ExcepcionIcs {
+  /** Fecha original de la ocurrencia en la serie (clave de la excepción). */
+  fechaOriginal: Date;
+  fechaNueva?: Date | null;
+  omitida?: boolean;
+  titulo?: string | null;
+}
+
 export interface EventoIcs {
   uid: string;
   titulo: string;
@@ -10,6 +18,7 @@ export interface EventoIcs {
   recurrencia?: string | null;
   proyecto?: string;
   zona?: string | null;
+  excepciones?: readonly ExcepcionIcs[];
 }
 
 export interface OpcionesIcs {
@@ -112,6 +121,17 @@ function generarVtimezone(zona: string): string[] {
   return texto.split(/\r?\n/).filter((linea) => linea.length > 0);
 }
 
+/**
+ * Línea de una propiedad de fecha. Con `zona` usa hora de pared y TZID (igual
+ * que DTSTART); sin ella, la fecha en UTC con sufijo Z.
+ */
+function lineaFechaIcs(nombre: string, fecha: Date, zona: string | null): string {
+  if (zona) {
+    return `${nombre};TZID=${zona}:${formatearCamposUtc(aHoraPared(fecha, zona))}`;
+  }
+  return `${nombre}:${formatearFechaUtc(fecha)}`;
+}
+
 export function generarCalendarioIcs(
   eventos: readonly EventoIcs[],
   opciones: OpcionesIcs = {},
@@ -137,22 +157,15 @@ export function generarCalendarioIcs(
   }
 
   for (const evento of eventos) {
+    const zona = evento.zona && eventoUsaTzid(evento) ? evento.zona : null;
+
     lineas.push("BEGIN:VEVENT");
     lineas.push(`UID:${evento.uid}@todo-projects`);
     lineas.push(`DTSTAMP:${sello}`);
-
-    if (eventoUsaTzid(evento) && evento.zona) {
-      const paredInicio = aHoraPared(evento.inicio, evento.zona);
-      const paredFin = new Date(paredInicio.getTime() + UNA_HORA_EN_MILISEGUNDOS);
-      lineas.push(`DTSTART;TZID=${evento.zona}:${formatearCamposUtc(paredInicio)}`);
-      lineas.push(`DTEND;TZID=${evento.zona}:${formatearCamposUtc(paredFin)}`);
-    } else {
-      lineas.push(`DTSTART:${formatearFechaUtc(evento.inicio)}`);
-      lineas.push(
-        `DTEND:${formatearFechaUtc(new Date(evento.inicio.getTime() + UNA_HORA_EN_MILISEGUNDOS))}`,
-      );
-    }
-
+    lineas.push(lineaFechaIcs("DTSTART", evento.inicio, zona));
+    lineas.push(
+      lineaFechaIcs("DTEND", new Date(evento.inicio.getTime() + UNA_HORA_EN_MILISEGUNDOS), zona),
+    );
     lineas.push(`SUMMARY:${escaparTextoIcs(evento.titulo)}`);
 
     if (evento.descripcion) {
@@ -163,6 +176,36 @@ export function generarCalendarioIcs(
     }
     if (evento.recurrencia && esReglaRecurrenciaValida(evento.recurrencia)) {
       lineas.push(`RRULE:${evento.recurrencia}`);
+    }
+
+    const excepciones = evento.excepciones ?? [];
+
+    // Una omitida desaparece con un EXDATE de su fecha original.
+    for (const excepcion of excepciones) {
+      if (excepcion.omitida) {
+        lineas.push(lineaFechaIcs("EXDATE", excepcion.fechaOriginal, zona));
+      }
+    }
+
+    // Las movidas o editadas necesitan un EXDATE de la original y un VEVENT
+    // propio con RECURRENCE-ID que sustituya a esa ocurrencia.
+    for (const excepcion of excepciones) {
+      if (excepcion.omitida || (!excepcion.fechaNueva && !excepcion.titulo)) {
+        continue;
+      }
+
+      const inicioNuevo = excepcion.fechaNueva ?? excepcion.fechaOriginal;
+      lineas.push(lineaFechaIcs("EXDATE", excepcion.fechaOriginal, zona));
+      lineas.push("BEGIN:VEVENT");
+      lineas.push(`UID:${evento.uid}@todo-projects`);
+      lineas.push(`DTSTAMP:${sello}`);
+      lineas.push(lineaFechaIcs("RECURRENCE-ID", excepcion.fechaOriginal, zona));
+      lineas.push(lineaFechaIcs("DTSTART", inicioNuevo, zona));
+      lineas.push(
+        lineaFechaIcs("DTEND", new Date(inicioNuevo.getTime() + UNA_HORA_EN_MILISEGUNDOS), zona),
+      );
+      lineas.push(`SUMMARY:${escaparTextoIcs(excepcion.titulo ?? evento.titulo)}`);
+      lineas.push("END:VEVENT");
     }
 
     lineas.push("END:VEVENT");

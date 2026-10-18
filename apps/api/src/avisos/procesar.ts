@@ -1,9 +1,10 @@
-import { and, eq, gte, inArray, isNotNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 
 import { expandirOcurrencias, partesEnZona } from "@todo/shared";
 
 import {
   avisosEnviados,
+  excepcionesOcurrencia,
   ocurrenciasHechas,
   proyectos,
   suscripcionesPush,
@@ -50,6 +51,20 @@ export async function procesarAvisos(
   const limiteOcurrencia = new Date(ahora.getTime() + MARGEN_BUSQUEDA_MS);
   const limitePrimeraFecha = new Date(desde.getTime() - MARGEN_BUSQUEDA_MS);
 
+  // Una ocurrencia movida puede caer en la ventana aunque su tarea tenga el
+  // venceEn por delante del límite; se añaden esas tareas a la consulta.
+  const excepcionesFuturas = await db
+    .selectDistinct({ tareaId: excepcionesOcurrencia.tareaId })
+    .from(excepcionesOcurrencia)
+    .where(
+      and(
+        isNotNull(excepcionesOcurrencia.fechaNueva),
+        gte(excepcionesOcurrencia.fechaNueva, limitePrimeraFecha),
+        lte(excepcionesOcurrencia.fechaNueva, limiteOcurrencia),
+      ),
+    );
+  const idsConExcepcionFutura = excepcionesFuturas.map((fila) => fila.tareaId);
+
   const filas = await db
     .select({
       tareaId: tareas.id,
@@ -71,8 +86,15 @@ export async function procesarAvisos(
       and(
         isNotNull(tareas.venceEn),
         isNotNull(tareas.recordatorioMin),
-        lte(tareas.venceEn, limiteOcurrencia),
-        or(isNotNull(tareas.recurrencia), gte(tareas.venceEn, limitePrimeraFecha)),
+        or(
+          and(
+            lte(tareas.venceEn, limiteOcurrencia),
+            or(isNotNull(tareas.recurrencia), gte(tareas.venceEn, limitePrimeraFecha)),
+          ),
+          idsConExcepcionFutura.length > 0
+            ? inArray(tareas.id, idsConExcepcionFutura)
+            : sql`false`,
+        ),
       ),
     );
 
@@ -113,6 +135,34 @@ export async function procesarAvisos(
     marcas.add(`${marca.tareaId}|${marca.ocurrencia.getTime()}`);
   }
 
+  // Excepciones de esas tareas: una omitida no avisa y una movida avisa con su
+  // fecha nueva (aunque la original quede fuera de la ventana).
+  const excepciones = await db
+    .select({
+      tareaId: excepcionesOcurrencia.tareaId,
+      fechaOriginal: excepcionesOcurrencia.fechaOriginal,
+      fechaNueva: excepcionesOcurrencia.fechaNueva,
+      omitida: excepcionesOcurrencia.omitida,
+    })
+    .from(excepcionesOcurrencia)
+    .where(inArray(excepcionesOcurrencia.tareaId, idsTareas));
+
+  const excepcionesPorTarea = new Map<
+    string,
+    Map<number, { fechaNueva: Date | null; omitida: boolean }>
+  >();
+  for (const excepcion of excepciones) {
+    let porTarea = excepcionesPorTarea.get(excepcion.tareaId);
+    if (!porTarea) {
+      porTarea = new Map();
+      excepcionesPorTarea.set(excepcion.tareaId, porTarea);
+    }
+    porTarea.set(excepcion.fechaOriginal.getTime(), {
+      fechaNueva: excepcion.fechaNueva,
+      omitida: excepcion.omitida,
+    });
+  }
+
   for (const fila of filas) {
     if (!fila.venceEn || fila.recordatorioMin === null) {
       continue;
@@ -122,14 +172,38 @@ export async function procesarAvisos(
     const desdeOcurrencia = new Date(desde.getTime() + recordatorioMs);
     const hastaOcurrencia = new Date(ahora.getTime() + recordatorioMs);
 
-    const ocurrencias = expandirOcurrencias(
+    const excepcionesTarea = excepcionesPorTarea.get(fila.tareaId);
+    const candidatas = new Map<number, Date>();
+    for (const ocurrencia of expandirOcurrencias(
       { inicio: fila.venceEn, recurrencia: fila.recurrencia, zona: fila.zona },
       desdeOcurrencia,
       hastaOcurrencia,
-    );
+    )) {
+      candidatas.set(ocurrencia.getTime(), ocurrencia);
+    }
+    if (excepcionesTarea) {
+      for (const ms of excepcionesTarea.keys()) {
+        if (!candidatas.has(ms)) {
+          candidatas.set(ms, new Date(ms));
+        }
+      }
+    }
 
-    for (const ocurrencia of ocurrencias) {
-      if (marcas.has(`${fila.tareaId}|${ocurrencia.getTime()}`)) {
+    for (const [originalMs, original] of candidatas) {
+      const excepcion = excepcionesTarea?.get(originalMs);
+      if (excepcion?.omitida) {
+        continue;
+      }
+
+      // El aviso usa la fecha efectiva: la nueva si la ocurrencia se movió.
+      const ocurrencia = excepcion?.fechaNueva ?? original;
+      if (
+        ocurrencia.getTime() < desdeOcurrencia.getTime() ||
+        ocurrencia.getTime() > hastaOcurrencia.getTime()
+      ) {
+        continue;
+      }
+      if (marcas.has(`${fila.tareaId}|${originalMs}`)) {
         continue;
       }
       if (ocurrencia.getTime() < ahora.getTime() - MARGEN_OCURRENCIA_MS) {

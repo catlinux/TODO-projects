@@ -1,10 +1,14 @@
 import { type FastifyInstance } from "fastify";
-import { and, asc, eq, gte, inArray, isNotNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { expandirOcurrencias, generarCalendarioIcs } from "@todo/shared";
+import {
+  expandirOcurrencias,
+  generarCalendarioIcs,
+  type ExcepcionIcs,
+} from "@todo/shared";
 
-import { columnas, ocurrenciasHechas, proyectos, tareas } from "./db/schema.js";
+import { columnas, excepcionesOcurrencia, ocurrenciasHechas, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 
 const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
@@ -27,10 +31,45 @@ interface OcurrenciaAgenda {
   primeraColumnaId: string;
   /** Columna de mayor `posicion` del proyecto: estar en ella es estar «hecha». */
   ultimaColumnaId: string;
+  /** Fecha efectiva (la nueva si la ocurrencia se movió). */
   fecha: string;
+  /** Fecha original de la serie; clave de la ocurrencia y de `ocurrencias_hechas`. */
+  fechaOriginal: string;
+  conExcepcion: boolean;
   esRecurrente: boolean;
   hecha: boolean;
   recordatorioMin: number | null;
+}
+
+interface ExcepcionCargada {
+  fechaNueva: Date | null;
+  omitida: boolean;
+  titulo: string | null;
+}
+
+function agruparExcepciones(
+  filas: Array<{
+    tareaId: string;
+    fechaOriginal: Date;
+    fechaNueva: Date | null;
+    omitida: boolean;
+    titulo: string | null;
+  }>,
+): Map<string, Map<number, ExcepcionCargada>> {
+  const porTarea = new Map<string, Map<number, ExcepcionCargada>>();
+  for (const fila of filas) {
+    let excepciones = porTarea.get(fila.tareaId);
+    if (!excepciones) {
+      excepciones = new Map();
+      porTarea.set(fila.tareaId, excepciones);
+    }
+    excepciones.set(fila.fechaOriginal.getTime(), {
+      fechaNueva: fila.fechaNueva,
+      omitida: fila.omitida,
+      titulo: fila.titulo,
+    });
+  }
+  return porTarea;
 }
 
 export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
@@ -60,6 +99,39 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
       return;
     }
 
+    // Excepciones del usuario que tocan el rango: una ocurrencia movida puede
+    // caer dentro aunque su fecha original quede fuera (y al revés). Se cargan
+    // antes para saber qué tareas hay que traer además de las del rango.
+    const excepciones = await db
+      .select({
+        tareaId: excepcionesOcurrencia.tareaId,
+        fechaOriginal: excepcionesOcurrencia.fechaOriginal,
+        fechaNueva: excepcionesOcurrencia.fechaNueva,
+        omitida: excepcionesOcurrencia.omitida,
+        titulo: excepcionesOcurrencia.titulo,
+      })
+      .from(excepcionesOcurrencia)
+      .innerJoin(tareas, eq(excepcionesOcurrencia.tareaId, tareas.id))
+      .innerJoin(proyectos, eq(tareas.proyectoId, proyectos.id))
+      .where(
+        and(
+          eq(proyectos.propietarioId, usuario.id),
+          or(
+            and(
+              gte(excepcionesOcurrencia.fechaOriginal, desde),
+              lte(excepcionesOcurrencia.fechaOriginal, hasta),
+            ),
+            and(
+              gte(excepcionesOcurrencia.fechaNueva, desde),
+              lte(excepcionesOcurrencia.fechaNueva, hasta),
+            ),
+          ),
+        ),
+      );
+
+    const excepcionesPorTarea = agruparExcepciones(excepciones);
+    const idsConExcepcion = [...excepcionesPorTarea.keys()];
+
     const filas = await db
       .select({
         tareaId: tareas.id,
@@ -80,8 +152,13 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
         and(
           eq(proyectos.propietarioId, usuario.id),
           isNotNull(tareas.venceEn),
-          lte(tareas.venceEn, hasta),
-          or(isNotNull(tareas.recurrencia), gte(tareas.venceEn, desde)),
+          or(
+            and(
+              lte(tareas.venceEn, hasta),
+              or(isNotNull(tareas.recurrencia), gte(tareas.venceEn, desde)),
+            ),
+            idsConExcepcion.length > 0 ? inArray(tareas.id, idsConExcepcion) : sql`false`,
+          ),
         ),
       )
       .orderBy(asc(tareas.venceEn));
@@ -127,11 +204,22 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
         continue;
       }
 
-      const fechas = expandirOcurrencias(
+      const excepcionesTarea = excepcionesPorTarea.get(fila.tareaId);
+      const candidatas = new Map<number, Date>();
+      for (const fecha of expandirOcurrencias(
         { inicio: fila.venceEn, recurrencia: fila.recurrencia, zona: fila.zona },
         desde,
         hasta,
-      );
+      )) {
+        candidatas.set(fecha.getTime(), fecha);
+      }
+      if (excepcionesTarea) {
+        for (const ms of excepcionesTarea.keys()) {
+          if (!candidatas.has(ms)) {
+            candidatas.set(ms, new Date(ms));
+          }
+        }
+      }
 
       const limites = limitesColumnas.get(fila.proyectoId);
       const primeraColumnaId = limites?.primera ?? fila.columnaId;
@@ -139,20 +227,32 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
       const esRecurrente = fila.recurrencia !== null;
       const enUltimaColumna = fila.columnaId === ultimaColumnaId;
 
-      for (const fecha of fechas) {
+      for (const original of candidatas.values()) {
+        const excepcion = excepcionesTarea?.get(original.getTime());
+        if (excepcion?.omitida) {
+          continue;
+        }
+
+        const efectiva = excepcion?.fechaNueva ?? original;
+        if (efectiva.getTime() < desde.getTime() || efectiva.getTime() > hasta.getTime()) {
+          continue;
+        }
+
         ocurrencias.push({
           tareaId: fila.tareaId,
-          titulo: fila.titulo,
+          titulo: excepcion?.titulo ?? fila.titulo,
           proyectoId: fila.proyectoId,
           proyectoNombre: fila.proyectoNombre,
           columnaId: fila.columnaId,
           columnaNombre: fila.columnaNombre,
           primeraColumnaId,
           ultimaColumnaId,
-          fecha: fecha.toISOString(),
+          fecha: efectiva.toISOString(),
+          fechaOriginal: original.toISOString(),
+          conExcepcion: excepcion !== undefined,
           esRecurrente,
           hecha:
-            marcas.has(`${fila.tareaId}|${fecha.getTime()}`) || (!esRecurrente && enUltimaColumna),
+            marcas.has(`${fila.tareaId}|${original.getTime()}`) || (!esRecurrente && enUltimaColumna),
           recordatorioMin: fila.recordatorioMin,
         });
       }
@@ -188,6 +288,32 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
       .where(and(eq(proyectos.propietarioId, usuario.id), isNotNull(tareas.venceEn)))
       .orderBy(asc(tareas.venceEn));
 
+    const idsTareas = filas.map((fila) => fila.id);
+    const excepcionesPorTarea = new Map<string, ExcepcionIcs[]>();
+    if (idsTareas.length > 0) {
+      const excepciones = await db
+        .select({
+          tareaId: excepcionesOcurrencia.tareaId,
+          fechaOriginal: excepcionesOcurrencia.fechaOriginal,
+          fechaNueva: excepcionesOcurrencia.fechaNueva,
+          omitida: excepcionesOcurrencia.omitida,
+          titulo: excepcionesOcurrencia.titulo,
+        })
+        .from(excepcionesOcurrencia)
+        .where(inArray(excepcionesOcurrencia.tareaId, idsTareas));
+
+      for (const excepcion of excepciones) {
+        const lista = excepcionesPorTarea.get(excepcion.tareaId) ?? [];
+        lista.push({
+          fechaOriginal: excepcion.fechaOriginal,
+          fechaNueva: excepcion.fechaNueva,
+          omitida: excepcion.omitida,
+          titulo: excepcion.titulo,
+        });
+        excepcionesPorTarea.set(excepcion.tareaId, lista);
+      }
+    }
+
     const eventos = filas.flatMap((fila) =>
       fila.venceEn
         ? [
@@ -199,6 +325,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
               recurrencia: fila.recurrencia,
               zona: fila.zona,
               proyecto: fila.proyectoNombre,
+              excepciones: excepcionesPorTarea.get(fila.id) ?? [],
             },
           ]
         : [],

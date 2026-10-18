@@ -273,6 +273,27 @@ export const ocurrenciasHechas = pgTable(
   ],
 );
 
+export const excepcionesOcurrencia = pgTable(
+  "excepciones_ocurrencia",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    // Clave de la ocurrencia en todo el sistema: la fecha original de la serie,
+    // que sigue siendo la fecha aunque la ocurrencia se mueva.
+    fechaOriginal: timestamp("fecha_original", { withTimezone: true }).notNull(),
+    fechaNueva: timestamp("fecha_nueva", { withTimezone: true }),
+    omitida: boolean("omitida").notNull().default(false),
+    titulo: text("titulo"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    uniqueIndex("excepciones_ocurrencia_tarea_fecha_idx").on(tabla.tareaId, tabla.fechaOriginal),
+    index("excepciones_ocurrencia_tarea_idx").on(tabla.tareaId),
+  ],
+);
+
 export const tokensApi = pgTable("tokens_api", {
   id: uuid("id").primaryKey().defaultRandom(),
   usuarioId: uuid("usuario_id")

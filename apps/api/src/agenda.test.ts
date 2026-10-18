@@ -124,6 +124,8 @@ interface Ocurrencia {
   primeraColumnaId: string;
   ultimaColumnaId: string;
   fecha: string;
+  fechaOriginal: string;
+  conExcepcion: boolean;
   esRecurrente: boolean;
   hecha: boolean;
   recordatorioMin: number | null;
@@ -484,6 +486,36 @@ describe("agenda", () => {
       recurrencia: "FREQ=HOURLY",
     });
     expect(creacion.statusCode).toBe(400);
+  });
+
+  it("incluye fechaOriginal y conExcepcion en cada ocurrencia", async () => {
+    const { cookie } = await registrar(app, "campos-ocurrencia");
+    const proyecto = await crearProyecto(app, cookie, "Campos ocurrencia");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Simple",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Semanal",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-11T10:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=2",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    const ocurrencias = respuesta.json() as Ocurrencia[];
+    expect(ocurrencias).toHaveLength(3);
+    expect(ocurrencias.every((ocurrencia) => ocurrencia.conExcepcion === false)).toBe(true);
+    for (const ocurrencia of ocurrencias) {
+      expect(ocurrencia.fechaOriginal).toBe(ocurrencia.fecha);
+    }
   });
 
   it("incluye recurrentes empezados antes del rango", async () => {

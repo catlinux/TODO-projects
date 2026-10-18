@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   avisosEnviados,
   columnas,
+  excepcionesOcurrencia,
   proyectos,
   suscripcionesPush,
   tareas,
@@ -197,6 +198,48 @@ describe("procesarAvisos", () => {
     expect(segunda).toEqual({ enviados: 1, fallidos: 0 });
     expect(push.enviados).toHaveLength(1);
     expect(correo.enviados).toHaveLength(1);
+  });
+
+  it("avisa con la fecha nueva de una ocurrencia movida y omite la omitida", async () => {
+    const { tarea } = await crearEscenario({
+      titulo: "Semanal",
+      venceEn: new Date("2026-05-10T10:00:00.000Z"),
+      recordatorioMin: 0,
+      recurrencia: "FREQ=DAILY;COUNT=5",
+    });
+    await db.insert(excepcionesOcurrencia).values([
+      {
+        tareaId: tarea.id,
+        fechaOriginal: new Date("2026-05-11T10:00:00.000Z"),
+        fechaNueva: new Date("2026-05-11T18:00:00.000Z"),
+      },
+      {
+        tareaId: tarea.id,
+        fechaOriginal: new Date("2026-05-12T10:00:00.000Z"),
+        omitida: true,
+      },
+    ]);
+
+    const canal = new CanalFalso("correo");
+
+    // La movida avisa a su hora nueva (20:00 en Madrid, CEST).
+    const movida = await ejecutar(
+      new Date("2026-05-11T18:00:00.000Z"),
+      new Date("2026-05-11T17:55:00.000Z"),
+      [canal],
+    );
+    expect(movida).toEqual({ enviados: 1, fallidos: 0 });
+    expect(canal.enviados).toHaveLength(1);
+    expect(canal.enviados[0]!.aviso.cuerpo).toContain("11/05/2026 20:00");
+
+    // La omitida no avisa a su hora original.
+    const omitida = await ejecutar(
+      new Date("2026-05-12T10:00:00.000Z"),
+      new Date("2026-05-12T09:55:00.000Z"),
+      [canal],
+    );
+    expect(omitida).toEqual({ enviados: 0, fallidos: 0 });
+    expect(canal.enviados).toHaveLength(1);
   });
 
   it("no avisa de tareas sin recordatorio", async () => {

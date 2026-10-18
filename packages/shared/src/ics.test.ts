@@ -287,3 +287,103 @@ describe("generarCalendarioIcs con zona horaria", () => {
     expect(lineas.some((linea) => linea.startsWith("BEGIN:VTIMEZONE"))).toBe(false);
   });
 });
+
+describe("generarCalendarioIcs con excepciones de una serie", () => {
+  const inicio = new Date("2026-05-10T08:00:00.000Z");
+  const eventoBase = {
+    uid: "33333333-3333-3333-3333-333333333333",
+    titulo: "Semanal",
+    inicio,
+    recurrencia: "FREQ=WEEKLY;COUNT=4",
+  };
+
+  it("emite un EXDATE con TZID por cada ocurrencia omitida", () => {
+    const calendario = generarCalendarioIcs([
+      {
+        ...eventoBase,
+        zona: "Europe/Madrid",
+        excepciones: [
+          { fechaOriginal: new Date("2026-05-17T08:00:00.000Z"), omitida: true },
+          { fechaOriginal: new Date("2026-05-31T08:00:00.000Z"), omitida: true },
+        ],
+      },
+    ]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("EXDATE;TZID=Europe/Madrid:20260517T100000");
+    expect(lineas).toContain("EXDATE;TZID=Europe/Madrid:20260531T100000");
+    // Las omitidas no añaden VEVENT: solo queda el de la serie.
+    expect(lineas.filter((linea) => linea === "BEGIN:VEVENT")).toHaveLength(1);
+  });
+
+  it("emite EXDATE y un VEVENT con RECURRENCE-ID para una movida y renombrada", () => {
+    const calendario = generarCalendarioIcs([
+      {
+        ...eventoBase,
+        zona: "America/New_York",
+        excepciones: [
+          {
+            fechaOriginal: new Date("2026-05-17T08:00:00.000Z"),
+            fechaNueva: new Date("2026-05-18T12:00:00.000Z"),
+            titulo: "Semanal movida",
+          },
+        ],
+      },
+    ]);
+    const lineas = lineasIcs(calendario);
+
+    // 08:00Z de la original son las 04:00 en Nueva York (EDT).
+    expect(lineas).toContain("EXDATE;TZID=America/New_York:20260517T040000");
+    expect(lineas).toContain("RECURRENCE-ID;TZID=America/New_York:20260517T040000");
+    // 2026-05-18T12:00Z son las 08:00 en Nueva York (EDT).
+    expect(lineas).toContain("DTSTART;TZID=America/New_York:20260518T080000");
+    expect(lineas).toContain("DTEND;TZID=America/New_York:20260518T090000");
+    expect(lineas.filter((linea) => linea === "BEGIN:VEVENT")).toHaveLength(2);
+
+    const indice = lineas.indexOf("RECURRENCE-ID;TZID=America/New_York:20260517T040000");
+    expect(indice).toBeGreaterThan(-1);
+    expect(lineas.slice(indice)).toContain("SUMMARY:Semanal movida");
+    // Los dos VEVENT (serie y excepción) comparten el mismo UID.
+    expect(
+      lineas.filter((linea) => linea === `UID:${eventoBase.uid}@todo-projects`),
+    ).toHaveLength(2);
+  });
+
+  it("emite RECURRENCE-ID solo con el título nuevo sin cambiar la fecha", () => {
+    const calendario = generarCalendarioIcs([
+      {
+        ...eventoBase,
+        zona: "Europe/Madrid",
+        excepciones: [
+          { fechaOriginal: new Date("2026-05-17T08:00:00.000Z"), titulo: "Solo el título" },
+        ],
+      },
+    ]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("EXDATE;TZID=Europe/Madrid:20260517T100000");
+    expect(lineas).toContain("RECURRENCE-ID;TZID=Europe/Madrid:20260517T100000");
+    expect(lineas).toContain("DTSTART;TZID=Europe/Madrid:20260517T100000");
+    expect(lineas).toContain("SUMMARY:Solo el título");
+  });
+
+  it("usa UTC si la serie no emite TZID", () => {
+    const calendario = generarCalendarioIcs([
+      {
+        ...eventoBase,
+        zona: "Marte/Olympus",
+        excepciones: [
+          {
+            fechaOriginal: new Date("2026-05-17T08:00:00.000Z"),
+            fechaNueva: new Date("2026-05-18T12:00:00.000Z"),
+          },
+        ],
+      },
+    ]);
+    const lineas = lineasIcs(calendario);
+
+    expect(lineas).toContain("EXDATE:20260517T080000Z");
+    expect(lineas).toContain("RECURRENCE-ID:20260517T080000Z");
+    expect(lineas).toContain("DTSTART:20260518T120000Z");
+  });
+});
