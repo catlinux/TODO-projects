@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 import { peticion, type ProyectoApi } from "../api";
-import { colorProyecto } from "../colores";
+import { FondoProyecto } from "../componentes/FondoProyecto";
 
 export default function Proyectos() {
   const { t } = useTranslation();
@@ -45,10 +45,15 @@ export default function Proyectos() {
   if (isError) return <p className="error">{t("auth.error")}</p>;
 
   return (
-    <main className="contenedor contenedor--ancho">
-      <h1>{t("projects.title")}</h1>
+    <main className="pagina">
+      <header className="pagina__cabecera">
+        <h1 className="pagina__titulo">{t("projects.title")}</h1>
+      </header>
 
-      <form className="formulario" onSubmit={enviar}>
+      <form className="panel-tarjeta" onSubmit={enviar}>
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo">{t("nav.newProject")}</h2>
+        </div>
         <label>
           {t("projects.name")}
           <input value={nombre} onChange={(e) => setNombre(e.target.value)} required />
@@ -67,21 +72,19 @@ export default function Proyectos() {
         <p>{t("projects.empty")}</p>
       ) : (
         <ul className="rejilla-proyectos">
-          {data.map((proyecto, indice) => (
+          {data.map((proyecto) => (
             <li key={proyecto.id} className="tarjeta-proyecto">
-              <span
-                className="tarjeta-proyecto__color"
-                style={{ background: colorProyecto(indice) }}
-                aria-hidden="true"
-              />
-              <div className="tarjeta-proyecto__cuerpo">
-                <Link className="tarjeta-proyecto__enlace" to={`/proyectos/${proyecto.id}`}>
-                  {proyecto.nombre}
-                </Link>
-                {proyecto.descripcion ? (
-                  <p className="tarjeta-proyecto__descripcion">{proyecto.descripcion}</p>
-                ) : null}
-              </div>
+              <Link className="tarjeta-proyecto__enlace" to={`/proyectos/${proyecto.id}`}>
+                <span className="tarjeta-proyecto__fondo" aria-hidden="true">
+                  <FondoProyecto fondo={proyecto.fondo ?? null} />
+                </span>
+                <span className="tarjeta-proyecto__cuerpo">
+                  <span className="tarjeta-proyecto__nombre">{proyecto.nombre}</span>
+                  {proyecto.descripcion ? (
+                    <span className="tarjeta-proyecto__descripcion">{proyecto.descripcion}</span>
+                  ) : null}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>

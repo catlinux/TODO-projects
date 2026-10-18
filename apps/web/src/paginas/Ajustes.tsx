@@ -155,13 +155,17 @@ export default function Ajustes() {
       : null;
 
   return (
-    <main className="contenedor contenedor--ajustes">
-      <h1>{t("settings.title")}</h1>
+    <main className="pagina pagina--estrecha">
+      <header className="pagina__cabecera">
+        <h1 className="pagina__titulo">{t("settings.title")}</h1>
+      </header>
 
-      <section className="tarjeta-ajustes" aria-labelledby="ajustes-acceso">
-        <div className="tarjeta-ajustes__cabecera">
-          <h2 id="ajustes-acceso">{t("settings.access")}</h2>
-          <p className="tarjeta-ajustes__descripcion">{t("settings.accessDescription")}</p>
+      <section className="panel-tarjeta" aria-labelledby="ajustes-acceso">
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo" id="ajustes-acceso">
+            {t("settings.access")}
+          </h2>
+          <p className="panel-tarjeta__descripcion">{t("settings.accessDescription")}</p>
         </div>
 
         <p>{t("settings.accessPinNote")}</p>
@@ -198,7 +202,7 @@ export default function Ajustes() {
                 <div className="fila-ajustes__principal">
                   <span className="fila-ajustes__nombre">{dispositivo.nombre}</span>
                   <span className="fila-ajustes__detalle">
-                    <span className="mono">
+                    <span className="cifra">
                       {formatearFechaHoraEs(dispositivo.createdAt) || dispositivo.createdAt}
                     </span>{" "}
                     ·{" "}
@@ -238,10 +242,12 @@ export default function Ajustes() {
         {errorSesiones && <p className="error">{errorSesiones}</p>}
       </section>
 
-      <section className="tarjeta-ajustes" aria-labelledby="ajustes-tokens">
-        <div className="tarjeta-ajustes__cabecera">
-          <h2 id="ajustes-tokens">{t("settings.tokens")}</h2>
-          <p className="tarjeta-ajustes__descripcion">{t("settings.tokensDescription")}</p>
+      <section className="panel-tarjeta" aria-labelledby="ajustes-tokens">
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo" id="ajustes-tokens">
+            {t("settings.tokens")}
+          </h2>
+          <p className="panel-tarjeta__descripcion">{t("settings.tokensDescription")}</p>
         </div>
 
         <form
@@ -324,11 +330,11 @@ export default function Ajustes() {
                       <strong>{token.nombre}</strong>
                     </td>
                     <td>{t(`settings.permissions.${token.permiso}`)}</td>
-                    <td className="mono celda-secundaria">{token.prefijo}</td>
-                    <td className="mono celda-secundaria">
+                    <td className="cifra celda-secundaria">{token.prefijo}</td>
+                    <td className="cifra celda-secundaria">
                       {formatearFechaHoraEs(token.ultimoUso) || "—"}
                     </td>
-                    <td className="mono celda-secundaria">
+                    <td className="cifra celda-secundaria">
                       {formatearFechaHoraEs(token.expiraEn) || "—"}
                     </td>
                     <td className="celda-accion">
@@ -350,10 +356,12 @@ export default function Ajustes() {
         )}
       </section>
 
-      <section className="tarjeta-ajustes" aria-labelledby="ajustes-actividad">
-        <div className="tarjeta-ajustes__cabecera">
-          <h2 id="ajustes-actividad">{t("settings.activity")}</h2>
-          <p className="tarjeta-ajustes__descripcion">{t("settings.activityDescription")}</p>
+      <section className="panel-tarjeta" aria-labelledby="ajustes-actividad">
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo" id="ajustes-actividad">
+            {t("settings.activity")}
+          </h2>
+          <p className="panel-tarjeta__descripcion">{t("settings.activityDescription")}</p>
         </div>
 
         {actividad.isLoading && <p>{t("app.loading")}</p>}
@@ -373,7 +381,7 @@ export default function Ajustes() {
                   </span>
                   <span className="fila-ajustes__detalle">
                     <span>{registro.tokenNombre ?? "—"}</span> ·{" "}
-                    <span className="mono">{formatearFechaHoraEs(registro.createdAt)}</span>
+                    <span className="cifra">{formatearFechaHoraEs(registro.createdAt)}</span>
                   </span>
                 </div>
                 <button
@@ -390,17 +398,21 @@ export default function Ajustes() {
         )}
       </section>
 
-      <section className="tarjeta-ajustes" aria-labelledby="ajustes-avisos">
-        <div className="tarjeta-ajustes__cabecera">
-          <h2 id="ajustes-avisos">{t("settings.browserNotifications")}</h2>
+      <section className="panel-tarjeta" aria-labelledby="ajustes-avisos">
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo" id="ajustes-avisos">
+            {t("settings.browserNotifications")}
+          </h2>
         </div>
         <AvisosNavegador />
       </section>
 
-      <section className="tarjeta-ajustes" aria-labelledby="ajustes-sesion">
-        <div className="tarjeta-ajustes__cabecera">
-          <h2 id="ajustes-sesion">{t("settings.session")}</h2>
-          <p className="tarjeta-ajustes__descripcion">{t("settings.sessionDescription")}</p>
+      <section className="panel-tarjeta" aria-labelledby="ajustes-sesion">
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo" id="ajustes-sesion">
+            {t("settings.session")}
+          </h2>
+          <p className="panel-tarjeta__descripcion">{t("settings.sessionDescription")}</p>
         </div>
         <button
           type="button"

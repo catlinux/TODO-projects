@@ -184,8 +184,7 @@ a:hover {
 }
 
 /* Fechas, horas y contadores: cifras de ancho fijo, sin fuente mono. */
-.cifra,
-.mono {
+.cifra {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "cv11", "ss01", "tnum";
 }
@@ -228,17 +227,6 @@ kbd {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-.contenedor,
-.contenedor-formulario {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 1.5rem;
-}
-
-.contenedor--ancho {
-  max-width: 1120px;
 }
 
 /* Página del proyecto: llena el panel con su fondo topográfico. */
@@ -1401,49 +1389,67 @@ button.tarjeta-detalle__accion {
   border-radius: 6px;
 }
 
+/* Proyectos: rejilla de tarjetas con miniatura del fondo del proyecto. */
 .rejilla-proyectos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0 0;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .tarjeta-proyecto {
-  overflow: hidden;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
-  box-shadow: var(--sombra-1);
-}
-
-.tarjeta-proyecto__color {
-  display: block;
-  height: 5px;
-}
-
-.tarjeta-proyecto__cuerpo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.85rem;
+  min-width: 0;
 }
 
 .tarjeta-proyecto__enlace {
-  font-weight: 600;
+  display: grid;
+  overflow: hidden;
   color: var(--texto);
   text-decoration: none;
+  background: var(--superficie);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .tarjeta-proyecto__enlace:hover {
-  color: var(--acento);
+  border-color: var(--lineas-fuertes);
+  box-shadow: var(--sombra-2);
+}
+
+.tarjeta-proyecto__enlace:focus-visible {
+  outline-offset: -2px;
+}
+
+.tarjeta-proyecto__fondo {
+  position: relative;
+  display: block;
+  height: 72px;
+  overflow: hidden;
+  background: var(--chip);
+}
+
+.tarjeta-proyecto__cuerpo {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.tarjeta-proyecto__nombre {
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .tarjeta-proyecto__descripcion {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
+  overflow-wrap: anywhere;
 }
 
 form {
@@ -1662,6 +1668,115 @@ fieldset {
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/*
+ * Páginas v4 (paso 4): cabecera común y tarjeta de contenido. El padding lo
+ * aporta el panel del armazón, así que aquí solo va el ancho máximo.
+ */
+.pagina {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.pagina--estrecha {
+  max-width: 760px;
+}
+
+.pagina__cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pagina__titulo {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pagina__subtitulo {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--secundario);
+}
+
+.pagina__acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-tarjeta {
+  padding: 20px;
+  background: var(--superficie);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
+}
+
+.panel-tarjeta__cabecera {
+  margin-bottom: 16px;
+}
+
+.panel-tarjeta__titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.panel-tarjeta__descripcion {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.panel-tarjeta + .panel-tarjeta {
+  margin-top: 16px;
+}
+
+/* Dentro de una rejilla, la separación la da el propio gap. */
+.hoy-cifras .panel-tarjeta + .panel-tarjeta,
+.hoy__lateral .panel-tarjeta + .panel-tarjeta {
+  margin-top: 0;
+}
+
+/* Control segmentado para elegir vista (Agenda, tema). */
+.control-segmentado {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--chip);
+  border-radius: var(--radio-control);
+}
+
+.control-segmentado button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: var(--texto-base);
+  font-weight: 500;
+  color: var(--secundario);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.control-segmentado button:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--superficie-2);
+}
+
+.control-segmentado button[aria-pressed="true"] {
+  color: var(--texto);
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
 }
 
 /*
@@ -2514,12 +2629,54 @@ form.columna-agregar button {
 }
 
 .agenda-lista h2 {
-  font-size: 1rem;
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
   text-transform: capitalize;
 }
 
+.agenda-lista section + section {
+  margin-top: 20px;
+}
+
+.agenda-lista ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-lista li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.agenda-lista li:last-child {
+  border-bottom: 0;
+}
+
+.agenda-lista label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.agenda-lista label input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--hecho);
+}
+
 .agenda-hora {
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .agenda-hecha a,
@@ -2533,76 +2690,37 @@ form.columna-agregar button {
   opacity: 0.6;
 }
 
-/* Agenda: calendario ancho con panel lateral de próximos avisos (Paso 3). */
-.agenda-cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.agenda-cabecera h1 {
-  margin: 0;
-  font-size: 1.6rem;
-}
-
-.agenda-cabecera .acciones button[aria-pressed="true"] {
-  color: var(--acento);
-  font-weight: 600;
-  background: var(--acento-suave);
-  border-color: var(--acento);
-}
-
-.agenda__ics {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--objetivo-tactil);
-  padding: 0.5rem 0.9rem;
-  color: var(--texto);
-  font-weight: 500;
-  text-decoration: none;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-control);
-}
-
-.agenda__ics:hover {
-  color: var(--texto);
-  border-color: var(--texto-secundario);
-}
-
+/* Agenda (paso 4): calendario ancho con panel lateral de próximos avisos. */
 .agenda {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 1.25rem;
+  gap: 20px;
   align-items: start;
 }
 
-.agenda__principal,
+.agenda__principal {
+  min-width: 0;
+}
+
 .agenda__avisos {
   min-width: 0;
-  padding: 1rem;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
 }
 
 .agenda__avisos h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .agenda__avisos-vacio {
   margin: 0;
-  font-size: 0.9rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .agenda__avisos-lista {
   display: grid;
-  gap: 0.6rem;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2610,95 +2728,93 @@ form.columna-agregar button {
 
 .aviso {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.6rem 0.65rem;
-  border: 1px solid var(--borde);
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid var(--lineas);
   border-radius: var(--radio-control);
 }
 
 .aviso__hora {
-  font-size: 0.78rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .aviso__titulo {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--texto);
   text-decoration: none;
 }
 
 .aviso__titulo:hover {
-  color: var(--acento);
+  color: var(--acento-texto);
 }
 
 .aviso__proyecto {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  gap: 6px;
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .aviso__color {
   flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 
 .aviso__antelacion {
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
 }
 
-/* Tema de FullCalendar con el sistema visual. */
+/* FullCalendar con las variables v4: sin bordes duros y hoy en --acento-suave. */
 .agenda__principal .fc {
-  --fc-border-color: var(--borde);
+  --fc-border-color: var(--lineas);
   --fc-page-bg-color: var(--superficie);
-  --fc-neutral-bg-color: var(--columna);
+  --fc-neutral-bg-color: var(--superficie-2);
+  --fc-neutral-text-color: var(--secundario);
   --fc-today-bg-color: var(--acento-suave);
-  --fc-event-bg-color: var(--superficie);
-  --fc-event-border-color: var(--borde);
+  --fc-event-bg-color: transparent;
+  --fc-event-border-color: transparent;
   --fc-event-text-color: var(--texto);
   --fc-button-bg-color: var(--superficie);
-  --fc-button-border-color: var(--borde);
+  --fc-button-border-color: var(--lineas-fuertes);
   --fc-button-text-color: var(--texto);
-  --fc-button-hover-bg-color: var(--columna);
-  --fc-button-hover-border-color: var(--texto-secundario);
-  --fc-button-active-bg-color: var(--acento-suave);
-  --fc-button-active-border-color: var(--acento);
+  --fc-button-hover-bg-color: var(--superficie-2);
+  --fc-button-hover-border-color: var(--lineas-fuertes);
+  --fc-button-active-bg-color: var(--superficie-2);
+  --fc-button-active-border-color: var(--lineas-fuertes);
   --fc-highlight-color: var(--acento-suave);
   --fc-now-indicator-color: var(--acento);
-  --fc-small-font-size: 0.82rem;
+  --fc-small-font-size: 12px;
 
   font-family: var(--fuente);
-  font-size: 0.9rem;
+  font-size: var(--texto-base);
 }
 
 .agenda__principal .fc .fc-toolbar {
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .agenda__principal .fc .fc-toolbar-title {
-  font-size: 1.6rem;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--texto);
 }
 
 .agenda__principal .fc .fc-button {
-  padding: 0.4rem 0.85rem;
-  min-height: var(--objetivo-tactil);
+  min-height: 34px;
+  padding: 0 12px;
   font-family: var(--fuente);
-  font-size: 0.9rem;
+  font-size: var(--texto-base);
   font-weight: 500;
   text-transform: none;
   border-radius: var(--radio-control);
   box-shadow: none;
-}
-
-.agenda__principal .fc .fc-button-primary:disabled {
-  color: var(--texto-secundario);
 }
 
 .agenda__principal .fc .fc-button:focus-visible {
@@ -2706,73 +2822,50 @@ form.columna-agregar button {
   outline-offset: 2px;
 }
 
-.agenda__principal .fc .fc-button-group {
-  gap: 0.4rem;
-}
-
-.agenda__principal .fc .fc-button-group > .fc-button:not(:first-child),
-.agenda__principal .fc .fc-button-group > .fc-button:not(:last-child) {
-  margin-right: 0;
-  margin-left: 0;
-}
-
 .agenda__principal .fc .fc-col-header-cell-cushion,
 .agenda__principal .fc .fc-daygrid-day-number {
-  padding: 0.35rem;
-  font-size: 0.85rem;
+  padding: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: var(--texto-secundario);
+  color: var(--secundario);
   text-decoration: none;
 }
 
-.agenda__principal .fc .fc-day-today .fc-daygrid-day-number {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  color: var(--texto-sobre-acento);
-  background: var(--acento);
-  border-radius: 999px;
+.agenda__principal .fc .fc-day-today {
+  background: var(--acento-suave);
 }
 
 .agenda__principal .fc .fc-daygrid-event {
-  padding: 0.05rem 0.35rem;
-  border-left-width: 3px;
-  border-radius: 6px;
+  margin-top: 1px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
 }
 
-.agenda__principal .fc .fc-event-time {
-  font-family: var(--fuente-mono);
-  font-weight: 500;
-}
-
-.agenda__principal .fc .fc-event-title {
-  font-weight: 600;
-}
-
-/* Evento del mes: punto de color, hora y título. */
+/* Evento del mes: punto de color, hora y título con elipsis. */
 .agenda__principal .fc .agenda-evento {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 4px;
   overflow: hidden;
 }
 
 .agenda-evento__punto {
   flex: 0 0 auto;
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
 }
 
 .agenda-evento__hora {
   flex: 0 0 auto;
-  font-family: var(--fuente-mono);
-  font-weight: 500;
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .agenda-evento__titulo {
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2780,26 +2873,24 @@ form.columna-agregar button {
 
 /* Panel del día seleccionado, bajo el calendario. */
 .agenda-dia {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--borde);
+  margin-top: 20px;
 }
 
 .agenda-dia h2 {
-  margin: 0 0 0.6rem;
-  font-size: 1rem;
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
   text-transform: capitalize;
 }
 
 .agenda-dia__vacio {
   margin: 0;
-  font-size: 0.9rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .agenda-dia__lista {
   display: grid;
-  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2809,8 +2900,13 @@ form.columna-agregar button {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 10px;
   min-height: 44px;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.agenda-dia__fila:last-child {
+  border-bottom: 0;
 }
 
 .agenda-dia__fila--hecha {
@@ -2825,40 +2921,41 @@ form.columna-agregar button {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: var(--objetivo-tactil);
-  height: var(--objetivo-tactil);
+  width: 32px;
+  height: 32px;
   cursor: pointer;
 }
 
 .agenda-dia__casilla input {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   min-height: 0;
   padding: 0;
   accent-color: var(--hecho);
 }
 
 .agenda-dia__hora {
-  flex: 0 0 auto;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  flex: 0 0 44px;
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .agenda-dia__titulo {
   flex: 1 1 8rem;
+  font-size: 14px;
   font-weight: 500;
   color: var(--texto);
   text-decoration: none;
 }
 
 .agenda-dia__titulo:hover {
-  color: var(--acento);
+  color: var(--acento-texto);
 }
 
 .agenda-dia__aviso {
   flex: 0 0 auto;
-  font-size: 0.78rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .token-creado {
@@ -2875,68 +2972,41 @@ form.columna-agregar button {
   opacity: 0.6;
 }
 
-/* Vista «Hoy»: atrasadas, hoy y próximos 7 días. */
-.contenedor--hoy {
-  max-width: 1000px;
-}
-
-.hoy-cabecera {
-  margin-bottom: 1rem;
-}
-
-.hoy-cabecera__fecha {
-  margin: 0;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  color: var(--texto-secundario);
-}
-
-.hoy-cabecera__saludo {
-  margin: 0.15rem 0 0;
-  font-size: 1.7rem;
-}
-
-/* Tres cifras destacadas: caben en una fila y se apilan sin desbordar. */
+/* Vista «Hoy» (paso 4): cifras compactas, lista agrupada y lateral. */
 .hoy-cifras {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .hoy-cifra {
   display: grid;
-  gap: 0.15rem;
+  gap: 2px;
   min-width: 0;
-  padding: 0.85rem 1rem;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
-  box-shadow: var(--sombra-1);
+  padding: 14px 16px;
 }
 
 .hoy-cifra__valor {
-  font-size: 1.5rem;
+  font-size: 28px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.1;
   overflow-wrap: anywhere;
 }
 
 .hoy-cifra__valor--aviso {
-  font-size: 1.05rem;
+  font-size: 18px;
 }
 
 .hoy-cifra__etiqueta {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .hoy {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 1.25rem;
+  gap: 20px;
   align-items: start;
 }
 
@@ -2946,34 +3016,26 @@ form.columna-agregar button {
 
 .hoy__lateral {
   display: grid;
-  gap: 1.25rem;
+  gap: 20px;
   min-width: 0;
-}
-
-.hoy-progreso,
-.hoy-avisos {
-  padding: 1rem;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
 }
 
 .hoy-progreso h2,
 .hoy-avisos h2 {
-  margin: 0 0 0.75rem;
-  font-size: 0.95rem;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .hoy-lateral__vacio {
   margin: 0;
-  font-size: 0.88rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
-.hoy-progreso__lista,
-.hoy-avisos__lista {
+.hoy-progreso__lista {
   display: grid;
-  gap: 0.75rem;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -2981,20 +3043,20 @@ form.columna-agregar button {
 
 .hoy-progreso__item {
   display: grid;
-  gap: 0.35rem;
+  gap: 6px;
 }
 
 .hoy-progreso__cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .hoy-progreso__valor {
   flex: 0 0 auto;
-  font-size: 0.78rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .hoy-progreso__barra {
@@ -3012,28 +3074,42 @@ form.columna-agregar button {
 }
 
 .hoy-vacio {
-  padding: 1.5rem;
+  padding: 24px;
   text-align: center;
-  color: var(--texto-secundario);
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
+  color: var(--secundario);
 }
 
 .hoy-seccion {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
-.hoy-seccion h2 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
+.hoy-seccion:last-child {
+  margin-bottom: 0;
+}
+
+.hoy-seccion__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.hoy-seccion__titulo {
+  margin: 0;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--texto);
+  color: var(--secundario);
+}
+
+.hoy-seccion__contador {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--secundario);
 }
 
 .hoy-lista {
   display: grid;
-  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -3042,17 +3118,22 @@ form.columna-agregar button {
 .hoy-fila {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  min-height: 56px;
-  padding: 0.5rem 0.75rem;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.hoy-fila:last-child {
+  border-bottom: 0;
+}
+
+.hoy-fila:hover {
+  background: var(--superficie-2);
 }
 
 .hoy-fila--hecha {
-  opacity: 0.65;
+  color: var(--secundario);
 }
 
 .hoy-fila--hecha .hoy-fila__titulo {
@@ -3063,9 +3144,8 @@ form.columna-agregar button {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: var(--objetivo-tactil);
-  height: var(--objetivo-tactil);
-  gap: 0;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
 }
 
@@ -3073,13 +3153,13 @@ form.columna-agregar button {
 .hoy-fila__casilla input {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   min-height: 0;
   padding: 0;
   appearance: none;
-  background: var(--tarjeta);
-  border: 1.5px solid var(--secundario);
+  background: var(--superficie);
+  border: 1.5px solid var(--lineas-fuertes);
   border-radius: 999px;
   cursor: pointer;
 }
@@ -3091,7 +3171,7 @@ form.columna-agregar button {
 
 .hoy-fila__casilla input:checked::after {
   content: "";
-  width: 10px;
+  width: 9px;
   height: 5px;
   border-bottom: 2px solid var(--texto-sobre-acento);
   border-left: 2px solid var(--texto-sobre-acento);
@@ -3104,27 +3184,25 @@ form.columna-agregar button {
 }
 
 .hoy-fila__hora {
-  flex: 0 0 auto;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  flex: 0 0 44px;
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .hoy-fila__titulo {
   flex: 1 1 10rem;
-  font-weight: 500;
+  min-width: 0;
+  font-size: 14px;
 }
 
 .hoy-fila__chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 6px;
   max-width: 100%;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.78rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
   text-decoration: none;
-  background: var(--chip);
-  border-radius: 999px;
 }
 
 .hoy-fila__chip:hover {
@@ -3133,41 +3211,85 @@ form.columna-agregar button {
 
 .hoy-fila__color {
   flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 
 .hoy-fila__campana {
   flex: 0 0 auto;
-  color: var(--texto-secundario);
+  color: var(--secundario);
 }
 
-/* Pantallas de acceso (Login y Registro): tarjeta centrada con la marca. */
+.hoy-avisos__lista {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hoy-aviso {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hoy-aviso__punto {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.hoy-aviso__hora {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--secundario);
+}
+
+.hoy-aviso__titulo {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--texto);
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hoy-aviso__titulo:hover {
+  color: var(--acento-texto);
+}
+
+/* Entrada (Login/Registro): fuera del armazón, tarjeta centrada sobre la marca. */
 .pantalla-acceso {
   display: grid;
   place-items: center;
   box-sizing: border-box;
   min-height: 100vh;
-  padding: 1.5rem;
+  padding: 24px;
+  background: var(--marco);
 }
 
 .tarjeta-acceso {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 20px;
   box-sizing: border-box;
   width: min(400px, 100%);
-  padding: 1.75rem;
+  padding: 28px;
   background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
-  box-shadow: var(--sombra-1);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-dialogo);
+  box-shadow: var(--sombra-dialogo);
 }
 
 .tarjeta-acceso h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 22px;
+  font-weight: 600;
   text-align: center;
 }
 
@@ -3176,15 +3298,16 @@ form.columna-agregar button {
 }
 
 .tarjeta-acceso__pie {
-  font-size: 0.9rem;
+  font-size: 13px;
   text-align: center;
+  color: var(--secundario);
 }
 
 .marca {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .marca__cuadrado {
@@ -3198,22 +3321,27 @@ form.columna-agregar button {
 }
 
 .marca__nombre {
-  font-size: 1.05rem;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .formulario-acceso {
-  gap: 0.85rem;
+  gap: 14px;
   margin-bottom: 0;
 }
 
+.formulario-acceso input {
+  min-height: 44px;
+}
+
 .campo-pin input {
-  min-height: 56px;
-  padding: 0.5rem 0.75rem;
-  font-size: 1.5rem;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 24px;
   text-align: center;
-  text-indent: 0.4em;
   letter-spacing: 0.4em;
+  text-indent: 0.4em;
 }
 
 .boton-ancho {
@@ -3224,43 +3352,15 @@ form.columna-agregar button {
 .boton-secundario {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 8px;
   color: var(--texto);
 }
 
-/* Ajustes: una tarjeta por sección. */
-.contenedor--ajustes {
-  max-width: 820px;
-}
-
-.tarjeta-ajustes {
-  margin-bottom: 1rem;
-  padding: 1.25rem;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
-  box-shadow: var(--sombra-1);
-}
-
-.tarjeta-ajustes__cabecera {
-  margin-bottom: 1rem;
-}
-
-.tarjeta-ajustes__cabecera h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.tarjeta-ajustes__descripcion {
-  margin: 0.15rem 0 0;
-  font-size: 0.88rem;
-  color: var(--texto-secundario);
-}
-
+/* Ajustes (paso 4): secciones .panel-tarjeta con tablas y filas limpias. */
 .lista-ajustes {
   display: grid;
-  gap: 0.5rem;
-  margin: 0.75rem 0;
+  margin: 12px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -3268,47 +3368,52 @@ form.columna-agregar button {
 .fila-ajustes {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-height: 56px;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-control);
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.fila-ajustes:last-child {
+  border-bottom: 0;
 }
 
 .fila-ajustes__principal {
   flex: 1;
   display: grid;
-  gap: 0.1rem;
+  gap: 2px;
   min-width: 0;
 }
 
 .fila-ajustes__nombre {
-  font-weight: 600;
+  font-weight: 500;
   overflow-wrap: anywhere;
 }
 
 .fila-ajustes__detalle {
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .boton-fila {
   flex: 0 0 auto;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.85rem;
 }
 
 .tabla-desplazable {
   overflow-x: auto;
-  margin-top: 0.75rem;
+  margin-top: 12px;
 }
 
 .tabla-tokens th {
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secundario);
   white-space: nowrap;
+}
+
+.tabla-tokens th,
+.tabla-tokens td {
+  border-bottom: 1px solid var(--lineas);
 }
 
 .tabla-tokens td {
@@ -3317,7 +3422,7 @@ form.columna-agregar button {
 }
 
 .celda-secundaria {
-  color: var(--texto-secundario);
+  color: var(--secundario);
 }
 
 .celda-accion {
@@ -3397,6 +3502,12 @@ form.columna-agregar button {
   .proyecto__error {
     margin-right: 16px;
     margin-left: 16px;
+  }
+
+  /* En táctil, los controles densos también alcanzan el objetivo de 40 px. */
+  .control-segmentado button,
+  .agenda__principal .fc .fc-button {
+    min-height: 40px;
   }
 }
 
@@ -3844,64 +3955,71 @@ form.columna-agregar button {
   border-radius: 5px;
 }
 
-/* Bandeja de entrada (fase D3). */
+/* Bandeja de entrada (paso 4): captura en una tarjeta y lista en otra. */
 .bandeja__captura {
   display: flex;
-  gap: 0.5rem;
-  margin: 0 0 1.25rem;
+  align-items: center;
+  gap: 10px;
+}
+
+.bandeja__captura-icono {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--secundario);
 }
 
 .bandeja__captura input {
   flex: 1 1 auto;
-}
-
-.bandeja__vacia {
-  padding: 1.25rem;
-  color: var(--texto-secundario);
-  background: var(--tarjeta);
-  border: 1px solid var(--lineas);
-  border-radius: var(--radio-tarjeta);
+  min-width: 0;
+  min-height: 44px;
 }
 
 .bandeja__lista {
   display: grid;
-  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.bandeja__vacia {
+  margin: 0;
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .bandeja__tarea {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
-  padding: 0.65rem 0.8rem;
-  background: var(--tarjeta);
-  border: 1px solid var(--lineas);
-  border-radius: var(--radio-tarjeta);
-  box-shadow: var(--sombra-1);
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.bandeja__tarea:last-child {
+  border-bottom: 0;
 }
 
 .bandeja__titulo {
   flex: 1 1 12rem;
-  min-height: 1.5rem;
-  font-weight: 500;
+  min-width: 0;
+  font-size: 14px;
   color: var(--texto);
   text-decoration: none;
 }
 
 .bandeja__titulo:hover {
-  color: var(--acento);
+  color: var(--acento-texto);
 }
 
 .bandeja__acciones {
   display: flex;
-  gap: 0.4rem;
+  gap: 4px;
   margin-left: auto;
 }
 
 .bandeja__mover {
   display: grid;
-  gap: 0.75rem;
+  gap: 12px;
 }

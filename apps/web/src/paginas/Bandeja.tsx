@@ -162,10 +162,26 @@ export default function Bandeja() {
   }
 
   return (
-    <main className="contenedor contenedor--ancho bandeja">
-      <h1>{t("inbox.title")}</h1>
+    <main className="pagina">
+      <header className="pagina__cabecera">
+        <h1 className="pagina__titulo">{t("inbox.title")}</h1>
+      </header>
 
-      <form className="bandeja__captura" onSubmit={crearDesdeCampo}>
+      <form className="panel-tarjeta bandeja__captura" onSubmit={crearDesdeCampo}>
+        <span className="bandeja__captura-icono" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
         <label className="visualmente-oculto" htmlFor="bandeja-captura">
           {t("inbox.captureLabel")}
         </label>
@@ -188,50 +204,54 @@ export default function Bandeja() {
 
       {error && <p className="error">{error}</p>}
 
-      {bandeja.isLoading ? (
-        <p>{t("app.loading")}</p>
-      ) : bandeja.isError ? (
-        <p className="error">{t("auth.error")}</p>
-      ) : tareas.length === 0 ? (
-        <p className="bandeja__vacia">{t("inbox.empty")}</p>
-      ) : (
-        <ul className="bandeja__lista">
-          {tareas.map((tarea) => {
-            const chip = chipFecha(tarea.venceEn);
-            return (
-              <li key={tarea.id} className="bandeja__tarea">
-                <Link
-                  className="bandeja__titulo"
-                  to={`/proyectos/${bandejaId}/tareas/${tarea.id}`}
-                >
-                  {tarea.titulo}
-                </Link>
-                {chip && (
-                  <span className={`chip-fecha chip-fecha--${chip.estado} mono`}>{chip.texto}</span>
-                )}
-                <div className="bandeja__acciones">
-                  <button
-                    type="button"
-                    className="boton-fila"
-                    aria-haspopup="dialog"
-                    onClick={() => setTareaMover(tarea)}
+      <section className="panel-tarjeta">
+        {bandeja.isLoading ? (
+          <p>{t("app.loading")}</p>
+        ) : bandeja.isError ? (
+          <p className="error">{t("auth.error")}</p>
+        ) : tareas.length === 0 ? (
+          <p className="bandeja__vacia">{t("inbox.empty")}</p>
+        ) : (
+          <ul className="bandeja__lista">
+            {tareas.map((tarea) => {
+              const chip = chipFecha(tarea.venceEn);
+              return (
+                <li key={tarea.id} className="bandeja__tarea">
+                  <Link
+                    className="bandeja__titulo"
+                    to={`/proyectos/${bandejaId}/tareas/${tarea.id}`}
                   >
-                    {t("inbox.move")}…
-                  </button>
-                  <button
-                    type="button"
-                    className="boton-fila"
-                    disabled={borrar.isPending}
-                    onClick={() => confirmarBorrado(tarea)}
-                  >
-                    {t("inbox.delete")}
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    {tarea.titulo}
+                  </Link>
+                  {chip && (
+                    <span className={`chip-fecha chip-fecha--${chip.estado} cifra`}>
+                      {chip.texto}
+                    </span>
+                  )}
+                  <div className="bandeja__acciones">
+                    <button
+                      type="button"
+                      className="boton-fila"
+                      aria-haspopup="dialog"
+                      onClick={() => setTareaMover(tarea)}
+                    >
+                      {t("inbox.move")}…
+                    </button>
+                    <button
+                      type="button"
+                      className="boton-fila"
+                      disabled={borrar.isPending}
+                      onClick={() => confirmarBorrado(tarea)}
+                    >
+                      {t("inbox.delete")}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
       <dialog
         ref={refDialogo}

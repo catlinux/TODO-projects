@@ -179,7 +179,7 @@ export default function Login() {
             <label className="campo-pin">
               {t("auth.pin")}
               <input
-                className="mono"
+                className="cifra"
                 type="password"
                 inputMode="numeric"
                 pattern="[0-9]{6,12}"

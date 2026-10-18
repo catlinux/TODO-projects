@@ -214,25 +214,27 @@ export default function Agenda() {
   );
 
   return (
-    <main className="contenedor contenedor--ancho">
-      <div className="agenda-cabecera">
-        <h1>{t("agenda.title")}</h1>
-        <div className="acciones">
-          <button
-            type="button"
-            aria-pressed={vista === "calendario"}
-            onClick={() => setVista("calendario")}
-          >
-            {t("agenda.calendar")}
-          </button>
-          <button type="button" aria-pressed={vista === "lista"} onClick={() => setVista("lista")}>
-            {t("agenda.list")}
-          </button>
-          <a className="agenda__ics" href="/api/agenda.ics">
+    <main className="pagina">
+      <header className="pagina__cabecera">
+        <h1 className="pagina__titulo">{t("agenda.title")}</h1>
+        <div className="pagina__acciones">
+          <div className="control-segmentado">
+            <button
+              type="button"
+              aria-pressed={vista === "calendario"}
+              onClick={() => setVista("calendario")}
+            >
+              {t("agenda.calendar")}
+            </button>
+            <button type="button" aria-pressed={vista === "lista"} onClick={() => setVista("lista")}>
+              {t("agenda.list")}
+            </button>
+          </div>
+          <a className="boton" href="/api/agenda.ics">
             {t("agenda.download")}
           </a>
         </div>
-      </div>
+      </header>
 
       <div className="agenda">
         {vista === "lista" ? (
@@ -257,7 +259,7 @@ export default function Agenda() {
                           key={`${ocurrencia.tareaId}-${ocurrencia.fecha}`}
                           className={ocurrencia.hecha ? "agenda-hecha" : undefined}
                         >
-                          <label className="agenda-hecha-check">
+                          <label>
                             <input
                               type="checkbox"
                               checked={ocurrencia.hecha}
@@ -271,7 +273,7 @@ export default function Agenda() {
                             />
                             {t("agenda.done")}
                           </label>{" "}
-                          <span className="agenda-hora mono">
+                          <span className="agenda-hora cifra">
                             {formatearFechaHoraEs(ocurrencia.fecha)}
                           </span>{" "}
                           <Link to={`/proyectos/${ocurrencia.proyectoId}`}>
@@ -319,7 +321,10 @@ export default function Agenda() {
               }}
             />
 
-            <section className="agenda-dia" aria-labelledby="agenda-dia-titulo">
+            <section
+              className="panel-tarjeta agenda-dia"
+              aria-labelledby="agenda-dia-titulo"
+            >
               <h2 id="agenda-dia-titulo">{etiquetaDiaClave(diaSeleccionado)}</h2>
               {calendario.isLoading && <p>{t("app.loading")}</p>}
               {!calendario.isLoading && ocurrenciasDia.length === 0 && (
@@ -350,7 +355,7 @@ export default function Agenda() {
                           {ocurrencia.hecha ? t("hoy.markPending") : t("hoy.markDone")}
                         </span>
                       </label>
-                      <span className="agenda-dia__hora mono">{horaCorta(ocurrencia.fecha)}</span>
+                      <span className="agenda-dia__hora cifra">{horaCorta(ocurrencia.fecha)}</span>
                       <Link className="agenda-dia__titulo" to={`/proyectos/${ocurrencia.proyectoId}`}>
                         {ocurrencia.titulo}
                       </Link>
@@ -375,7 +380,10 @@ export default function Agenda() {
           </section>
         )}
 
-        <aside className="agenda__avisos" aria-labelledby="agenda-avisos-titulo">
+        <aside
+          className="panel-tarjeta agenda__avisos"
+          aria-labelledby="agenda-avisos-titulo"
+        >
           <h2 id="agenda-avisos-titulo">{t("agenda.upcoming")}</h2>
           {cargandoAvisos && <p>{t("app.loading")}</p>}
           {!cargandoAvisos && proximos.length === 0 && (
@@ -385,7 +393,7 @@ export default function Agenda() {
             <ul className="agenda__avisos-lista">
               {proximos.map((aviso) => (
                 <li key={`${aviso.tareaId}-${aviso.horaAviso}`} className="aviso">
-                  <span className="aviso__hora mono">{aviso.horaAvisoTexto}</span>
+                  <span className="aviso__hora cifra">{aviso.horaAvisoTexto}</span>
                   <Link className="aviso__titulo" to={`/proyectos/${aviso.proyectoId}`}>
                     {aviso.titulo}
                   </Link>

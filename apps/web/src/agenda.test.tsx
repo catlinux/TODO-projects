@@ -279,7 +279,7 @@ describe("Agenda", () => {
     expect(within(aside).getAllByText("Proyecto")).toHaveLength(2);
     expect(aside.querySelectorAll(".aviso__color")).toHaveLength(2);
 
-    const hora = aside.querySelector(".aviso__hora.mono");
+    const hora = aside.querySelector(".aviso__hora.cifra");
     expect(hora?.textContent).toMatch(/\d{2}:\d{2}/);
     expect(within(aside).queryByText(/no hay avisos/i)).toBeNull();
   });
