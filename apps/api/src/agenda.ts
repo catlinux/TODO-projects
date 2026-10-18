@@ -26,6 +26,7 @@ interface OcurrenciaAgenda {
   fecha: string;
   esRecurrente: boolean;
   hecha: boolean;
+  recordatorioMin: number | null;
 }
 
 export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
@@ -66,6 +67,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
         venceEn: tareas.venceEn,
         recurrencia: tareas.recurrencia,
         zona: tareas.zona,
+        recordatorioMin: tareas.recordatorioMin,
       })
       .from(tareas)
       .innerJoin(proyectos, eq(tareas.proyectoId, proyectos.id))
@@ -116,6 +118,7 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
           fecha: fecha.toISOString(),
           esRecurrente: fila.recurrencia !== null,
           hecha: marcas.has(`${fila.tareaId}|${fecha.getTime()}`),
+          recordatorioMin: fila.recordatorioMin,
         });
       }
     }

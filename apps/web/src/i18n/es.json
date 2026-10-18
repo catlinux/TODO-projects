@@ -117,7 +117,12 @@
     "calendar": "Calendario",
     "download": "Descargar calendario (.ics)",
     "empty": "No hay eventos en los próximos 30 días",
-    "done": "Hecha"
+    "done": "Hecha",
+    "prev": "Anterior",
+    "today": "Hoy",
+    "next": "Siguiente",
+    "upcoming": "Próximos avisos",
+    "noUpcoming": "No hay avisos en los próximos 7 días"
   },
   "push": {
     "activar": "Activar avisos del navegador",

@@ -631,6 +631,224 @@ fieldset {
   opacity: 0.6;
 }
 
+/* Agenda: calendario ancho con panel lateral de próximos avisos (Paso 3). */
+.agenda-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.agenda-cabecera h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.agenda-cabecera .acciones button[aria-pressed="true"] {
+  color: var(--acento);
+  font-weight: 600;
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.agenda__ics {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--objetivo-tactil);
+  padding: 0.5rem 0.9rem;
+  color: var(--texto);
+  font-weight: 500;
+  text-decoration: none;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+}
+
+.agenda__ics:hover {
+  color: var(--texto);
+  border-color: var(--texto-secundario);
+}
+
+.agenda {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.agenda__principal,
+.agenda__avisos {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+}
+
+.agenda__avisos h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.agenda__avisos-vacio {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--texto-secundario);
+}
+
+.agenda__avisos-lista {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aviso {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem 0.65rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+}
+
+.aviso__hora {
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+}
+
+.aviso__titulo {
+  font-weight: 600;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.aviso__titulo:hover {
+  color: var(--acento);
+}
+
+.aviso__proyecto {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.aviso__color {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.aviso__antelacion {
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+/* Tema de FullCalendar con el sistema visual. */
+.agenda__principal .fc {
+  --fc-border-color: var(--borde);
+  --fc-page-bg-color: var(--superficie);
+  --fc-neutral-bg-color: var(--columna);
+  --fc-today-bg-color: var(--acento-suave);
+  --fc-event-bg-color: var(--superficie);
+  --fc-event-border-color: var(--borde);
+  --fc-event-text-color: var(--texto);
+  --fc-button-bg-color: var(--superficie);
+  --fc-button-border-color: var(--borde);
+  --fc-button-text-color: var(--texto);
+  --fc-button-hover-bg-color: var(--columna);
+  --fc-button-hover-border-color: var(--texto-secundario);
+  --fc-button-active-bg-color: var(--acento-suave);
+  --fc-button-active-border-color: var(--acento);
+  --fc-highlight-color: var(--acento-suave);
+  --fc-now-indicator-color: var(--acento);
+  --fc-small-font-size: 0.82rem;
+
+  font-family: var(--fuente);
+  font-size: 0.9rem;
+}
+
+.agenda__principal .fc .fc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.agenda__principal .fc .fc-toolbar-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.agenda__principal .fc .fc-button {
+  padding: 0.4rem 0.85rem;
+  min-height: var(--objetivo-tactil);
+  font-family: var(--fuente);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: var(--radio-control);
+  box-shadow: none;
+}
+
+.agenda__principal .fc .fc-button-primary:disabled {
+  color: var(--texto-secundario);
+}
+
+.agenda__principal .fc .fc-button:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.agenda__principal .fc .fc-button-group {
+  gap: 0.4rem;
+}
+
+.agenda__principal .fc .fc-button-group > .fc-button:not(:first-child),
+.agenda__principal .fc .fc-button-group > .fc-button:not(:last-child) {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.agenda__principal .fc .fc-col-header-cell-cushion,
+.agenda__principal .fc .fc-daygrid-day-number {
+  padding: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  text-decoration: none;
+}
+
+.agenda__principal .fc .fc-day-today .fc-daygrid-day-number {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  color: #ffffff;
+  background: var(--acento);
+  border-radius: 999px;
+}
+
+.agenda__principal .fc .fc-daygrid-event {
+  padding: 0.05rem 0.35rem;
+  border-left-width: 3px;
+  border-radius: 6px;
+}
+
+.agenda__principal .fc .fc-event-time {
+  font-family: var(--fuente-mono);
+  font-weight: 500;
+}
+
+.agenda__principal .fc .fc-event-title {
+  font-weight: 600;
+}
+
 .token-creado {
   border: 1px solid var(--borde);
   border-radius: var(--radio-tarjeta);
@@ -643,6 +861,12 @@ fieldset {
 
 .token-revocado {
   opacity: 0.6;
+}
+
+@media (max-width: 1000px) {
+  .agenda {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 740px) {

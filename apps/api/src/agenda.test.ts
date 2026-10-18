@@ -90,6 +90,7 @@ interface Ocurrencia {
   columnaNombre: string;
   fecha: string;
   esRecurrente: boolean;
+  recordatorioMin: number | null;
 }
 
 describe("agenda", () => {
@@ -182,6 +183,38 @@ describe("agenda", () => {
       "2026-06-30T23:59:59.000Z",
     );
     expect((fuera.json() as Ocurrencia[]).length).toBe(0);
+  });
+
+  it("incluye el recordatorio de la tarea en cada ocurrencia", async () => {
+    const { cookie } = await registrar(app, "agenda-recordatorio");
+    const proyecto = await crearProyecto(app, cookie, "Recordatorio agenda");
+
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Con aviso",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-10T10:00:00.000Z",
+      recordatorioMin: 30,
+    });
+    await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Sin aviso",
+      columnaId: proyecto.columnaId,
+      venceEn: "2026-05-11T10:00:00.000Z",
+    });
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    expect(respuesta.statusCode).toBe(200);
+    const ocurrencias = respuesta.json() as Ocurrencia[];
+    expect(ocurrencias.map((ocurrencia) => [ocurrencia.titulo, ocurrencia.recordatorioMin])).toEqual(
+      [
+        ["Con aviso", 30],
+        ["Sin aviso", null],
+      ],
+    );
   });
 
   it("expande una tarea recurrente semanal", async () => {

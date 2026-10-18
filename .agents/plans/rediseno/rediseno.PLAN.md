@@ -22,7 +22,7 @@ Maqueta aprobada por el usuario: https://claude.ai/artifact/UneU1zYrzgqnNWkwrgJs
 - Archivos: `componentes/Tablero.tsx`, `paginas/ProyectoDetalle.tsx`, `paginas/Proyectos.tsx`, `estilos.css`.
 - Cabecera del proyecto (miga, título, «Nueva tarea» en acento), columnas compactas con contador, tarjetas limpias con chip de fecha (próxima ≤ 24 h, atrasada, normal), icono de campana si `recordatorioMin` y de repetición si `recurrencia`; tarjeta arrastrada rotada con sombra. Lista de proyectos como rejilla de tarjetas con su color.
 
-### Paso 3 — Agenda y próximos avisos · AgentRelay, esfuerzo medio · [ ]
+### Paso 3 — Agenda y próximos avisos · AgentRelay, esfuerzo medio · [x]
 - Archivos: `apps/api/src/agenda.ts` (+ test: añadir `recordatorioMin` a cada ocurrencia), `apps/web/src/api.ts`, `paginas/Agenda.tsx`, `estilos.css`.
 - FullCalendar con el tema (eventos con el color del proyecto, hoy resaltado) y panel lateral «Próximos avisos» (siguientes 7 días con aviso: hora del aviso = fecha − `recordatorioMin`). Botones de `.ics` existentes, con el nuevo estilo.
 

@@ -47,6 +47,7 @@ export interface OcurrenciaAgenda {
   fecha: string;
   esRecurrente: boolean;
   hecha: boolean;
+  recordatorioMin: number | null;
 }
 
 export type PermisoTokenApi = "lectura" | "escritura" | "calendario";
