@@ -1,10 +1,10 @@
 import { type FastifyInstance } from "fastify";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import { esquemaTarea, esquemaTareaParcial, ZONA_POR_DEFECTO } from "@todo/shared";
 
-import { columnas, proyectos, tareas } from "./db/schema.js";
+import { columnas, proyectos, tareas, tareasEtiquetas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 import { instantaneaTarea, registrarActividad } from "./actividad.js";
 import { colocarTareaEnColumna, reindexarColumna } from "./tablero-posiciones.js";
@@ -32,6 +32,27 @@ export async function obtenerTareaPropia(db: Database, id: string, usuarioId: st
     .limit(1);
 
   return fila ?? null;
+}
+
+/** Etiquetas (ids) de varias tareas en una sola consulta. */
+async function etiquetasPorTarea(db: Database, tareaIds: string[]): Promise<Map<string, string[]>> {
+  const porTarea = new Map<string, string[]>();
+  if (tareaIds.length === 0) {
+    return porTarea;
+  }
+
+  const relaciones = await db
+    .select({ tareaId: tareasEtiquetas.tareaId, etiquetaId: tareasEtiquetas.etiquetaId })
+    .from(tareasEtiquetas)
+    .where(inArray(tareasEtiquetas.tareaId, tareaIds));
+
+  for (const relacion of relaciones) {
+    const lista = porTarea.get(relacion.tareaId) ?? [];
+    lista.push(relacion.etiquetaId);
+    porTarea.set(relacion.tareaId, lista);
+  }
+
+  return porTarea;
 }
 
 export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
@@ -66,7 +87,15 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       .where(eq(tareas.proyectoId, params.data.id))
       .orderBy(asc(columnas.posicion), asc(tareas.posicion));
 
-    return filas.map((fila) => fila.tareas);
+    const etiquetas = await etiquetasPorTarea(
+      db,
+      filas.map((fila) => fila.tareas.id),
+    );
+
+    return filas.map((fila) => ({
+      ...fila.tareas,
+      etiquetas: etiquetas.get(fila.tareas.id) ?? [],
+    }));
   });
 
   app.post("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
@@ -191,7 +220,9 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       return;
     }
 
-    return fila.tarea;
+    const etiquetas = await etiquetasPorTarea(db, [fila.tarea.id]);
+
+    return { ...fila.tarea, etiquetas: etiquetas.get(fila.tarea.id) ?? [] };
   });
 
   app.patch("/tareas/:id", { preHandler: app.requireAuth }, async (request, reply) => {

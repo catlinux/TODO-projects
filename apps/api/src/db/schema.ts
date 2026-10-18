@@ -4,6 +4,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -77,6 +78,38 @@ export const tareas = pgTable("tareas", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const etiquetas = pgTable(
+  "etiquetas",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    proyectoId: uuid("proyecto_id")
+      .notNull()
+      .references(() => proyectos.id, { onDelete: "cascade" }),
+    nombre: text("nombre").notNull(),
+    // Color de la paleta fija (8 valores); validado en shared.
+    color: text("color").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (tabla) => [index("etiquetas_proyecto_idx").on(tabla.proyectoId)],
+);
+
+export const tareasEtiquetas = pgTable(
+  "tareas_etiquetas",
+  {
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    etiquetaId: uuid("etiqueta_id")
+      .notNull()
+      .references(() => etiquetas.id, { onDelete: "cascade" }),
+  },
+  (tabla) => [primaryKey({ columns: [tabla.tareaId, tabla.etiquetaId] })],
+);
 
 export const sesiones = pgTable("sesiones", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -99,6 +99,31 @@ export const esquemaTareaParcial = esquemaTareaBase
   })
   .partial();
 
+/** Paleta fija de etiquetas (texto blanco, contraste ≥ 4.5:1). */
+export const COLORES_ETIQUETA = [
+  "#6E4FE6",
+  "#C8303A",
+  "#2563D9",
+  "#18794E",
+  "#B4530A",
+  "#0E7490",
+  "#A21CAF",
+  "#4B5563",
+] as const;
+
+export type ColorEtiqueta = (typeof COLORES_ETIQUETA)[number];
+
+export const esquemaEtiqueta = z.object({
+  nombre: z.string().trim().min(1, "Nombre obligatorio").max(40, "Nombre demasiado largo"),
+  color: z.enum(COLORES_ETIQUETA, { message: "Color no válido" }),
+});
+
+export const esquemaEtiquetaParcial = esquemaEtiqueta.partial();
+
+export const esquemaEtiquetasTarea = z.object({
+  ids: z.array(z.string().uuid("Etiqueta no válida")),
+});
+
 export const PERMISOS_TOKEN = ["lectura", "escritura", "calendario"] as const;
 
 export const esquemaTokenApi = z.object({
