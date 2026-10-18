@@ -330,6 +330,16 @@
     "dayEmpty": "No hay tareas este día",
     "alert": "Aviso: {{valor}}"
   },
+  "occurrence": {
+    "options": "Opciones de «{{titulo}}»",
+    "move": "Mover solo esta…",
+    "moveTitle": "Mover solo esta ocurrencia",
+    "moveDate": "Nueva fecha y hora",
+    "moveConfirm": "Mover",
+    "omit": "Omitir solo esta",
+    "restore": "Restaurar",
+    "hasException": "Con excepción"
+  },
   "inbox": {
     "title": "Bandeja de entrada",
     "captureLabel": "Añadir a la bandeja de entrada",

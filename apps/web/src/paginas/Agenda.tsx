@@ -4,17 +4,21 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 import type {
   DatesSetArg,
   EventClickArg,
   EventContentArg,
+  EventDropArg,
   EventInput,
 } from "@fullcalendar/core";
 
 import { peticion, type OcurrenciaAgenda, type ProyectoApi } from "../api";
 import { avisosProximos } from "../avisos-proximos";
 import { colorProyecto } from "../colores";
+import { IconoExcepcion } from "../componentes/IconosTarea";
+import { MenuOcurrencia } from "../componentes/MenuOcurrencia";
 import { formatearFechaHoraEs } from "../recurrencia-web";
 
 type Vista = "lista" | "calendario";
@@ -98,20 +102,49 @@ export default function Agenda() {
   const marcarHecha = useMutation({
     mutationFn: async ({
       tareaId,
-      fecha,
+      fechaOriginal,
       hecha,
     }: {
       tareaId: string;
-      fecha: string;
+      fechaOriginal: string;
       hecha: boolean;
     }) => {
       await peticion(`/tareas/${tareaId}/ocurrencias`, {
         method: "POST",
-        body: JSON.stringify({ fecha, hecha }),
+        body: JSON.stringify({ fecha: fechaOriginal, hecha }),
       });
     },
     onSuccess: async () => {
       await cliente.invalidateQueries({ queryKey: ["agenda"] });
+    },
+  });
+
+  // Arrastrar una ocurrencia: las recurrentes crean una excepción (solo esa
+  // ocurrencia); el resto mueve la fecha de la tarea.
+  const moverEnCalendario = useMutation({
+    mutationFn: async ({
+      ocurrencia,
+      fechaNueva,
+    }: {
+      ocurrencia: OcurrenciaAgenda;
+      fechaNueva: string;
+    }) => {
+      if (ocurrencia.esRecurrente) {
+        await peticion(`/tareas/${ocurrencia.tareaId}/excepciones`, {
+          method: "PUT",
+          body: JSON.stringify({ fechaOriginal: ocurrencia.fechaOriginal, fechaNueva }),
+        });
+        return;
+      }
+
+      await peticion(`/tareas/${ocurrencia.tareaId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ venceEn: fechaNueva }),
+      });
+    },
+    onSuccess: async () => {
+      await cliente.invalidateQueries({ queryKey: ["agenda"] });
+      await cliente.invalidateQueries({ queryKey: ["tareas"] });
     },
   });
 
@@ -193,8 +226,15 @@ export default function Agenda() {
           backgroundColor: fondoSuave(color),
           borderColor: color,
           textColor: TEXTO_EVENTO,
-          classNames: ocurrencia.hecha ? ["hecha"] : [],
-          extendedProps: { proyectoId: ocurrencia.proyectoId },
+          classNames: [
+            ...(ocurrencia.hecha ? ["hecha"] : []),
+            ...(ocurrencia.conExcepcion ? ["con-excepcion"] : []),
+          ],
+          extendedProps: {
+            proyectoId: ocurrencia.proyectoId,
+            conExcepcion: ocurrencia.conExcepcion,
+            ocurrencia,
+          },
         };
       }),
     [calendario.data, colorDeProyecto],
@@ -210,6 +250,9 @@ export default function Agenda() {
       />
       {arg.timeText && <span className="agenda-evento__hora">{arg.timeText}</span>}
       <span className="agenda-evento__titulo">{arg.event.title}</span>
+      {arg.event.extendedProps.conExcepcion === true && (
+        <IconoExcepcion etiqueta={t("occurrence.hasException")} />
+      )}
     </span>
   );
 
@@ -266,7 +309,7 @@ export default function Agenda() {
                               onChange={(evento) =>
                                 marcarHecha.mutate({
                                   tareaId: ocurrencia.tareaId,
-                                  fecha: ocurrencia.fecha,
+                                  fechaOriginal: ocurrencia.fechaOriginal,
                                   hecha: evento.target.checked,
                                 })
                               }
@@ -276,9 +319,13 @@ export default function Agenda() {
                           <span className="agenda-hora cifra">
                             {formatearFechaHoraEs(ocurrencia.fecha)}
                           </span>{" "}
+                          {ocurrencia.conExcepcion && (
+                            <IconoExcepcion etiqueta={t("occurrence.hasException")} />
+                          )}{" "}
                           <Link to={`/proyectos/${ocurrencia.proyectoId}`}>
                             {ocurrencia.titulo} · {ocurrencia.proyectoNombre}
                           </Link>
+                          {ocurrencia.esRecurrente && <MenuOcurrencia ocurrencia={ocurrencia} />}
                         </li>
                       ))}
                     </ul>
@@ -290,7 +337,7 @@ export default function Agenda() {
         ) : (
           <section className="agenda__principal" aria-label={t("agenda.calendar")}>
             <FullCalendar
-              plugins={[dayGridPlugin]}
+              plugins={[dayGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
               locale={esLocale}
               headerToolbar={{ left: "prev today next", center: "title", right: "" }}
@@ -307,11 +354,26 @@ export default function Agenda() {
               moreLinkText={t("agenda.more")}
               eventContent={contenidoEvento}
               events={eventos}
+              editable
+              eventDurationEditable={false}
               navLinks
               navLinkDayClick={(fecha) => setDiaSeleccionado(claveDia(fecha.toISOString()))}
               datesSet={(info: DatesSetArg) =>
                 setRangoCalendario({ desde: info.startStr, hasta: info.endStr })
               }
+              eventDrop={(info: EventDropArg) => {
+                const ocurrencia = info.event.extendedProps.ocurrencia as
+                  | OcurrenciaAgenda
+                  | undefined;
+                if (!ocurrencia || !info.event.start) {
+                  info.revert();
+                  return;
+                }
+                moverEnCalendario.mutate(
+                  { ocurrencia, fechaNueva: info.event.start.toISOString() },
+                  { onError: () => info.revert() },
+                );
+              }}
               eventClick={(info: EventClickArg) => {
                 info.jsEvent.preventDefault();
                 const proyectoId = info.event.extendedProps.proyectoId;
@@ -346,7 +408,7 @@ export default function Agenda() {
                           onChange={(evento) =>
                             marcarHecha.mutate({
                               tareaId: ocurrencia.tareaId,
-                              fecha: ocurrencia.fecha,
+                              fechaOriginal: ocurrencia.fechaOriginal,
                               hecha: evento.target.checked,
                             })
                           }
@@ -359,6 +421,9 @@ export default function Agenda() {
                       <Link className="agenda-dia__titulo" to={`/proyectos/${ocurrencia.proyectoId}`}>
                         {ocurrencia.titulo}
                       </Link>
+                      {ocurrencia.conExcepcion && (
+                        <IconoExcepcion etiqueta={t("occurrence.hasException")} />
+                      )}
                       <span className="hoy-fila__chip">
                         <span
                           className="hoy-fila__color"
@@ -372,6 +437,7 @@ export default function Agenda() {
                           {t("agenda.alert", { valor: etiquetaAntelacion(ocurrencia.recordatorioMin) })}
                         </span>
                       )}
+                      {ocurrencia.esRecurrente && <MenuOcurrencia ocurrencia={ocurrencia} />}
                     </li>
                   ))}
                 </ul>

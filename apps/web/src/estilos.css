@@ -2430,6 +2430,57 @@ form.columna-agregar button {
   padding-left: 8px;
 }
 
+/* Menú «⋯» de una ocurrencia recurrente (Hoy y panel del día de la Agenda). */
+.menu-ocurrencia__contenedor {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.menu-ocurrencia {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 2px;
+  min-width: 200px;
+  padding: 4px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-2);
+}
+
+.menu-ocurrencia button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--texto);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-control);
+}
+
+.menu-ocurrencia button:hover:not(:disabled),
+.menu-ocurrencia button:focus-visible {
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.menu-ocurrencia__error {
+  margin: 4px 8px 2px;
+  font-size: 0.8rem;
+}
+
+.dialogo--ocurrencia {
+  width: min(420px, calc(100vw - 2rem));
+}
+
 /* Alta de tarjeta en línea, al pie de la columna. */
 .columna-kanban__anadir {
   display: flex;

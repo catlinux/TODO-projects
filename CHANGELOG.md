@@ -4,8 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.18.0] - 2026-10-18
+
 ### Añadido
-- API de excepciones de una serie recurrente (`PUT`/`DELETE /tareas/:id/excepciones`): mover, omitir o renombrar una sola ocurrencia. La agenda, los avisos y el `.ics` (`EXDATE` y `RECURRENCE-ID`) las respetan. La interfaz llega en la 0.18.0.
+- Excepciones de una serie recurrente: mover, omitir o restaurar solo una ocurrencia, desde el menú «⋯» de Hoy y del panel del día de la Agenda, o arrastrándola en el calendario. API (`PUT`/`DELETE /tareas/:id/excepciones`), agenda, avisos y `.ics` (`EXDATE` y `RECURRENCE-ID`) las respetan.
+
+### Corregido
+- Marcar como hecha una ocurrencia recurrente usa su fecha original, también si se ha movido.
 
 ## [0.17.1] - 2026-10-18
 

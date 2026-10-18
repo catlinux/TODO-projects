@@ -38,6 +38,8 @@ function ocurrencia(tareaId: string, dias: number, hecha = false): OcurrenciaAge
     primeraColumnaId: "c1",
     ultimaColumnaId: "c-last",
     fecha: fecha.toISOString(),
+    fechaOriginal: fecha.toISOString(),
+    conExcepcion: false,
     esRecurrente: false,
     hecha,
     recordatorioMin: null,

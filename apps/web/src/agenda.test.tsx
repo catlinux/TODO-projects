@@ -58,6 +58,8 @@ interface OcurrenciaPrueba {
   columnaId: string;
   columnaNombre: string;
   fecha: string;
+  fechaOriginal: string;
+  conExcepcion: boolean;
   esRecurrente: boolean;
   hecha: boolean;
   recordatorioMin: number | null;
@@ -72,6 +74,8 @@ const ocurrencias: OcurrenciaPrueba[] = [
     columnaId: "c1",
     columnaNombre: "Pendiente",
     fecha: "2026-05-10T08:00:00.000Z",
+    fechaOriginal: "2026-05-10T08:00:00.000Z",
+    conExcepcion: false,
     esRecurrente: false,
     hecha: true,
     recordatorioMin: null,
@@ -84,6 +88,8 @@ const ocurrencias: OcurrenciaPrueba[] = [
     columnaId: "c1",
     columnaNombre: "Pendiente",
     fecha: "2026-05-10T15:00:00.000Z",
+    fechaOriginal: "2026-05-10T15:00:00.000Z",
+    conExcepcion: false,
     esRecurrente: false,
     hecha: false,
     recordatorioMin: null,
@@ -223,6 +229,74 @@ describe("Agenda", () => {
     const panel = await screen.findByRole("region", { name: /10 de mayo/i });
     expect(within(panel).getByText("Reunión")).toBeTruthy();
     expect(within(panel).getByText("Demostración")).toBeTruthy();
+  });
+
+  it("omite una ocurrencia recurrente desde el panel del día", async () => {
+    const recurrente: OcurrenciaPrueba = {
+      tareaId: "t-rec",
+      titulo: "Semanal",
+      proyectoId: "p1",
+      proyectoNombre: "Proyecto",
+      columnaId: "c1",
+      columnaNombre: "Pendiente",
+      fecha: "2026-05-10T09:00:00.000Z",
+      fechaOriginal: "2026-05-10T09:00:00.000Z",
+      conExcepcion: false,
+      esRecurrente: true,
+      hecha: false,
+      recordatorioMin: null,
+    };
+
+    const peticiones: Array<{ method: string; url: string; body: string | null }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/proyectos") {
+          return respuestaJson([
+            {
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
+            },
+          ]);
+        }
+        if (url.startsWith("/api/agenda?")) {
+          return respuestaJson([recurrente]);
+        }
+        if (url.startsWith("/api/tareas/")) {
+          peticiones.push({
+            method: init?.method ?? "GET",
+            url,
+            body: init?.body ? String(init.body) : null,
+          });
+          return new Response(null, { status: 204 });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const { user } = renderAgenda();
+    await user.click(screen.getByRole("button", { name: /calendario/i }));
+    await user.click(await screen.findByRole("button", { name: "Elegir 10 de mayo" }));
+
+    const panel = await screen.findByRole("region", { name: /10 de mayo/i });
+    await user.click(within(panel).getByRole("button", { name: /opciones de «semanal»/i }));
+    await user.click(screen.getByRole("menuitem", { name: "Omitir solo esta" }));
+
+    await waitFor(() => expect(peticiones).toHaveLength(1));
+    expect(peticiones[0]).toMatchObject({
+      method: "PUT",
+      url: "/api/tareas/t-rec/excepciones",
+    });
+    expect(JSON.parse(String(peticiones[0]!.body))).toEqual({
+      fechaOriginal: recurrente.fechaOriginal,
+      omitida: true,
+    });
   });
 
   it("lista los próximos avisos con hora, proyecto y antelación", async () => {

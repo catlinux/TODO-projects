@@ -48,6 +48,28 @@ export function IconoRepeticion({ etiqueta }: PropiedadesIcono) {
   );
 }
 
+export function IconoExcepcion({ etiqueta }: PropiedadesIcono) {
+  return (
+    <svg
+      className="tarjeta-kanban__icono"
+      role="img"
+      aria-label={etiqueta}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v5.5" />
+      <path d="M12 16.5h.01" />
+    </svg>
+  );
+}
+
 export function IconoComentario({ etiqueta }: PropiedadesIcono) {
   return (
     <svg

@@ -11,6 +11,8 @@ import {
 } from "../api";
 import { avisosProximos } from "../avisos-proximos";
 import { colorProyecto } from "../colores";
+import { IconoExcepcion } from "../componentes/IconosTarea";
+import { MenuOcurrencia } from "../componentes/MenuOcurrencia";
 import {
   agruparHoy,
   fechaCabecera,
@@ -70,6 +72,10 @@ function Fila({ ocurrencia, color, alMarcar }: FilaProps) {
 
       <span className="hoy-fila__titulo">{ocurrencia.titulo}</span>
 
+      {ocurrencia.conExcepcion && (
+        <IconoExcepcion etiqueta={t("occurrence.hasException")} />
+      )}
+
       <Link className="hoy-fila__chip" to={`/proyectos/${ocurrencia.proyectoId}`}>
         <span className="hoy-fila__color" style={{ background: color }} aria-hidden="true" />
         {ocurrencia.proyectoNombre}
@@ -78,6 +84,8 @@ function Fila({ ocurrencia, color, alMarcar }: FilaProps) {
       {typeof ocurrencia.recordatorioMin === "number" && (
         <IconoCampana etiqueta={t("tasks.hasReminder")} />
       )}
+
+      {ocurrencia.esRecurrente && <MenuOcurrencia ocurrencia={ocurrencia} />}
     </li>
   );
 }
@@ -101,7 +109,7 @@ export default function Hoy() {
       if (ocurrencia.esRecurrente) {
         await peticion(`/tareas/${ocurrencia.tareaId}/ocurrencias`, {
           method: "POST",
-          body: JSON.stringify({ fecha: ocurrencia.fecha, hecha }),
+          body: JSON.stringify({ fecha: ocurrencia.fechaOriginal, hecha }),
         });
         return;
       }

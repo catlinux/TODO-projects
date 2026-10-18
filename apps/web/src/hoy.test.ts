@@ -27,6 +27,8 @@ function ocurrencia(
     primeraColumnaId: "c1",
     ultimaColumnaId: "c-last",
     fecha: fecha.toISOString(),
+    fechaOriginal: fecha.toISOString(),
+    conExcepcion: false,
     esRecurrente: false,
     hecha: false,
     recordatorioMin: null,

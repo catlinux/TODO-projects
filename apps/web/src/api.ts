@@ -140,7 +140,12 @@ export interface OcurrenciaAgenda {
   primeraColumnaId: string;
   /** Columna de mayor `posicion` del proyecto: estar en ella es estar «hecha». */
   ultimaColumnaId: string;
+  /** Fecha efectiva de la ocurrencia (la nueva si se movió con una excepción). */
   fecha: string;
+  /** Fecha original de la serie; clave de la ocurrencia y de `ocurrencias_hechas`. */
+  fechaOriginal: string;
+  /** La ocurrencia tiene una excepción (movida, omitida o con otro título). */
+  conExcepcion: boolean;
   esRecurrente: boolean;
   hecha: boolean;
   recordatorioMin: number | null;

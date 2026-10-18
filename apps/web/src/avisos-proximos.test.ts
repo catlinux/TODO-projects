@@ -14,6 +14,8 @@ function ocurrencia(cambios: Partial<OcurrenciaAgenda> = {}): OcurrenciaAgenda {
     primeraColumnaId: "c1",
     ultimaColumnaId: "c-last",
     fecha: "2026-05-10T10:00:00.000Z",
+    fechaOriginal: "2026-05-10T10:00:00.000Z",
+    conExcepcion: false,
     esRecurrente: false,
     hecha: false,
     recordatorioMin: null,

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -33,6 +33,8 @@ function ocurrencia(
     primeraColumnaId: "c1",
     ultimaColumnaId: "c-last",
     fecha: fecha.toISOString(),
+    fechaOriginal: fecha.toISOString(),
+    conExcepcion: false,
     esRecurrente: false,
     hecha: false,
     recordatorioMin: null,
@@ -221,11 +223,12 @@ describe("Hoy", () => {
     expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({ columnaId: "c1" });
   });
 
-  it("marca la ocurrencia de una recurrente sin cambiarla de columna", async () => {
+  it("marca la ocurrencia de una recurrente por su fecha original", async () => {
     const recurrente = ocurrencia("t-recurrente", "Semanal", 0, {
       esRecurrente: true,
       columnaId: "c1",
       ultimaColumnaId: "c-last",
+      fechaOriginal: new Date("2026-05-11T09:00:00.000Z").toISOString(),
     });
     const { user, mutaciones } = renderHoy([recurrente]);
 
@@ -238,9 +241,104 @@ describe("Hoy", () => {
       url: "/api/tareas/t-recurrente/ocurrencias",
     });
     expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({
-      fecha: recurrente.fecha,
+      fecha: recurrente.fechaOriginal,
       hecha: true,
     });
+  });
+
+  it("mueve solo la ocurrencia recurrente con un diálogo de fecha y hora", async () => {
+    const recurrente = ocurrencia("t-recurrente", "Semanal", 0, {
+      esRecurrente: true,
+      fechaOriginal: new Date("2026-05-11T09:00:00.000Z").toISOString(),
+    });
+    const { user, mutaciones } = renderHoy([recurrente]);
+
+    await screen.findByText("Semanal");
+    await user.click(
+      within(fila("Semanal")).getByRole("button", { name: /opciones de «semanal»/i }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Mover solo esta…" }));
+
+    const dialogo = await screen.findByRole("dialog", { name: "Mover solo esta ocurrencia" });
+    fireEvent.change(within(dialogo).getByLabelText("Nueva fecha y hora"), {
+      target: { value: "2026-05-12T11:30" },
+    });
+    await user.click(within(dialogo).getByRole("button", { name: "Mover" }));
+
+    await waitFor(() => expect(mutaciones()).toHaveLength(1));
+    expect(mutaciones()[0]).toMatchObject({
+      method: "PUT",
+      url: "/api/tareas/t-recurrente/excepciones",
+    });
+    expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({
+      fechaOriginal: recurrente.fechaOriginal,
+      fechaNueva: new Date("2026-05-12T11:30").toISOString(),
+    });
+  });
+
+  it("omite solo la ocurrencia recurrente", async () => {
+    const recurrente = ocurrencia("t-recurrente", "Semanal", 0, {
+      esRecurrente: true,
+      fechaOriginal: new Date("2026-05-11T09:00:00.000Z").toISOString(),
+    });
+    const { user, mutaciones } = renderHoy([recurrente]);
+
+    await screen.findByText("Semanal");
+    await user.click(
+      within(fila("Semanal")).getByRole("button", { name: /opciones de «semanal»/i }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Omitir solo esta" }));
+
+    await waitFor(() => expect(mutaciones()).toHaveLength(1));
+    expect(mutaciones()[0]).toMatchObject({
+      method: "PUT",
+      url: "/api/tareas/t-recurrente/excepciones",
+    });
+    expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({
+      fechaOriginal: recurrente.fechaOriginal,
+      omitida: true,
+    });
+  });
+
+  it("marca con excepción y restaura la ocurrencia recurrente", async () => {
+    const recurrente = ocurrencia("t-recurrente", "Semanal", 0, {
+      esRecurrente: true,
+      conExcepcion: true,
+      fechaOriginal: new Date("2026-05-11T09:00:00.000Z").toISOString(),
+    });
+    const { user, mutaciones } = renderHoy([recurrente]);
+
+    await screen.findByText("Semanal");
+    expect(within(fila("Semanal")).getByRole("img", { name: "Con excepción" })).toBeTruthy();
+
+    await user.click(
+      within(fila("Semanal")).getByRole("button", { name: /opciones de «semanal»/i }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: "Restaurar" }));
+
+    await waitFor(() => expect(mutaciones()).toHaveLength(1));
+    expect(mutaciones()[0]).toMatchObject({ method: "DELETE" });
+    expect(mutaciones()[0]!.url).toBe(
+      `/api/tareas/t-recurrente/excepciones?fechaOriginal=${encodeURIComponent(
+        recurrente.fechaOriginal,
+      )}`,
+    );
+  });
+
+  it("no ofrece «Restaurar» si la ocurrencia no tiene excepción", async () => {
+    const recurrente = ocurrencia("t-recurrente", "Semanal", 0, {
+      esRecurrente: true,
+    });
+    const { user } = renderHoy([recurrente]);
+
+    await screen.findByText("Semanal");
+    await user.click(
+      within(fila("Semanal")).getByRole("button", { name: /opciones de «semanal»/i }),
+    );
+
+    expect(screen.queryByRole("menuitem", { name: "Restaurar" })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Omitir solo esta" })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: "Con excepción" })).toBeNull();
   });
 
   it("avisa cuando no hay nada pendiente", async () => {
