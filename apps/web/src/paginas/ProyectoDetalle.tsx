@@ -43,6 +43,7 @@ export default function ProyectoDetalle() {
   });
 
   const [valores, setValores] = useState<ValoresFormularioTarea>(valoresIniciales);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [nombreColumna, setNombreColumna] = useState("");
   const [columnaEditando, setColumnaEditando] = useState<{ id: string; nombre: string } | null>(
@@ -142,11 +143,61 @@ export default function ProyectoDetalle() {
   const listaTareas = tareas.data ?? [];
 
   return (
-    <main className="contenedor">
-      <p>
+    <main className="contenedor contenedor--ancho">
+      <nav className="migas" aria-label={t("projects.breadcrumb")}>
         <Link to="/proyectos">{t("nav.projects")}</Link>
-      </p>
-      <h1>{proyecto.data?.nombre ?? t("projects.title")}</h1>
+        <span aria-hidden="true">/</span>
+        <span className="migas__actual">{proyecto.data?.nombre ?? t("projects.title")}</span>
+      </nav>
+
+      <header className="cabecera-proyecto">
+        <h1>{proyecto.data?.nombre ?? t("projects.title")}</h1>
+        <button
+          type="button"
+          className="boton-principal"
+          aria-expanded={mostrarFormulario}
+          aria-controls="formulario-tarea"
+          onClick={() => setMostrarFormulario((valor) => !valor)}
+        >
+          {t("tasks.new")}
+        </button>
+      </header>
+
+      {mostrarFormulario && (
+        <section id="formulario-tarea" className="panel-tarea">
+          <form
+            className="formulario"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void crearTarea.mutate();
+            }}
+          >
+            <CamposTarea valores={valores} onCambio={setValores} />
+            <label>
+              {t("columns.title")}
+              <select
+                value={columnaSeleccionada}
+                onChange={(e) => setColumnaSeleccionada(e.target.value)}
+              >
+                {listaColumnas.map((columna) => (
+                  <option key={columna.id} value={columna.id}>
+                    {columna.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="boton-principal" disabled={crearTarea.isPending}>
+              {t("tasks.create")}
+            </button>
+          </form>
+        </section>
+      )}
+
+      <section className="tareas">
+        <h2>{t("tasks.listTitle")}</h2>
+
+        <Tablero proyectoId={proyectoId} columnas={listaColumnas} tareas={listaTareas} />
+      </section>
 
       <section className="gestion-columnas">
         <h2>{t("columns.title")}</h2>
@@ -228,37 +279,6 @@ export default function ProyectoDetalle() {
           ))}
         </ul>
         {listaColumnas.length === 0 && <p>{t("columns.empty")}</p>}
-      </section>
-
-      <section className="tareas">
-        <h2>{t("tasks.listTitle")}</h2>
-        <form
-          className="formulario"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void crearTarea.mutate();
-          }}
-        >
-          <CamposTarea valores={valores} onCambio={setValores} />
-          <label>
-            {t("columns.title")}
-            <select
-              value={columnaSeleccionada}
-              onChange={(e) => setColumnaSeleccionada(e.target.value)}
-            >
-              {listaColumnas.map((columna) => (
-                <option key={columna.id} value={columna.id}>
-                  {columna.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit" disabled={crearTarea.isPending}>
-            {t("tasks.create")}
-          </button>
-        </form>
-
-        <Tablero proyectoId={proyectoId} columnas={listaColumnas} tareas={listaTareas} />
       </section>
     </main>
   );

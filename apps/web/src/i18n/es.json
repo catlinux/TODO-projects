@@ -34,7 +34,8 @@
     "name": "Nombre",
     "description": "Descripción",
     "create": "Crear proyecto",
-    "empty": "No hay proyectos todavía"
+    "empty": "No hay proyectos todavía",
+    "breadcrumb": "Ruta de navegación"
   },
   "tasks": {
     "title": "Tareas",
@@ -87,7 +88,9 @@
       "none": "Sin aviso"
     },
     "reminderShort": "Aviso: {{valor}}",
-    "reminderUnknown": "{{minutos}} minutos antes"
+    "reminderUnknown": "{{minutos}} minutos antes",
+    "new": "Nueva tarea",
+    "hasReminder": "Con aviso"
   },
   "columns": {
     "title": "Columnas",

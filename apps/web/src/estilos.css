@@ -61,6 +61,100 @@ a:hover {
   padding: 1.5rem;
 }
 
+.contenedor--ancho {
+  max-width: 1120px;
+}
+
+.migas {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.migas a {
+  color: var(--texto-secundario);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--acento);
+}
+
+.migas__actual {
+  color: var(--texto);
+  font-weight: 500;
+}
+
+.cabecera-proyecto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cabecera-proyecto h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.panel-tarea {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+}
+
+.rejilla-proyectos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarjeta-proyecto {
+  overflow: hidden;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.tarjeta-proyecto__color {
+  display: block;
+  height: 5px;
+}
+
+.tarjeta-proyecto__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem;
+}
+
+.tarjeta-proyecto__enlace {
+  font-weight: 600;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.tarjeta-proyecto__enlace:hover {
+  color: var(--acento);
+}
+
+.tarjeta-proyecto__descripcion {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
 form {
   display: grid;
   gap: 0.75rem;
@@ -378,14 +472,36 @@ fieldset {
 
 .columna-kanban {
   min-width: 240px;
-  max-width: 320px;
+  max-width: 340px;
   background: var(--columna);
   border-radius: var(--radio-columna);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  flex: 0 0 280px;
+  flex: 1 1 240px;
+}
+
+.columna-kanban__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.15rem;
+}
+
+.columna-kanban__cabecera h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.columna-kanban__contador {
+  padding: 0.05rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+  background: var(--superficie);
+  border-radius: 999px;
 }
 
 .columna-kanban__tareas {
@@ -419,7 +535,9 @@ fieldset {
 }
 
 .tarjeta-kanban--superpuesta {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  border-color: var(--acento);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  transform: rotate(-1.5deg);
 }
 
 .tarjeta-kanban__encabezado {
@@ -428,10 +546,54 @@ fieldset {
   gap: 0.5rem;
 }
 
+.tarjeta-kanban__titulo {
+  font-weight: 600;
+}
+
 .tarjeta-kanban__asa {
   width: 1.75rem;
   padding: 0.25rem 0;
   cursor: grab;
+}
+
+.tarjeta-kanban__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip-fecha {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.78rem;
+  border-radius: 6px;
+}
+
+.chip-fecha--atrasada {
+  background: var(--fecha-atrasada-fondo);
+  color: var(--fecha-atrasada-texto);
+}
+
+.chip-fecha--proxima {
+  background: var(--fecha-proxima-fondo);
+  color: var(--fecha-proxima-texto);
+}
+
+.chip-fecha--normal {
+  background: var(--fecha-normal-fondo);
+  color: var(--fecha-normal-texto);
+}
+
+.tarjeta-kanban__icono {
+  flex: 0 0 auto;
+  color: var(--texto-secundario);
+}
+
+.tarjeta-kanban__mover {
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
 }
 
 .tarjeta-kanban__mover label,
@@ -439,10 +601,8 @@ fieldset {
   width: 100%;
 }
 
-.tarjeta-kanban__fecha,
-.tarjeta-kanban__repite {
-  margin: 0;
-  font-size: 0.85rem;
+.tarjeta-kanban .acciones button {
+  font-size: 0.8rem;
   color: var(--texto-secundario);
 }
 

@@ -420,6 +420,7 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
+    await user.click(await screen.findByRole("button", { name: /nueva tarea/i }));
     await user.type(await screen.findByLabelText(/^título$/i), "Reunión");
     fireEvent.change(screen.getByLabelText(/fecha y hora/i), {
       target: { value: "2026-05-10T10:00" },
@@ -520,7 +521,7 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByText("Se repite")).toBeTruthy();
+    expect(await screen.findByRole("img", { name: /se repite/i })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /editar/i }));
 
     const fecha = screen.getAllByLabelText(/fecha y hora/i).at(-1)!;
@@ -613,7 +614,7 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByText("Aviso: 1 hora antes")).toBeTruthy();
+    expect(await screen.findByRole("img", { name: /con aviso/i })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /editar/i }));
 
     const selector = screen.getAllByLabelText(/avisar antes/i).at(-1)!;

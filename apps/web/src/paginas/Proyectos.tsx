@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 import { peticion, type ProyectoApi } from "../api";
+import { colorProyecto } from "../colores";
 
 export default function Proyectos() {
   const { t } = useTranslation();
@@ -44,7 +45,7 @@ export default function Proyectos() {
   if (isError) return <p className="error">{t("auth.error")}</p>;
 
   return (
-    <main className="contenedor">
+    <main className="contenedor contenedor--ancho">
       <h1>{t("projects.title")}</h1>
 
       <form className="formulario" onSubmit={enviar}>
@@ -57,7 +58,7 @@ export default function Proyectos() {
           <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={crear.isPending}>
+        <button type="submit" className="boton-principal" disabled={crear.isPending}>
           {t("projects.create")}
         </button>
       </form>
@@ -65,10 +66,22 @@ export default function Proyectos() {
       {!data || data.length === 0 ? (
         <p>{t("projects.empty")}</p>
       ) : (
-        <ul>
-          {data.map((proyecto) => (
-            <li key={proyecto.id}>
-              <Link to={`/proyectos/${proyecto.id}`}>{proyecto.nombre}</Link>
+        <ul className="rejilla-proyectos">
+          {data.map((proyecto, indice) => (
+            <li key={proyecto.id} className="tarjeta-proyecto">
+              <span
+                className="tarjeta-proyecto__color"
+                style={{ background: colorProyecto(indice) }}
+                aria-hidden="true"
+              />
+              <div className="tarjeta-proyecto__cuerpo">
+                <Link className="tarjeta-proyecto__enlace" to={`/proyectos/${proyecto.id}`}>
+                  {proyecto.nombre}
+                </Link>
+                {proyecto.descripcion ? (
+                  <p className="tarjeta-proyecto__descripcion">{proyecto.descripcion}</p>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>

@@ -17,16 +17,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { peticion, type ColumnaApi, type TareaApi } from "../api";
+import { chipFecha } from "../fechas";
 import {
   aIsoUtc,
   aValorLocal,
   analizarRegla,
   construirRegla,
-  formatearFechaHoraEs,
   zonaNavegador,
 } from "../recurrencia-web";
 import { moverTareaEnLista } from "../tablero-utils";
-import { CamposTarea, OPCIONES_RECORDATORIO, type ValoresFormularioTarea } from "./CamposTarea";
+import { CamposTarea, type ValoresFormularioTarea } from "./CamposTarea";
 
 export interface PropiedadesTablero {
   proyectoId: string;
@@ -46,6 +46,50 @@ interface TarjetaProps {
   editarTarea(tareaId: string, valores: ValoresFormularioTarea): Promise<void>;
   moverLabel: string;
   eliminarLabel: string;
+}
+
+function IconoCampana({ etiqueta }: { etiqueta: string }) {
+  return (
+    <svg
+      className="tarjeta-kanban__icono"
+      role="img"
+      aria-label={etiqueta}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
+}
+
+function IconoRepeticion({ etiqueta }: { etiqueta: string }) {
+  return (
+    <svg
+      className="tarjeta-kanban__icono"
+      role="img"
+      aria-label={etiqueta}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 2l4 4-4 4" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <path d="M7 22l-4-4 4-4" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
 }
 
 function TarjetaArrastrable({
@@ -87,12 +131,9 @@ function TarjetaArrastrable({
     setEditando(true);
   }
 
-  function etiquetaRecordatorio(minutos: number): string {
-    const opcion = OPCIONES_RECORDATORIO.find((actual) => actual.valor === minutos);
-    return opcion
-      ? t(`tasks.reminderOptions.${opcion.clave}`)
-      : t("tasks.reminderUnknown", { minutos });
-  }
+  const chip = chipFecha(tarea.venceEn);
+  const tieneAviso = tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined;
+  const tieneRecurrencia = Boolean(tarea.recurrencia);
 
   return (
     <li
@@ -113,14 +154,12 @@ function TarjetaArrastrable({
         <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
       </div>
 
-      {tarea.venceEn && (
-        <p className="tarjeta-kanban__fecha">{formatearFechaHoraEs(tarea.venceEn)}</p>
-      )}
-      {tarea.recurrencia && <p className="tarjeta-kanban__repite">{t("tasks.repeats")}</p>}
-      {tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined && (
-        <p className="tarjeta-kanban__aviso">
-          {t("tasks.reminderShort", { valor: etiquetaRecordatorio(tarea.recordatorioMin) })}
-        </p>
+      {(chip || tieneAviso || tieneRecurrencia) && (
+        <div className="tarjeta-kanban__meta">
+          {chip && <span className={`chip-fecha chip-fecha--${chip.estado} mono`}>{chip.texto}</span>}
+          {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
+          {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
+        </div>
       )}
 
       {editando ? (
@@ -313,7 +352,10 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
           const tareasColumna = tareasPorColumna(columna.id);
           return (
             <section key={columna.id} className="columna-kanban" aria-label={columna.nombre}>
-              <h3>{columna.nombre}</h3>
+              <div className="columna-kanban__cabecera">
+                <h3>{columna.nombre}</h3>
+                <span className="columna-kanban__contador mono">{tareasColumna.length}</span>
+              </div>
               <ColumnaSolt id={columna.id}>
                 <SortableContext id={columna.id} items={tareasColumna.map((item) => item.id)}>
                   <ul className="columna-kanban__tareas">

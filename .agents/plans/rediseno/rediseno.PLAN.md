@@ -18,7 +18,7 @@ Maqueta aprobada por el usuario: https://claude.ai/artifact/UneU1zYrzgqnNWkwrgJs
 - Variables y tipografía; disposición con menú lateral en escritorio (logo, Agenda, lista de proyectos con su color, Ajustes, avisos del navegador y salir abajo) y barra inferior en ≤ 740 px (Proyectos, Agenda, Ajustes).
 - Terminado: tests, typecheck y lint de la web pasan; sin cambios de API.
 
-### Paso 2 — Tablero y tarjetas · AgentRelay, esfuerzo medio · [ ]
+### Paso 2 — Tablero y tarjetas · AgentRelay, esfuerzo medio · [x]
 - Archivos: `componentes/Tablero.tsx`, `paginas/ProyectoDetalle.tsx`, `paginas/Proyectos.tsx`, `estilos.css`.
 - Cabecera del proyecto (miga, título, «Nueva tarea» en acento), columnas compactas con contador, tarjetas limpias con chip de fecha (próxima ≤ 24 h, atrasada, normal), icono de campana si `recordatorioMin` y de repetición si `recurrencia`; tarjeta arrastrada rotada con sombra. Lista de proyectos como rejilla de tarjetas con su color.
 
