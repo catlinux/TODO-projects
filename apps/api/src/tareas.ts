@@ -19,9 +19,16 @@ import {
   tareasEtiquetas,
 } from "./db/schema.js";
 import type { Database } from "./db/index.js";
+import type { ConfigArchivos } from "./config.js";
 import { instantaneaTarea, registrarActividad } from "./actividad.js";
 import { registrarHistorial } from "./historial.js";
 import { colocarTareaEnColumna, reindexarColumna } from "./tablero-posiciones.js";
+import {
+  adjuntosPorTarea,
+  eliminarFicheros,
+  esImagenAdjuntaATarea,
+  recogerArchivosDeTarea,
+} from "./almacen-archivos.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
 
@@ -134,16 +141,22 @@ export async function listarTareasDeProyecto(db: Database, proyectoId: string) {
   const etiquetas = await etiquetasPorTarea(db, ids);
   const checklist = await checklistPorTarea(db, ids);
   const recuentoComentarios = await comentariosPorTarea(db, ids);
+  const recuentoAdjuntos = await adjuntosPorTarea(db, ids);
 
   return filas.map((fila) => ({
     ...fila.tareas,
     etiquetas: etiquetas.get(fila.tareas.id) ?? [],
     checklist: checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 },
     comentarios: recuentoComentarios.get(fila.tareas.id) ?? 0,
+    adjuntos: recuentoAdjuntos.get(fila.tareas.id) ?? 0,
   }));
 }
 
-export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
+export function registrarRutasTareas(
+  app: FastifyInstance,
+  db: Database,
+  config: ConfigArchivos,
+): void {
   app.get("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
     const usuario = request.usuario;
     if (!usuario) {
@@ -305,12 +318,14 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     const etiquetas = await etiquetasPorTarea(db, [fila.tarea.id]);
     const checklist = await checklistPorTarea(db, [fila.tarea.id]);
     const comentariosTarea = await comentariosPorTarea(db, [fila.tarea.id]);
+    const adjuntos = await adjuntosPorTarea(db, [fila.tarea.id]);
 
     return {
       ...fila.tarea,
       etiquetas: etiquetas.get(fila.tarea.id) ?? [],
       checklist: checklist.get(fila.tarea.id) ?? { hechos: 0, total: 0 },
       comentarios: comentariosTarea.get(fila.tarea.id) ?? 0,
+      adjuntos: adjuntos.get(fila.tarea.id) ?? 0,
     };
   });
 
@@ -340,8 +355,16 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     }
 
     if (body.data.portada?.tipo === "imagen") {
-      reply.code(400).send({ mensaje: "Todavía no se admiten portadas con imagen" });
-      return;
+      const valida = await esImagenAdjuntaATarea(
+        db,
+        body.data.portada.archivoId,
+        params.data.id,
+        usuario.id,
+      );
+      if (!valida) {
+        reply.code(400).send({ mensaje: "La portada debe ser una imagen adjunta a esta tarea" });
+        return;
+      }
     }
 
     const tareaActual = fila.tarea;
@@ -661,6 +684,8 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     }
 
     const columnaId = fila.tarea.columnaId;
+    // Los ids se recogen antes de borrar las filas: la cascada se lleva los archivos.
+    const idsArchivos = await recogerArchivosDeTarea(db, params.data.id);
 
     await db.transaction(async (tx) => {
       await tx.delete(tareas).where(eq(tareas.id, params.data.id));
@@ -689,6 +714,8 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
         });
       }
     });
+
+    await eliminarFicheros(config.dir, idsArchivos);
 
     reply.code(204).send();
   });

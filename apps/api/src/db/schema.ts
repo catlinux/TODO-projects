@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -93,6 +94,28 @@ export const tareas = pgTable("tareas", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const archivos = pgTable(
+  "archivos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    usuarioId: uuid("usuario_id")
+      .notNull()
+      .references(() => usuarios.id),
+    // Cada fichero pertenece a una tarea (adjunto) o a un proyecto (fondo), nunca a los dos.
+    tareaId: uuid("tarea_id").references(() => tareas.id, { onDelete: "cascade" }),
+    proyectoId: uuid("proyecto_id").references(() => proyectos.id, { onDelete: "cascade" }),
+    nombre: text("nombre").notNull(),
+    mime: text("mime").notNull(),
+    tamano: integer("tamano").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [
+    check("archivos_un_destino", sql`(${tabla.tareaId} is null) <> (${tabla.proyectoId} is null)`),
+    index("archivos_tarea_idx").on(tabla.tareaId),
+    index("archivos_proyecto_idx").on(tabla.proyectoId),
+  ],
+);
 
 export const etiquetas = pgTable(
   "etiquetas",

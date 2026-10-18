@@ -1,4 +1,5 @@
 import cookie from "@fastify/cookie";
+import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { sql } from "drizzle-orm";
@@ -9,12 +10,14 @@ import { MENSAJE_DEMASIADOS_INTENTOS, registrarRutasAuth, type LimitesAuth } fro
 import { obtenerSesion } from "./auth.js";
 import { registrarRutasAgenda } from "./agenda.js";
 import { registrarRutasActividad } from "./actividad.js";
+import { registrarRutasArchivos } from "./archivos.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasBandeja } from "./bandeja.js";
 import { registrarRutasBuscar } from "./buscar.js";
 import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasChecklist } from "./checklist.js";
 import { registrarRutasComentarios } from "./comentarios.js";
+import { leerConfigArchivos, type ConfigArchivos } from "./config.js";
 import { registrarRutasEtiquetas } from "./etiquetas.js";
 import { registrarRutasHistorial } from "./historial.js";
 import { registrarRutasOcurrencias } from "./ocurrencias.js";
@@ -41,6 +44,8 @@ export interface OpcionesApp {
   /** Origen público (https://dominio) que activa las passkeys. Por defecto, ORIGEN_PUBLICO. */
   origenPublico?: string | null;
   bloqueoPin?: ReturnType<typeof crearBloqueoGlobal>;
+  /** Directorio y tamaño máximo de archivos. Por defecto, ARCHIVOS_DIR y ARCHIVOS_MAX_MB. */
+  archivos?: ConfigArchivos;
 }
 
 const MAX_POR_IP = 10;
@@ -123,6 +128,20 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
       // No enumerable para que el cuerpo sea solo {mensaje} y el estado sea 429.
       Object.defineProperty(respuesta, "statusCode", { value: 429 });
       return respuesta;
+    },
+  });
+
+  const configArchivos = opciones.archivos ?? leerConfigArchivos();
+
+  // Límites de subida de archivos: un fichero por petición, tamaño máximo y campos acotados.
+  await app.register(multipart, {
+    limits: {
+      fileSize: configArchivos.maxBytes,
+      files: 1,
+      fields: 5,
+      parts: 6,
+      fieldSize: 100 * 1024,
+      fieldNameSize: 200,
     },
   });
 
@@ -222,9 +241,10 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
     ...(opciones.bloqueoPin ? { bloqueo: opciones.bloqueoPin } : {}),
   });
   registrarRutasTokens(app, db);
-  registrarRutasProyectos(app, db);
+  registrarRutasProyectos(app, db, configArchivos);
   registrarRutasColumnas(app, db);
-  registrarRutasTareas(app, db);
+  registrarRutasTareas(app, db, configArchivos);
+  registrarRutasArchivos(app, db, configArchivos);
   registrarRutasEtiquetas(app, db);
   registrarRutasChecklist(app, db);
   registrarRutasComentarios(app, db);

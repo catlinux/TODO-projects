@@ -6,6 +6,12 @@ import { esquemaProyecto, esquemaProyectoParcial, type FondoProyecto } from "@to
 
 import { columnas, proyectos } from "./db/schema.js";
 import type { Database } from "./db/index.js";
+import type { ConfigArchivos } from "./config.js";
+import {
+  eliminarFicheros,
+  recogerArchivosDeProyecto,
+  validarFondosDeProyecto,
+} from "./almacen-archivos.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
 
@@ -15,7 +21,11 @@ function responderValidacion(reply: FastifyReply, mensaje: string): void {
   reply.code(400).send({ mensaje } satisfies RespuestaError);
 }
 
-export function registrarRutasProyectos(app: FastifyInstance, db: Database): void {
+export function registrarRutasProyectos(
+  app: FastifyInstance,
+  db: Database,
+  config: ConfigArchivos,
+): void {
   app.get("/proyectos", { preHandler: app.requireAuth }, async (request, reply) => {
     const usuario = request.usuario;
     if (!usuario) {
@@ -136,8 +146,16 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
     }
 
     if (body.data.fondo?.tipo === "imagenes") {
-      responderValidacion(reply, "Todavía no se admiten imágenes de fondo");
-      return;
+      const valido = await validarFondosDeProyecto(
+        db,
+        body.data.fondo.ids,
+        params.data.id,
+        usuario.id,
+      );
+      if (!valido) {
+        responderValidacion(reply, "Alguna imagen de fondo no pertenece al proyecto");
+        return;
+      }
     }
 
     const cambios: {
@@ -204,9 +222,14 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
       return;
     }
 
+    // Los ids se recogen antes de borrar: la cascada se lleva tareas y archivos.
+    const idsArchivos = await recogerArchivosDeProyecto(db, params.data.id);
+
     await db
       .delete(proyectos)
       .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)));
+
+    await eliminarFicheros(config.dir, idsArchivos);
 
     reply.code(204).send();
   });
