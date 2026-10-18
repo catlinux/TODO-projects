@@ -90,13 +90,14 @@ function PaletaColor({
 }
 
 export interface PropiedadesSelectorEtiquetas {
+  id?: string;
   tareaId: string;
   proyectoId: string;
   /** Ids de las etiquetas asignadas a la tarea. */
   asignadas: string[];
 }
 
-export function SelectorEtiquetas({ tareaId, proyectoId, asignadas }: PropiedadesSelectorEtiquetas) {
+export function SelectorEtiquetas({ id, tareaId, proyectoId, asignadas }: PropiedadesSelectorEtiquetas) {
   const { t } = useTranslation();
   const cliente = useQueryClient();
   const [abierto, setAbierto] = useState(false);
@@ -237,7 +238,7 @@ export function SelectorEtiquetas({ tareaId, proyectoId, asignadas }: Propiedade
   }
 
   return (
-    <section className="tarjeta-detalle__seccion">
+    <section id={id} className="tarjeta-detalle__seccion">
       <div className="tarjeta-detalle__seccion-cabecera">
         <h3>{t("labels.section")}</h3>
         <button

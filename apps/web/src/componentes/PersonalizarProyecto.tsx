@@ -310,7 +310,7 @@ export function PersonalizarProyecto({
   return (
     <dialog
       ref={refDialogo}
-      className="dialogo-tarea dialogo-personalizar"
+      className="dialogo dialogo--personalizar"
       aria-labelledby="titulo-dialogo-personalizar"
       onCancel={(evento) => {
         evento.preventDefault();
@@ -324,12 +324,12 @@ export function PersonalizarProyecto({
       }}
     >
       {abierto && (
-        <div className="dialogo-tarea__cuerpo">
-          <div className="dialogo-tarea__cabecera">
+        <div className="dialogo__cuerpo">
+          <div className="dialogo__cabecera">
             <h2 id="titulo-dialogo-personalizar">{t("projects.personalize.title")}</h2>
             <button
               type="button"
-              className="dialogo-tarea__cerrar"
+              className="boton-icono"
               aria-label={t("tasks.closeDialog")}
               onClick={onCerrar}
             >
@@ -611,8 +611,8 @@ export function PersonalizarProyecto({
               </button>
             </fieldset>
 
-            <div className="acciones">
-              <button type="button" onClick={onCerrar}>
+            <div className="dialogo__pie">
+              <button type="button" className="boton-fantasma" onClick={onCerrar}>
                 {t("tasks.cancel")}
               </button>
               <button type="submit" className="boton-principal" disabled={guardar.isPending}>

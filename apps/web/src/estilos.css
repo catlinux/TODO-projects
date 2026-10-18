@@ -487,73 +487,65 @@ kbd {
   outline-color: #fff;
 }
 
-.dialogo-tarea {
+/*
+ * Familia única de diálogos (paso 3): misma superficie, borde, radio, sombra y
+ * velo. Las variantes solo cambian el ancho o el contenido.
+ */
+.dialogo {
   width: min(560px, calc(100vw - 2rem));
   max-height: calc(100vh - 3rem);
   padding: 0;
+  overflow-y: auto;
   color: var(--texto);
   background: var(--superficie);
-  border: 1px solid var(--borde);
+  border: 1px solid var(--lineas);
   border-radius: var(--radio-dialogo);
   box-shadow: var(--sombra-dialogo);
 }
 
-.dialogo-tarea::backdrop {
+.dialogo::backdrop {
   background: var(--velo);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
-.dialogo-tarea__cuerpo {
-  display: grid;
-  gap: 1rem;
-  padding: 1.25rem;
+.dialogo__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
 }
 
-.dialogo-tarea__cabecera {
+.dialogo__cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 12px;
 }
 
-.dialogo-tarea__cabecera h2 {
+.dialogo__cabecera h2 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.dialogo-tarea__cerrar {
-  display: grid;
-  place-items: center;
-  min-width: var(--objetivo-tactil);
-  padding: 0.25rem;
-  color: var(--texto-secundario);
-  background: transparent;
-  border-color: transparent;
+.dialogo__pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.dialogo-tarea__cerrar:hover:not(:disabled) {
-  background: var(--columna);
-  border-color: transparent;
-}
-
-.dialogo-tarea .formulario {
+.dialogo .formulario {
   margin-bottom: 0;
 }
 
-/* Tarjeta abierta como ruta (B3): diálogo ancho con scroll interno. */
+/* Tarjeta abierta: portada a todo el ancho, título editable y secciones. */
 .tarjeta-detalle {
   width: min(720px, calc(100vw - 2rem));
   max-height: calc(100vh - 3rem);
-  padding: 0;
   overflow: hidden;
-  color: var(--texto);
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-dialogo);
-  box-shadow: var(--sombra-dialogo);
-}
-
-.tarjeta-detalle::backdrop {
-  background: var(--velo);
 }
 
 .tarjeta-detalle__marco {
@@ -564,48 +556,67 @@ kbd {
 
 .tarjeta-detalle__portada {
   display: block;
-  height: 96px;
+  height: 120px;
   background: var(--chip);
+  border-radius: var(--radio-dialogo) var(--radio-dialogo) 0 0;
 }
 
 .tarjeta-detalle__portada--imagen {
-  height: 140px;
+  height: 180px;
 }
 
 .tarjeta-detalle__cuerpo {
   display: grid;
-  gap: 1rem;
-  padding: 1.25rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tarjeta-detalle__principal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  padding: 20px;
   overflow-y: auto;
 }
 
 .tarjeta-detalle__cabecera {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .tarjeta-detalle__columna {
-  display: grid;
-  gap: 0.25rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--texto-secundario);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--secundario);
+}
+
+.tarjeta-detalle__columna select {
+  width: auto;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
 }
 
 .tarjeta-detalle__titulo-fila {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .tarjeta-detalle__titulo {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 22px;
+  font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -619,111 +630,123 @@ kbd {
 .tarjeta-detalle__titulo-boton {
   display: inline-flex;
   align-items: center;
-  min-height: var(--objetivo-tactil);
-  padding: 0;
+  max-width: 100%;
+  margin-left: -8px;
+  padding: 2px 8px;
   font: inherit;
   font-weight: 600;
   text-align: left;
   color: inherit;
   background: transparent;
-  border-color: transparent;
-  border-radius: var(--radio-control);
+  border: 1px solid transparent;
+  border-radius: 8px;
 }
 
 .tarjeta-detalle__titulo-boton:hover:not(:disabled) {
-  color: var(--acento);
+  background: var(--chip);
   border-color: transparent;
 }
 
 .tarjeta-detalle__hecha {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 6px;
   flex: 0 0 auto;
-  min-height: var(--objetivo-tactil);
-  padding: 0 0.75rem;
-  font-size: 0.9rem;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--secundario);
   white-space: nowrap;
-  border: 1px solid var(--borde);
+  border: 1px solid var(--lineas);
   border-radius: 999px;
 }
 
 .tarjeta-detalle__hecha input {
-  width: 18px;
+  width: 16px;
+  height: 16px;
   min-height: 0;
-  height: 18px;
   margin: 0;
   padding: 0;
+  accent-color: var(--acento);
+}
+
+/* Fila de acciones rápidas: lleva el foco a cada sección de la tarjeta. */
+.tarjeta-detalle__acciones-rapidas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button.tarjeta-detalle__accion {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
 }
 
 .tarjeta-detalle__seccion {
-  display: grid;
-  gap: 0.5rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--lineas);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .tarjeta-detalle__seccion-cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 12px;
 }
 
+.tarjeta-detalle__seccion h3,
 .tarjeta-detalle__seccion-cabecera h3 {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--texto-secundario);
+  color: var(--secundario);
+}
+
+.tarjeta-detalle__seccion .acciones {
+  justify-content: flex-end;
+}
+
+.tarjeta-detalle__seccion .boton-texto {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
 }
 
 .tarjeta-detalle form {
   margin-bottom: 0;
 }
 
-.boton-texto {
-  min-height: 32px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
-  background: transparent;
-  border-color: transparent;
-}
-
-.boton-texto:hover:not(:disabled) {
-  color: var(--texto);
-  background: var(--chip);
-  border-color: transparent;
-}
-
 .tarjeta-detalle__descripcion {
-  font-size: 0.95rem;
+  font-size: 14px;
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
 .tarjeta-detalle__descripcion a {
-  color: var(--acento);
+  color: var(--acento-texto);
 }
 
 .tarjeta-detalle__descripcion-vacia {
   width: 100%;
   justify-content: flex-start;
-  min-height: var(--objetivo-tactil);
-  padding: 0.5rem 0.65rem;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 14px;
   text-align: left;
-  color: var(--texto-secundario);
+  color: var(--secundario);
   background: transparent;
-  border: 1px dashed var(--borde);
+  border: 1px dashed var(--lineas-fuertes);
   border-radius: var(--radio-control);
 }
 
 .tarjeta-detalle__descripcion-vacia:hover:not(:disabled) {
   color: var(--texto);
   background: var(--chip);
-  border-color: var(--texto-secundario);
+  border-color: var(--secundario);
 }
 
 .tarjeta-detalle__descripcion-textarea {
@@ -734,7 +757,7 @@ kbd {
 /* Pastillas de etiqueta: color + nombre, nunca solo color. */
 .tarjeta-detalle .etiqueta {
   min-height: 24px;
-  font-size: 0.8rem;
+  font-size: 13px;
 }
 
 .selector-etiquetas__asignadas {
@@ -745,18 +768,19 @@ kbd {
 }
 
 .selector-etiquetas__vacia {
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
+/* Popover de etiquetas: superficie, borde fino, radio 10 y sombra de capa. */
 .selector-etiquetas {
   display: grid;
-  gap: 0.6rem;
-  padding: 0.75rem;
+  gap: 8px;
+  padding: 10px;
   background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-control-grande);
-  box-shadow: var(--sombra-2);
+  border: 1px solid var(--lineas);
+  border-radius: 10px;
+  box-shadow: var(--sombra-3);
 }
 
 .selector-etiquetas__busqueda {
@@ -765,6 +789,7 @@ kbd {
 
 .selector-etiquetas__sugerencia {
   justify-content: flex-start;
+  min-height: 36px;
   text-align: left;
 }
 
@@ -782,22 +807,28 @@ kbd {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 2px;
+  min-height: 36px;
+  padding: 0 4px;
+  border-radius: 8px;
+}
+
+.selector-etiquetas__fila:hover {
+  background: var(--chip);
 }
 
 .selector-etiquetas__opcion {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   flex: 1 1 auto;
-  min-height: 32px;
+  min-height: 36px;
   cursor: pointer;
 }
 
 .selector-etiquetas__opcion input {
-  width: 18px;
+  width: 16px;
   min-height: 0;
-  height: 18px;
+  height: 16px;
   margin: 0;
   flex: 0 0 auto;
 }
@@ -818,9 +849,9 @@ kbd {
 .selector-etiquetas__accion,
 .selector-etiquetas__accion--peligro {
   min-height: 32px;
-  padding: 0 0.5rem;
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--secundario);
   background: transparent;
   border-color: transparent;
 }
@@ -840,7 +871,7 @@ kbd {
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 13px;
 }
 
 .selector-etiquetas__nueva {
@@ -849,7 +880,7 @@ kbd {
   flex-wrap: wrap;
   gap: 6px;
   margin: 0;
-  padding-top: 0.6rem;
+  padding-top: 8px;
   border-top: 1px solid var(--lineas);
 }
 
@@ -883,16 +914,16 @@ kbd {
   accent-color: var(--etiqueta-texto);
 }
 
-/* Checklist de la tarea. */
+/* Checklist de la tarea: barra fina y elementos de 36 px. */
 .checklist__progreso {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 10px;
 }
 
 .checklist__barra {
   flex: 1 1 auto;
-  height: 8px;
+  height: 6px;
   overflow: hidden;
   background: var(--chip);
   border-radius: 999px;
@@ -901,13 +932,19 @@ kbd {
 .checklist__barra-relleno {
   display: block;
   height: 100%;
-  background: var(--hecho);
+  background: var(--acento);
   border-radius: inherit;
+  transition: background-color 160ms ease;
+}
+
+.checklist__barra-relleno--hecho {
+  background: var(--hecho);
 }
 
 .checklist__contador {
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .checklist__lista {
@@ -922,23 +959,32 @@ kbd {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 0;
+  min-height: 36px;
+  padding: 0 4px;
+  border-radius: var(--radio-control);
+}
+
+.checklist__item:hover {
+  background: var(--chip);
 }
 
 .checklist__item input[type="checkbox"] {
-  width: 18px;
+  width: 16px;
   min-height: 0;
-  height: 18px;
+  height: 16px;
   margin: 0;
   flex: 0 0 auto;
+  accent-color: var(--acento);
 }
 
 .checklist__texto,
 .checklist__texto-boton {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 32px;
-  padding: 0 0.4rem;
+  padding: 0 4px;
   font: inherit;
+  font-size: 14px;
   text-align: left;
   color: inherit;
 }
@@ -956,35 +1002,36 @@ kbd {
 }
 
 .checklist__texto-boton--hecho {
-  color: var(--texto-secundario);
+  color: var(--secundario);
   text-decoration: line-through;
 }
 
-.checklist__accion {
-  min-height: 32px;
-  min-width: 32px;
-  padding: 0 0.4rem;
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
-  background: transparent;
-  border-color: transparent;
+/* Las acciones del elemento aparecen al pasar el ratón o al recibir el foco. */
+.checklist__item .boton-icono {
+  opacity: 0;
+  transition: opacity 120ms ease;
 }
 
-.checklist__accion:hover:not(:disabled) {
-  color: var(--texto);
-  background: var(--chip);
-  border-color: transparent;
+.checklist__item:hover .boton-icono,
+.checklist__item:focus-within .boton-icono {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .checklist__item .boton-icono {
+    opacity: 1;
+  }
 }
 
 .checklist__vacia {
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .checklist__anadir {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
 }
 
@@ -992,7 +1039,12 @@ kbd {
   flex: 1 1 auto;
 }
 
-/* Adjuntos de la tarjeta (paso E3): subida, lista y acciones. */
+.checklist__anadir button {
+  height: 36px;
+  min-height: 36px;
+}
+
+/* Adjuntos: rejilla de miniaturas de 96 px con su zona de soltar. */
 .adjuntos__entrada {
   position: absolute;
   width: 1px;
@@ -1010,11 +1062,10 @@ kbd {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.6rem;
-  background: var(--chip);
-  border: 1px dashed var(--lineas);
-  border-radius: var(--radio-control-grande);
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--lineas-fuertes);
+  border-radius: var(--radio-control);
 }
 
 .adjuntos__zona--activa {
@@ -1024,51 +1075,53 @@ kbd {
 
 .adjuntos__ayuda {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .adjuntos__boton {
-  min-height: var(--objetivo-tactil);
+  height: 32px;
+  min-height: 32px;
+  font-size: 13px;
 }
 
 .adjuntos__estado {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .adjuntos__lista {
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .adjuntos__vacia {
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .adjuntos__item {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.4rem;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 8px;
   border: 1px solid var(--lineas);
-  border-radius: var(--radio-control-grande);
+  border-radius: var(--radio-control);
 }
 
 .adjuntos__vista {
   display: grid;
-  flex: 0 0 auto;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  height: 96px;
   overflow: hidden;
   background: var(--chip);
-  border-radius: var(--radio-control);
+  border-radius: 8px;
 }
 
 .adjuntos__miniatura {
@@ -1080,45 +1133,45 @@ kbd {
 .adjuntos__icono {
   display: grid;
   place-items: center;
-  color: var(--texto-secundario);
+  color: var(--secundario);
 }
 
 .adjuntos__datos {
   display: grid;
-  flex: 1 1 auto;
   gap: 2px;
   min-width: 0;
 }
 
 .adjuntos__nombre {
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .adjuntos__tamano {
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .adjuntos__acciones {
   display: flex;
-  flex: 0 0 auto;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  gap: 4px;
 }
 
 .adjuntos__abrir {
   display: inline-flex;
   align-items: center;
-  min-height: var(--objetivo-tactil);
-  padding: 0 0.5rem;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
 }
 
-/* Acciones de cada adjunto: objetivos táctiles de 40 px. */
 .adjuntos__acciones .boton-texto {
-  min-height: var(--objetivo-tactil);
+  height: 32px;
+  min-height: 32px;
 }
 
 /* Subconjunto de formato de las descripciones (formato.tsx). */
@@ -1150,11 +1203,14 @@ kbd {
     height: 100%;
     max-height: 100vh;
   }
+
+  .tarjeta-detalle__portada {
+    border-radius: 0;
+  }
 }
 
-.dialogo-personalizar {
+.dialogo--personalizar {
   width: min(620px, calc(100vw - 2rem));
-  overflow-y: auto;
 }
 
 .personalizar__grupo {
@@ -1528,6 +1584,23 @@ button.boton-fantasma {
 }
 
 .boton-fantasma:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--chip);
+  border-color: transparent;
+}
+
+/* Botón de texto para acciones discretas dentro de secciones densas. */
+.boton-texto {
+  min-height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+  color: var(--secundario);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.boton-texto:hover:not(:disabled) {
   color: var(--texto);
   background: var(--chip);
   border-color: transparent;
@@ -3327,44 +3400,40 @@ form.columna-agregar button {
   }
 }
 
-/* Tarjeta abierta (C2): a partir de 900 px el panel de actividad va a la derecha. */
-.tarjeta-detalle__principal {
-  display: grid;
-  gap: 1rem;
-}
-
+/* Tarjeta abierta: a partir de 900 px el panel de actividad va a la derecha. */
 @media (min-width: 900px) {
   .tarjeta-detalle {
     width: min(1040px, calc(100vw - 2rem));
   }
 
   .tarjeta-detalle__cuerpo {
-    grid-template-columns: minmax(0, 1fr) 320px;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) 340px;
   }
 }
 
+/* Panel de actividad sobre la superficie 2, con borde izquierdo. */
 .panel-actividad {
-  display: grid;
-  gap: 0.75rem;
-  padding: 0.85rem;
-  background: var(--chip);
-  border-radius: var(--radio-control-grande);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--superficie-2);
+  border-left: 1px solid var(--lineas);
 }
 
 .panel-actividad__titulo {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--texto-secundario);
+  color: var(--secundario);
 }
 
 .panel-actividad__formulario,
 .panel-actividad__edicion {
   display: grid;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .panel-actividad__formulario textarea,
@@ -3376,50 +3445,102 @@ form.columna-agregar button {
 
 .panel-actividad__ayuda {
   margin: 0;
-  font-size: 0.75rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
+}
+
+/* Botón pequeño para enviar el comentario. */
+.panel-actividad__formulario .boton-principal,
+.panel-actividad__edicion .boton-principal {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
 }
 
 .panel-actividad__lista {
   display: grid;
-  gap: 0.75rem;
-  max-height: 26rem;
+  gap: 14px;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
   list-style: none;
 }
 
-.panel-actividad__elemento {
+/* Comentario: avatar con la inicial y columna de contenido. */
+.panel-actividad__elemento--comentario {
   display: grid;
-  gap: 0.25rem;
-  padding-left: 0.6rem;
-  border-left: 2px solid var(--lineas);
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.panel-actividad__avatar {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--texto-sobre-acento);
+  background: var(--acento);
+  border-radius: 999px;
+}
+
+.panel-actividad__contenido {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Historial: una línea con un punto de 6 px. */
+.panel-actividad__elemento--historial {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.panel-actividad__punto {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  background: var(--lineas-fuertes);
+  border-radius: 999px;
 }
 
 .panel-actividad__meta {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.35rem;
+  gap: 6px;
   margin: 0;
-  font-size: 0.82rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .panel-actividad__autor {
+  font-weight: 600;
   color: var(--texto);
 }
 
 .panel-actividad__fecha {
-  font-family: var(--fuente-mono);
-  font-size: 0.75rem;
+  font-size: 12px;
+}
+
+.panel-actividad__historial {
+  margin: 0;
+  font-size: 13px;
+  color: var(--secundario);
+  overflow-wrap: anywhere;
+}
+
+.panel-actividad__historial strong {
+  font-weight: 600;
+  color: var(--texto);
 }
 
 /* Texto plano con saltos de línea: nunca se interpreta como HTML. */
 .panel-actividad__texto {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 14px;
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -3430,46 +3551,60 @@ form.columna-agregar button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
+  gap: 4px;
+  font-size: 13px;
 }
 
 .panel-actividad__vacia {
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
-/* Selector de portada: 10 muestras con nombre accesible y marca de selección. */
+@media (max-width: 899px) {
+  .panel-actividad {
+    border-left: none;
+    border-top: 1px solid var(--lineas);
+  }
+}
+
+/* Selector de portada: popover con muestras y nombre accesible. */
 .selector-portada {
   display: grid;
-  gap: 0.6rem;
-  padding: 0.6rem;
-  background: var(--chip);
-  border-radius: var(--radio-control-grande);
+  gap: 10px;
+  padding: 10px;
+  background: var(--superficie);
+  border: 1px solid var(--lineas);
+  border-radius: 10px;
+  box-shadow: var(--sombra-3);
 }
 
 .selector-portada__actual {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .selector-portada__muestras {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
-  gap: 0.4rem;
+  gap: 6px;
 }
 
 .selector-portada__muestra {
   display: grid;
   place-items: center;
-  min-height: var(--objetivo-tactil);
+  min-height: 36px;
   padding: 0;
-  font-size: 1rem;
+  font-size: 15px;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
   border: 2px solid transparent;
   border-radius: var(--radio-control);
+}
+
+.selector-portada__muestra:hover:not(:disabled),
+.selector-portada__imagen:hover:not(:disabled) {
+  box-shadow: 0 0 0 2px var(--chip);
 }
 
 .selector-portada__muestra[aria-checked="true"] {
@@ -3484,14 +3619,14 @@ form.columna-agregar button {
 /* Imágenes adjuntas elegibles como portada. */
 .selector-portada__etiqueta {
   margin: 0;
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .selector-portada__imagenes {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: 0.4rem;
+  gap: 6px;
 }
 
 .selector-portada__imagen {
@@ -3499,7 +3634,7 @@ form.columna-agregar button {
   place-items: center;
   min-height: 56px;
   padding: 0;
-  font-size: 1rem;
+  font-size: 15px;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
   background-color: var(--chip);
@@ -3524,48 +3659,72 @@ form.columna-agregar button {
   color: inherit;
 }
 
-/* Paleta de búsqueda y comandos (paso D2). */
+/* Paleta de búsqueda y comandos (Ctrl/⌘+K). */
 .paleta {
-  width: min(560px, calc(100vw - 2rem));
+  width: min(600px, calc(100vw - 2rem));
   margin-top: 12vh;
-  padding: 0;
-  color: var(--texto);
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-dialogo);
-  box-shadow: var(--sombra-dialogo);
-}
-
-.paleta::backdrop {
-  background: var(--velo);
 }
 
 .paleta__cuerpo {
   display: grid;
-  gap: 0.5rem;
-  padding: 0.9rem;
+  gap: 8px;
+}
+
+.paleta__busqueda {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.paleta__lupa {
+  flex: 0 0 auto;
+  color: var(--secundario);
 }
 
 .paleta__campo {
-  width: 100%;
-  min-height: var(--objetivo-tactil);
-  padding: 0 0.8rem;
-  font-size: 1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  font-size: 16px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.paleta__campo:focus {
+  border: 0;
+  box-shadow: none;
+}
+
+.paleta__atajo {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--secundario);
+  background: var(--chip);
+  border-radius: 5px;
 }
 
 .paleta__estado {
   min-height: 1.05rem;
   margin: 0;
-  padding: 0 0.2rem;
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .paleta__vacio,
 .paleta__ayuda {
   margin: 0;
-  padding: 0.4rem 0.6rem;
-  color: var(--texto-secundario);
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--secundario);
 }
 
 .paleta__estado--error {
@@ -3577,40 +3736,38 @@ form.columna-agregar button {
   gap: 2px;
   max-height: min(52vh, 420px);
   margin: 0;
-  padding: 0;
+  padding: 0 8px 8px;
   overflow-y: auto;
   list-style: none;
 }
 
 .paleta__grupo {
-  padding: 0.5rem 0.5rem 0.2rem;
-  font-size: 0.72rem;
+  padding: 10px 8px 4px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--texto-secundario);
+  color: var(--secundario);
 }
 
 .paleta__opcion {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  min-height: var(--objetivo-tactil);
-  padding: 0.35rem 0.5rem;
-  border-radius: var(--radio-control);
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 8px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
 .paleta__opcion--activa {
-  background: var(--activo);
+  background: var(--chip);
 }
 
 .paleta__color {
   flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  background: var(--lineas);
-  border-radius: 4px;
+  width: 10px;
+  height: 10px;
+  background: var(--lineas-fuertes);
+  border-radius: 3px;
 }
 
 .paleta__texto {
@@ -3621,43 +3778,70 @@ form.columna-agregar button {
 }
 
 .paleta__titulo {
+  font-size: 14px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .paleta__titulo--hecha {
-  color: var(--texto-secundario);
+  color: var(--secundario);
   text-decoration: line-through;
 }
 
 .paleta__detalle {
-  font-size: 0.78rem;
-  color: var(--texto-secundario);
+  font-size: 12px;
+  color: var(--secundario);
 }
 
 .paleta__fecha {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.75rem;
-  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 5px;
 }
 
-/* Ayuda de atajos («?»). */
-.ayuda-atajos__lista {
-  display: grid;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Ayuda de atajos («?»): tabla limpia con kbd en chip. */
+.ayuda-atajos {
+  width: min(520px, calc(100vw - 2rem));
 }
 
-.ayuda-atajos__fila {
-  padding: 0.55rem 0.7rem;
+.ayuda-atajos__tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ayuda-atajos__tabla th,
+.ayuda-atajos__tabla td {
+  padding: 8px 0;
+  font-size: 14px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--lineas);
+}
+
+.ayuda-atajos__tabla tr:last-child th,
+.ayuda-atajos__tabla tr:last-child td {
+  border-bottom: 0;
+}
+
+.ayuda-atajos__tabla th {
+  width: 96px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.ayuda-atajos__tabla kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 2px 6px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--secundario);
   background: var(--chip);
-  border-radius: var(--radio-control);
+  border-radius: 5px;
 }
 
 /* Bandeja de entrada (fase D3). */

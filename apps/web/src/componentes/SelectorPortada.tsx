@@ -7,12 +7,14 @@ import { COLORES_PORTADA, PATRONES_PORTADA, estiloPortada, urlArchivo } from "..
 import { nombreColor } from "./SelectorEtiquetas";
 
 export interface PropiedadesSelectorPortada {
+  id?: string;
   tareaId: string;
   proyectoId: string;
   portada?: PortadaTareaApi | null;
 }
 
 export function SelectorPortada({
+  id,
   tareaId,
   proyectoId,
   portada = null,
@@ -79,7 +81,7 @@ export function SelectorPortada({
   }
 
   return (
-    <section className="tarjeta-detalle__seccion">
+    <section id={id} className="tarjeta-detalle__seccion">
       <div className="tarjeta-detalle__seccion-cabecera">
         <h3>{t("cover.section")}</h3>
         <button

@@ -206,7 +206,7 @@ export function Paleta({ abierto, onCerrar, onNuevaTarea }: PropiedadesPaleta) {
   return (
     <dialog
       ref={refDialogo}
-      className="paleta"
+      className="dialogo paleta"
       aria-labelledby="titulo-paleta"
       onCancel={(evento) => {
         evento.preventDefault();
@@ -224,24 +224,42 @@ export function Paleta({ abierto, onCerrar, onNuevaTarea }: PropiedadesPaleta) {
           <h2 id="titulo-paleta" className="visualmente-oculto">
             {t("palette.title")}
           </h2>
-          <input
-            ref={refEntrada}
-            type="text"
-            className="paleta__campo"
-            role="combobox"
-            aria-expanded={opciones.length > 0}
-            aria-controls="paleta-lista"
-            aria-autocomplete="list"
-            aria-activedescendant={idActivo}
-            aria-label={t("palette.placeholder")}
-            placeholder={t("palette.placeholder")}
-            value={consulta}
-            onChange={(evento) => {
-              setConsulta(evento.target.value);
-              setIndiceActivo(0);
-            }}
-            onKeyDown={alPulsarEnEntrada}
-          />
+          <div className="paleta__busqueda">
+            <svg
+              className="paleta__lupa"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+            <input
+              ref={refEntrada}
+              type="text"
+              className="paleta__campo"
+              role="combobox"
+              aria-expanded={opciones.length > 0}
+              aria-controls="paleta-lista"
+              aria-autocomplete="list"
+              aria-activedescendant={idActivo}
+              aria-label={t("palette.placeholder")}
+              placeholder={t("palette.placeholder")}
+              value={consulta}
+              onChange={(evento) => {
+                setConsulta(evento.target.value);
+                setIndiceActivo(0);
+              }}
+              onKeyDown={alPulsarEnEntrada}
+            />
+            <kbd className="paleta__atajo">{t("palette.shortcutKey")}</kbd>
+          </div>
 
           <p
             className={`paleta__estado${busqueda.isError ? " paleta__estado--error" : ""}`}

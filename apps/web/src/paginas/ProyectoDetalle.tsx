@@ -386,7 +386,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
 
       <dialog
         ref={refDialogo}
-        className="dialogo-tarea"
+        className="dialogo"
         aria-labelledby="titulo-dialogo-tarea"
         onCancel={(evento) => {
           evento.preventDefault();
@@ -400,12 +400,12 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
         }}
       >
         {dialogoTareaAbierto && (
-          <div className="dialogo-tarea__cuerpo">
-            <div className="dialogo-tarea__cabecera">
+          <div className="dialogo__cuerpo">
+            <div className="dialogo__cabecera">
               <h2 id="titulo-dialogo-tarea">{t("tasks.new")}</h2>
               <button
                 type="button"
-                className="dialogo-tarea__cerrar"
+                className="boton-icono"
                 aria-label={t("tasks.closeDialog")}
                 onClick={() => setDialogoTareaAbierto(false)}
               >
@@ -433,7 +433,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
                   ))}
                 </select>
               </label>
-              <div className="acciones">
+              <div className="dialogo__pie">
                 <button type="submit" className="boton-principal" disabled={crearTarea.isPending}>
                   {t("tasks.create")}
                 </button>

@@ -5,11 +5,12 @@ import { useTranslation } from "react-i18next";
 import { peticion, type ChecklistItemApi } from "../api";
 
 export interface PropiedadesChecklist {
+  id?: string;
   tareaId: string;
   proyectoId: string;
 }
 
-export function Checklist({ tareaId, proyectoId }: PropiedadesChecklist) {
+export function Checklist({ id, tareaId, proyectoId }: PropiedadesChecklist) {
   const { t } = useTranslation();
   const cliente = useQueryClient();
   const [textoNuevo, setTextoNuevo] = useState("");
@@ -102,7 +103,7 @@ export function Checklist({ tareaId, proyectoId }: PropiedadesChecklist) {
   }
 
   return (
-    <section className="tarjeta-detalle__seccion">
+    <section id={id} className="tarjeta-detalle__seccion">
       <div className="tarjeta-detalle__seccion-cabecera">
         <h3>{t("checklist.section")}</h3>
         {total > 0 && (
@@ -127,11 +128,13 @@ export function Checklist({ tareaId, proyectoId }: PropiedadesChecklist) {
           aria-valuenow={hechos}
         >
           <span
-            className="checklist__barra-relleno"
+            className={`checklist__barra-relleno${
+              total > 0 && hechos === total ? " checklist__barra-relleno--hecho" : ""
+            }`}
             style={{ width: `${total > 0 ? (hechos / total) * 100 : 0}%` }}
           />
         </div>
-        <span className="checklist__contador mono">
+        <span className="checklist__contador cifra">
           {t("checklist.progress", { hechos, total })}
         </span>
       </div>
@@ -189,7 +192,7 @@ export function Checklist({ tareaId, proyectoId }: PropiedadesChecklist) {
 
               <button
                 type="button"
-                className="checklist__accion"
+                className="boton-icono"
                 aria-label={t("checklist.up", { texto: elemento.texto })}
                 disabled={indice <= 0}
                 onClick={() => mover(elemento, -1)}
@@ -198,7 +201,7 @@ export function Checklist({ tareaId, proyectoId }: PropiedadesChecklist) {
               </button>
               <button
                 type="button"
-                className="checklist__accion"
+                className="boton-icono"
                 aria-label={t("checklist.down", { texto: elemento.texto })}
                 disabled={indice === lista.length - 1}
                 onClick={() => mover(elemento, 1)}
@@ -207,7 +210,7 @@ export function Checklist({ tareaId, proyectoId }: PropiedadesChecklist) {
               </button>
               <button
                 type="button"
-                className="checklist__accion"
+                className="boton-icono"
                 aria-label={t("checklist.delete", { texto: elemento.texto })}
                 onClick={() => borrar.mutate(elemento.id)}
               >

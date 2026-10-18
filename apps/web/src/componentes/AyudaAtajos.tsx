@@ -54,19 +54,19 @@ export function AyudaAtajos({ abierto, onCerrar }: PropiedadesAyudaAtajos) {
   }, [abierto]);
 
   const filas = [
-    { id: "buscar", texto: t("shortcuts.search") },
-    { id: "nueva-tarea", texto: t("shortcuts.newTask") },
-    { id: "hoy", texto: t("shortcuts.today") },
-    { id: "bandeja", texto: t("shortcuts.inbox") },
-    { id: "agenda", texto: t("shortcuts.agenda") },
-    { id: "ayuda", texto: t("shortcuts.help") },
-    { id: "cerrar", texto: t("shortcuts.escape") },
+    { id: "buscar", teclas: t("shortcuts.search.teclas"), texto: t("shortcuts.search.texto") },
+    { id: "nueva-tarea", teclas: t("shortcuts.newTask.teclas"), texto: t("shortcuts.newTask.texto") },
+    { id: "hoy", teclas: t("shortcuts.today.teclas"), texto: t("shortcuts.today.texto") },
+    { id: "bandeja", teclas: t("shortcuts.inbox.teclas"), texto: t("shortcuts.inbox.texto") },
+    { id: "agenda", teclas: t("shortcuts.agenda.teclas"), texto: t("shortcuts.agenda.texto") },
+    { id: "ayuda", teclas: t("shortcuts.help.teclas"), texto: t("shortcuts.help.texto") },
+    { id: "cerrar", teclas: t("shortcuts.escape.teclas"), texto: t("shortcuts.escape.texto") },
   ];
 
   return (
     <dialog
       ref={refDialogo}
-      className="dialogo-tarea ayuda-atajos"
+      className="dialogo ayuda-atajos"
       aria-labelledby="titulo-ayuda-atajos"
       onCancel={(evento) => {
         evento.preventDefault();
@@ -80,25 +80,30 @@ export function AyudaAtajos({ abierto, onCerrar }: PropiedadesAyudaAtajos) {
       }}
     >
       {abierto && (
-        <div className="dialogo-tarea__cuerpo">
-          <div className="dialogo-tarea__cabecera">
+        <div className="dialogo__cuerpo">
+          <div className="dialogo__cabecera">
             <h2 id="titulo-ayuda-atajos">{t("shortcuts.title")}</h2>
             <button
               type="button"
-              className="dialogo-tarea__cerrar"
+              className="boton-icono"
               aria-label={t("tasks.closeDialog")}
               onClick={onCerrar}
             >
               <IconoCerrar />
             </button>
           </div>
-          <ul className="ayuda-atajos__lista" aria-label={t("shortcuts.title")}>
-            {filas.map((fila) => (
-              <li key={fila.id} className="ayuda-atajos__fila">
-                {fila.texto}
-              </li>
-            ))}
-          </ul>
+          <table className="ayuda-atajos__tabla">
+            <tbody>
+              {filas.map((fila) => (
+                <tr key={fila.id}>
+                  <th scope="row">
+                    <kbd>{fila.teclas}</kbd>
+                  </th>
+                  <td>{fila.texto}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </dialog>

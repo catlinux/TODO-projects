@@ -42,12 +42,13 @@ function IconoArchivo() {
 }
 
 export interface PropiedadesAdjuntos {
+  id?: string;
   tareaId: string;
   proyectoId: string;
   portada?: PortadaTareaApi | null;
 }
 
-export function Adjuntos({ tareaId, proyectoId, portada = null }: PropiedadesAdjuntos) {
+export function Adjuntos({ id, tareaId, proyectoId, portada = null }: PropiedadesAdjuntos) {
   const { t } = useTranslation();
   const cliente = useQueryClient();
   const refEntrada = useRef<HTMLInputElement>(null);
@@ -140,7 +141,7 @@ export function Adjuntos({ tareaId, proyectoId, portada = null }: PropiedadesAdj
   const ocupado = subir.isPending || borrar.isPending || cambiarPortada.isPending;
 
   return (
-    <section className="tarjeta-detalle__seccion">
+    <section id={id} className="tarjeta-detalle__seccion">
       <div className="tarjeta-detalle__seccion-cabecera">
         <h3>{t("attachments.section")}</h3>
       </div>
@@ -221,7 +222,7 @@ export function Adjuntos({ tareaId, proyectoId, portada = null }: PropiedadesAdj
 
               <span className="adjuntos__datos">
                 <span className="adjuntos__nombre">{archivo.nombre}</span>
-                <span className="adjuntos__tamano mono">{formatearTamano(archivo.tamano)}</span>
+                <span className="adjuntos__tamano cifra">{formatearTamano(archivo.tamano)}</span>
               </span>
 
               <span className="adjuntos__acciones">

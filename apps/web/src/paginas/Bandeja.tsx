@@ -235,7 +235,7 @@ export default function Bandeja() {
 
       <dialog
         ref={refDialogo}
-        className="dialogo-tarea bandeja__dialogo"
+        className="dialogo"
         aria-labelledby="titulo-mover-tarea"
         onCancel={(evento) => {
           evento.preventDefault();
@@ -249,7 +249,7 @@ export default function Bandeja() {
         }}
       >
         {tareaMover && (
-          <div className="dialogo-tarea__cuerpo">
+          <div className="dialogo__cuerpo">
             <h2 id="titulo-mover-tarea">{t("inbox.moveTitle", { titulo: tareaMover.titulo })}</h2>
             {proyectos.data && proyectos.data.length === 0 ? (
               <p>{t("inbox.noProjects")}</p>
@@ -284,7 +284,7 @@ export default function Bandeja() {
                 </label>
               </div>
             )}
-            <div className="acciones">
+            <div className="dialogo__pie">
               <button
                 type="button"
                 className="boton-principal"
@@ -299,7 +299,7 @@ export default function Bandeja() {
               >
                 {t("inbox.confirmMove")}
               </button>
-              <button type="button" onClick={() => setTareaMover(null)}>
+              <button type="button" className="boton-fantasma" onClick={() => setTareaMover(null)}>
                 {t("inbox.cancel")}
               </button>
             </div>

@@ -97,6 +97,7 @@
     "delete": "Eliminar",
     "empty": "No hay tareas todavía",
     "description": "Descripción",
+    "dates": "Fechas",
     "dueDate": "Fecha y hora",
     "recurrence": "Recurrencia",
     "frequency": "Frecuencia",
@@ -220,6 +221,7 @@
   "attachments": {
     "section": "Adjuntos",
     "add": "Adjuntar archivo",
+    "attach": "Adjuntar",
     "choose": "Elegir archivo",
     "dropHint": "Arrastra archivos aquí o usa el botón para elegirlos.",
     "uploading": "Subiendo…",
@@ -341,6 +343,7 @@
   "palette": {
     "title": "Buscar y comandos",
     "placeholder": "Buscar tareas y proyectos…",
+    "shortcutKey": "Ctrl K",
     "hint": "Escribe al menos 2 caracteres para buscar",
     "groupActions": "Acciones",
     "groupTasks": "Tareas",
@@ -358,13 +361,13 @@
   },
   "shortcuts": {
     "title": "Atajos de teclado",
-    "search": "Ctrl o ⌘ + K: buscar y comandos",
-    "newTask": "N: nueva tarea en el proyecto abierto",
-    "today": "G y luego H: ir a Hoy",
-    "inbox": "G y luego B: ir a la Bandeja de entrada",
-    "agenda": "G y luego A: ir a Agenda",
-    "help": "?: mostrar esta ayuda",
-    "escape": "Esc: cerrar diálogos"
+    "search": { "teclas": "Ctrl K", "texto": "Buscar y comandos" },
+    "newTask": { "teclas": "N", "texto": "Nueva tarea en el proyecto abierto" },
+    "today": { "teclas": "G H", "texto": "Ir a Hoy" },
+    "inbox": { "teclas": "G B", "texto": "Ir a la Bandeja de entrada" },
+    "agenda": { "teclas": "G A", "texto": "Ir a Agenda" },
+    "help": { "teclas": "?", "texto": "Mostrar esta ayuda" },
+    "escape": { "teclas": "Esc", "texto": "Cerrar diálogos" }
   },
   "push": {
     "activar": "Activar avisos del navegador",

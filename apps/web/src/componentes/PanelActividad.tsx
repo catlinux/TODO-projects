@@ -10,6 +10,7 @@ import {
   type RespuestaActividadApi,
   type UsuarioApi,
 } from "../api";
+import { inicial } from "../inicial";
 
 const FORMATO_RELATIVO = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
 
@@ -246,32 +247,48 @@ export function PanelActividad({ tareaId, proyectoId }: PropiedadesPanelActivida
             <li className="panel-actividad__vacia">{t("activity.empty")}</li>
           )}
           {elementos.map((elemento) => {
+            const fecha = (
+              <time
+                className="panel-actividad__fecha cifra"
+                dateTime={elemento.creadoEn}
+                title={fechaAbsoluta(elemento.creadoEn)}
+              >
+                {fechaRelativa(elemento.creadoEn)}
+              </time>
+            );
+
+            if (elemento.tipo === "historial") {
+              return (
+                <li
+                  key={elemento.id}
+                  className="panel-actividad__elemento panel-actividad__elemento--historial"
+                >
+                  <span className="panel-actividad__punto" aria-hidden="true" />
+                  <p className="panel-actividad__historial">
+                    <strong>{elemento.usuarioNombre}</strong>{" "}
+                    {textoHistorial(elemento, t)} {fecha}
+                  </p>
+                </li>
+              );
+            }
+
             const propio =
-              elemento.tipo === "comentario" &&
-              Boolean(usuario.data) &&
-              elemento.usuarioId === usuario.data?.id;
+              Boolean(usuario.data) && elemento.usuarioId === usuario.data?.id;
 
             return (
               <li
                 key={elemento.id}
-                className={`panel-actividad__elemento panel-actividad__elemento--${elemento.tipo}`}
+                className="panel-actividad__elemento panel-actividad__elemento--comentario"
               >
-                <p className="panel-actividad__meta">
-                  <strong className="panel-actividad__autor">{elemento.usuarioNombre}</strong>{" "}
-                  {elemento.tipo === "historial" && (
-                    <span className="panel-actividad__accion">{textoHistorial(elemento, t)}</span>
-                  )}
-                  <time
-                    className="panel-actividad__fecha"
-                    dateTime={elemento.creadoEn}
-                    title={fechaAbsoluta(elemento.creadoEn)}
-                  >
-                    {fechaRelativa(elemento.creadoEn)}
-                  </time>
-                </p>
+                <span className="panel-actividad__avatar" aria-hidden="true">
+                  {inicial(elemento.usuarioNombre)}
+                </span>
+                <div className="panel-actividad__contenido">
+                  <p className="panel-actividad__meta">
+                    <strong className="panel-actividad__autor">{elemento.usuarioNombre}</strong> {fecha}
+                  </p>
 
-                {elemento.tipo === "comentario" &&
-                  (editandoId === elemento.id ? (
+                  {editandoId === elemento.id ? (
                     <form
                       className="panel-actividad__edicion"
                       onSubmit={(evento) => {
@@ -343,7 +360,8 @@ export function PanelActividad({ tareaId, proyectoId }: PropiedadesPanelActivida
                         </div>
                       )}
                     </>
-                  ))}
+                  )}
+                </div>
               </li>
             );
           })}

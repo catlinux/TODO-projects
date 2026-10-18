@@ -60,6 +60,90 @@ function IconoCerrar() {
   );
 }
 
+/** Iconos de la fila de acciones rápidas (16 px). */
+function IconoEtiquetas() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0l-6.2-6.2A2 2 0 0 1 3.8 13V5.8A2 2 0 0 1 5.8 3.8H13a2 2 0 0 1 1.4.6l6.2 6.2a2 2 0 0 1 0 2.8z" />
+      <circle cx="8.5" cy="8.5" r="1" />
+    </svg>
+  );
+}
+
+function IconoChecklist() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 6h2l2 2 4-4" />
+      <path d="M4 15h2l2 2 4-4" />
+      <path d="M14 7h6" />
+      <path d="M14 16h6" />
+    </svg>
+  );
+}
+
+function IconoPortada() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.5" />
+      <path d="M21 15l-5-5-7 7" />
+    </svg>
+  );
+}
+
+function IconoAdjuntar() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5L10 18a2 2 0 0 1-3-3l7.5-7.5" />
+    </svg>
+  );
+}
+
+/** Lleva el foco a una sección de la tarjeta desde la fila de acciones. */
+function irASeccion(id: string) {
+  document.getElementById(id)?.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
 export default function TarjetaDetalle() {
   const { t } = useTranslation();
   const navegar = useNavigate();
@@ -200,7 +284,7 @@ export default function TarjetaDetalle() {
   return (
     <dialog
       ref={refDialogo}
-      className="tarjeta-detalle"
+      className="dialogo tarjeta-detalle"
       aria-labelledby="titulo-tarjeta"
       onCancel={(evento) => {
         evento.preventDefault();
@@ -220,7 +304,7 @@ export default function TarjetaDetalle() {
       }}
     >
       {tarea.isError ? (
-        <div className="tarjeta-detalle__cuerpo">
+        <div className="tarjeta-detalle__principal">
           <p className="error">{t("tasks.notFound")}</p>
           <div className="acciones">
             <button type="button" className="boton-principal" onClick={cerrar}>
@@ -229,7 +313,7 @@ export default function TarjetaDetalle() {
           </div>
         </div>
       ) : !tareaActual ? (
-        <div className="tarjeta-detalle__cuerpo">
+        <div className="tarjeta-detalle__principal">
           <p>{t("app.loading")}</p>
         </div>
       ) : (
@@ -262,7 +346,7 @@ export default function TarjetaDetalle() {
                 </label>
                 <button
                   type="button"
-                  className="dialogo-tarea__cerrar"
+                  className="boton-icono"
                   aria-label={t("tasks.closeDialog")}
                   onClick={cerrar}
                 >
@@ -320,19 +404,50 @@ export default function TarjetaDetalle() {
                 )}
               </div>
 
-              <SelectorPortada
+              <div className="tarjeta-detalle__acciones-rapidas">
+                <button
+                  type="button"
+                  className="boton tarjeta-detalle__accion"
+                  onClick={() => irASeccion("seccion-etiquetas")}
+                >
+                  <IconoEtiquetas />
+                  {t("labels.button")}
+                </button>
+                <button
+                  type="button"
+                  className="boton tarjeta-detalle__accion"
+                  onClick={() => irASeccion("seccion-checklist")}
+                >
+                  <IconoChecklist />
+                  {t("checklist.section")}
+                </button>
+                <button
+                  type="button"
+                  className="boton tarjeta-detalle__accion"
+                  onClick={() => irASeccion("seccion-portada")}
+                >
+                  <IconoPortada />
+                  {t("cover.section")}
+                </button>
+                <button
+                  type="button"
+                  className="boton tarjeta-detalle__accion"
+                  onClick={() => document.getElementById("adjuntos-archivo")?.click()}
+                >
+                  <IconoAdjuntar />
+                  {t("attachments.attach")}
+                </button>
+              </div>
+
+              <SelectorEtiquetas
+                id="seccion-etiquetas"
                 tareaId={tareaId ?? ""}
                 proyectoId={proyectoId}
-                portada={tareaActual.portada ?? null}
+                asignadas={tareaActual.etiquetas ?? []}
               />
 
-              <Adjuntos
-                tareaId={tareaId ?? ""}
-                proyectoId={proyectoId}
-                portada={tareaActual.portada ?? null}
-              />
-
-              <section className="tarjeta-detalle__seccion">
+              <section id="seccion-fechas" className="tarjeta-detalle__seccion">
+                <h3>{t("tasks.dates")}</h3>
                 <form
                   className="tarjeta-detalle__datos"
                   onSubmit={(evento) => {
@@ -355,13 +470,7 @@ export default function TarjetaDetalle() {
                 </form>
               </section>
 
-              <SelectorEtiquetas
-                tareaId={tareaId ?? ""}
-                proyectoId={proyectoId}
-                asignadas={tareaActual.etiquetas ?? []}
-              />
-
-              <section className="tarjeta-detalle__seccion">
+              <section id="seccion-descripcion" className="tarjeta-detalle__seccion">
                 <div className="tarjeta-detalle__seccion-cabecera">
                   <h3>{t("tasks.description")}</h3>
                   {!editandoDescripcion && (
@@ -420,7 +529,21 @@ export default function TarjetaDetalle() {
                 )}
               </section>
 
-              <Checklist tareaId={tareaId ?? ""} proyectoId={proyectoId} />
+              <Checklist id="seccion-checklist" tareaId={tareaId ?? ""} proyectoId={proyectoId} />
+
+              <SelectorPortada
+                id="seccion-portada"
+                tareaId={tareaId ?? ""}
+                proyectoId={proyectoId}
+                portada={tareaActual.portada ?? null}
+              />
+
+              <Adjuntos
+                id="seccion-adjuntos"
+                tareaId={tareaId ?? ""}
+                proyectoId={proyectoId}
+                portada={tareaActual.portada ?? null}
+              />
             </div>
 
             <PanelActividad tareaId={tareaId ?? ""} proyectoId={proyectoId} />
