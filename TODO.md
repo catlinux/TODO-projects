@@ -2,7 +2,9 @@
 
 ## Prioridad alta
 
-- Aspecto v3 y funciones de tarjeta (etiquetas, checklist, comentarios, búsqueda, bandeja, adjuntos y fondos con imágenes): hoja de ruta en `.agents/plans/v3/v3.PLAN.md` (fases A, B, C y D hechas hasta la 0.13.0; queda la 0.14.0).
+- Despliegue de los archivos (paso E2 de `.agents/plans/v3/v3.PLAN.md`, necesita tu aprobación): volumen `archivos_data` en `/data/archivos` en `docker-compose.prod.yml`, `request_body { max_size 12MB }` en `/api/*` del Caddyfile, copia de los archivos en el script de backup y `docs/DESPLIEGUE.md`. Hasta entonces los adjuntos y fondos con imagen no se pueden usar en producción.
+
+- Auditoría con Opus de la v3 (seguridad de subidas, permisos de cada endpoint nuevo, accesibilidad, coherencia visual).
 
 - Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
 
