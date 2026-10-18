@@ -7,6 +7,7 @@ import { Disposicion } from "./componentes/Disposicion";
 import Login from "./paginas/Login";
 import Registro from "./paginas/Registro";
 import Hoy from "./paginas/Hoy";
+import Bandeja from "./paginas/Bandeja";
 import Proyectos from "./paginas/Proyectos";
 import ProyectoDetalle from "./paginas/ProyectoDetalle";
 import TarjetaDetalle from "./paginas/TarjetaDetalle";
@@ -40,6 +41,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Hoy />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/bandeja"
+        element={
+          <RutaProtegida>
+            <Bandeja />
           </RutaProtegida>
         }
       />

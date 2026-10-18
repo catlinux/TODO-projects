@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
-import type { OcurrenciaAgenda, ProyectoApi } from "../api";
+import type { OcurrenciaAgenda, ProyectoApi, TareaApi } from "../api";
 import { CLAVE_TEMA } from "../tema";
 import { BarraNavegacion } from "./BarraNavegacion";
 
@@ -44,6 +44,19 @@ function ocurrencia(tareaId: string, dias: number, hecha = false): OcurrenciaAge
   };
 }
 
+function tareaBandeja(id: string): TareaApi {
+  return {
+    id,
+    proyectoId: "b1",
+    columnaId: "cb",
+    titulo: `Tarea ${id}`,
+    posicion: 0,
+    venceEn: null,
+    createdAt: "",
+    updatedAt: "",
+  };
+}
+
 /** Devuelve el color tal y como lo normaliza el DOM (hex → rgb). */
 function rgb(hex: string): string {
   const valor = hex.replace("#", "");
@@ -53,7 +66,11 @@ function rgb(hex: string): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
+function renderMenu(
+  ruta: string,
+  ocurrencias: OcurrenciaAgenda[] = [],
+  tareasBandeja: TareaApi[] = [],
+) {
   let logoutLlamado = false;
   vi.stubGlobal(
     "fetch",
@@ -63,6 +80,31 @@ function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
+      }
+      if (url === "/api/bandeja") {
+        return new Response(
+          JSON.stringify({
+            proyecto: {
+              id: "b1",
+              nombre: "Bandeja de entrada",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            },
+            columnas: [
+              {
+                id: "cb",
+                proyectoId: "b1",
+                nombre: "Entrada",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ],
+            tareas: tareasBandeja,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
       }
       if (url === "/api/auth/yo") {
         return new Response(JSON.stringify(usuario), {
@@ -137,8 +179,23 @@ describe("BarraNavegacion", () => {
     ).toBe("/ajustes");
   });
 
-  it("cierra la sesión, limpia la caché y navega a login", async () => {
-    const { cliente, user, seCerroSesion } = renderMenu("/proyectos");
+  it("enlaza la Bandeja de entrada y cuenta sus pendientes", async () => {
+    renderMenu("/bandeja", [], [tareaBandeja("t1"), tareaBandeja("t2")]);
+
+    const menu = menuLateral();
+    const enlace = within(menu).getByRole("link", { name: /bandeja de entrada/i });
+    expect(enlace.getAttribute("href")).toBe("/bandeja");
+    expect(await within(enlace).findByText("2")).toBeTruthy();
+  });
+
+  it("oculta el contador de la Bandeja cuando está vacía", () => {
+    renderMenu("/bandeja");
+
+    const enlace = within(menuLateral()).getByRole("link", { name: /bandeja de entrada/i });
+    expect(enlace.querySelector(".menu-lateral__contador")).toBeNull();
+  });
+
+  it("cierra la sesión, limpia la caché y navega a login", async () => {    const { cliente, user, seCerroSesion } = renderMenu("/proyectos");
 
     expect(
       within(menuLateral())
@@ -238,7 +295,7 @@ describe("BarraNavegacion", () => {
     const hoy = within(menu).getByRole("link", { name: /hoy/i });
     expect(hoy.getAttribute("href")).toBe("/hoy");
     expect(await within(hoy).findByText("2")).toBeTruthy();
-    expect(menu.querySelector("a")?.getAttribute("href")).toBe("/hoy");
+    expect(menu.querySelector("a")?.getAttribute("href")).toBe("/bandeja");
 
     const inferior = screen.getByRole("navigation", { name: "Navegación inferior" });
     expect(within(inferior).getByRole("link", { name: /hoy/i }).getAttribute("href")).toBe("/hoy");

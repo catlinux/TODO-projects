@@ -3006,3 +3006,66 @@ fieldset {
   background: var(--chip);
   border-radius: var(--radio-control);
 }
+
+/* Bandeja de entrada (fase D3). */
+.bandeja__captura {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+}
+
+.bandeja__captura input {
+  flex: 1 1 auto;
+}
+
+.bandeja__vacia {
+  padding: 1.25rem;
+  color: var(--texto-secundario);
+  background: var(--tarjeta);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+}
+
+.bandeja__lista {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bandeja__tarea {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0.8rem;
+  background: var(--tarjeta);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
+}
+
+.bandeja__titulo {
+  flex: 1 1 12rem;
+  min-height: 1.5rem;
+  font-weight: 500;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.bandeja__titulo:hover {
+  color: var(--acento);
+}
+
+.bandeja__acciones {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.bandeja__mover {
+  display: grid;
+  gap: 0.75rem;
+}
+

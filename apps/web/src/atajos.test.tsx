@@ -19,6 +19,7 @@ function acciones(): AccionesAtajos {
     onBuscar: vi.fn(),
     onNuevaTarea: vi.fn(),
     onHoy: vi.fn(),
+    onBandeja: vi.fn(),
     onAgenda: vi.fn(),
     onAyuda: vi.fn(),
   };
@@ -84,6 +85,16 @@ describe("useAtajos", () => {
     expect(espia.onAgenda).toHaveBeenCalledTimes(1);
   });
 
+  it("«G» seguido de «B» va a la Bandeja de entrada", () => {
+    const espia = acciones();
+    render(<Arnes {...espia} />);
+
+    fireEvent.keyDown(document.body, { key: "g" });
+    fireEvent.keyDown(document.body, { key: "b" });
+
+    expect(espia.onBandeja).toHaveBeenCalledTimes(1);
+  });
+
   it("una «G» sola no navega", () => {
     const espia = acciones();
     render(<Arnes {...espia} />);
@@ -91,6 +102,7 @@ describe("useAtajos", () => {
     fireEvent.keyDown(document.body, { key: "g" });
 
     expect(espia.onHoy).not.toHaveBeenCalled();
+    expect(espia.onBandeja).not.toHaveBeenCalled();
     expect(espia.onAgenda).not.toHaveBeenCalled();
   });
 

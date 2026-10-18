@@ -110,6 +110,7 @@ export function Paleta({ abierto, onCerrar, onNuevaTarea }: PropiedadesPaleta) {
     () => [
       { id: "nueva-tarea", etiqueta: t("palette.newTask"), accion: () => onNuevaTarea() },
       { id: "ir-hoy", etiqueta: t("palette.goToday"), accion: () => navegar("/hoy") },
+      { id: "ir-bandeja", etiqueta: t("palette.goInbox"), accion: () => navegar("/bandeja") },
       { id: "ir-agenda", etiqueta: t("palette.goAgenda"), accion: () => navegar("/agenda") },
       {
         id: "cambiar-tema",

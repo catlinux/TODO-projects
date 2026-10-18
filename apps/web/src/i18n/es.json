@@ -9,6 +9,7 @@
     "agenda": "Agenda",
     "settings": "Ajustes",
     "hoy": "Hoy",
+    "inbox": "Bandeja de entrada",
     "newProject": "Nuevo proyecto",
     "search": "Buscar",
     "sidebar": "Menú lateral",
@@ -283,6 +284,23 @@
     "dayEmpty": "No hay tareas este día",
     "alert": "Aviso: {{valor}}"
   },
+  "inbox": {
+    "title": "Bandeja de entrada",
+    "captureLabel": "Añadir a la bandeja de entrada",
+    "capturePlaceholder": "Escribe una tarea y pulsa Intro…",
+    "add": "Añadir",
+    "empty": "La bandeja está vacía. Escribe arriba para añadir una tarea.",
+    "move": "Mover a",
+    "moveTitle": "Mover «{{titulo}}»",
+    "project": "Proyecto",
+    "column": "Columna",
+    "confirmMove": "Mover",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar la tarea «{{titulo}}»?",
+    "noProjects": "No hay ningún proyecto al que moverla",
+    "pendingCount": "{{n}} pendientes"
+  },
   "palette": {
     "title": "Buscar y comandos",
     "placeholder": "Buscar tareas y proyectos…",
@@ -292,6 +310,7 @@
     "groupProjects": "Proyectos",
     "newTask": "Nueva tarea",
     "goToday": "Ir a Hoy",
+    "goInbox": "Ir a la Bandeja",
     "goAgenda": "Ir a Agenda",
     "changeTheme": "Cambiar tema",
     "results": "Resultados",
@@ -305,6 +324,7 @@
     "search": "Ctrl o ⌘ + K: buscar y comandos",
     "newTask": "N: nueva tarea en el proyecto abierto",
     "today": "G y luego H: ir a Hoy",
+    "inbox": "G y luego B: ir a la Bandeja de entrada",
     "agenda": "G y luego A: ir a Agenda",
     "help": "?: mostrar esta ayuda",
     "escape": "Esc: cerrar diálogos"

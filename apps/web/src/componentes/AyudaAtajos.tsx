@@ -57,6 +57,7 @@ export function AyudaAtajos({ abierto, onCerrar }: PropiedadesAyudaAtajos) {
     { id: "buscar", texto: t("shortcuts.search") },
     { id: "nueva-tarea", texto: t("shortcuts.newTask") },
     { id: "hoy", texto: t("shortcuts.today") },
+    { id: "bandeja", texto: t("shortcuts.inbox") },
     { id: "agenda", texto: t("shortcuts.agenda") },
     { id: "ayuda", texto: t("shortcuts.help") },
     { id: "cerrar", texto: t("shortcuts.escape") },

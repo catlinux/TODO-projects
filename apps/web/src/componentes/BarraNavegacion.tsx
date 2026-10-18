@@ -3,7 +3,13 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
-import { peticion, type OcurrenciaAgenda, type ProyectoApi, type UsuarioApi } from "../api";
+import {
+  peticion,
+  type OcurrenciaAgenda,
+  type ProyectoApi,
+  type RespuestaBandejaApi,
+  type UsuarioApi,
+} from "../api";
 import { useCerrarSesion } from "../cerrarSesion";
 import { colorProyecto } from "../colores";
 import { agruparHoy, pendientesHoy, rangoHoy } from "../hoy";
@@ -98,6 +104,14 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
 
   const pendientes = pendientesHoy(agruparHoy(ocurrencias ?? [], ahora));
 
+  // Misma consulta y clave que la página «Bandeja»: el contador sale de la caché.
+  const { data: bandeja } = useQuery({
+    queryKey: ["bandeja"],
+    queryFn: () => peticion<RespuestaBandejaApi>("/bandeja"),
+  });
+
+  const pendientesBandeja = bandeja?.tareas.length ?? 0;
+
   const cerrarSesion = useCerrarSesion();
 
   return (
@@ -130,6 +144,24 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
           <span className="menu-lateral__buscar-texto">{t("nav.search")}</span>
           <kbd className="menu-lateral__atajo">{etiquetaAtajoBusqueda()}</kbd>
         </button>
+
+        <NavLink to="/bandeja" className="menu-lateral__enlace">
+          <Icono>
+            <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+            <path d="M3 13h5l1.5 2.5h5L16 13h5" />
+          </Icono>
+          {t("nav.inbox")}
+          {pendientesBandeja > 0 && (
+            <>
+              <span className="visualmente-oculto">
+                {t("inbox.pendingCount", { n: pendientesBandeja })}
+              </span>
+              <span className="menu-lateral__contador" aria-hidden="true">
+                {pendientesBandeja}
+              </span>
+            </>
+          )}
+        </NavLink>
 
         <NavLink to="/hoy" className="menu-lateral__enlace">
           <Icono>

@@ -37,6 +37,7 @@ export function Disposicion({ children }: { children: ReactNode }) {
     onBuscar: () => setPaletaAbierta(true),
     onNuevaTarea: () => irANuevaTarea(false),
     onHoy: () => navegar("/hoy"),
+    onBandeja: () => navegar("/bandeja"),
     onAgenda: () => navegar("/agenda"),
     onAyuda: () => setAyudaAbierta(true),
   });

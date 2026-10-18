@@ -107,6 +107,12 @@ export interface RespuestaActividadApi {
   hayMas: boolean;
 }
 
+export interface RespuestaBandejaApi {
+  proyecto: ProyectoApi;
+  columnas: ColumnaApi[];
+  tareas: TareaApi[];
+}
+
 export interface OcurrenciaAgenda {
   tareaId: string;
   titulo: string;

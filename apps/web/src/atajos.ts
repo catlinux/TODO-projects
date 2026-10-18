@@ -8,6 +8,8 @@ export interface AccionesAtajos {
   onNuevaTarea: () => void;
   /** «G» seguido de «H»: ir a Hoy. */
   onHoy: () => void;
+  /** «G» seguido de «B»: ir a la Bandeja de entrada. */
+  onBandeja: () => void;
   /** «G» seguido de «A»: ir a la Agenda. */
   onAgenda: () => void;
   /** «?»: abrir la ayuda de atajos. */
@@ -94,6 +96,10 @@ export function useAtajos(acciones: AccionesAtajos): void {
           evento.preventDefault();
           olvidarG();
           actuales.onHoy();
+        } else if (tecla === "b") {
+          evento.preventDefault();
+          olvidarG();
+          actuales.onBandeja();
         } else if (tecla === "a") {
           evento.preventDefault();
           olvidarG();
