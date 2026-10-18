@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 
 import "./i18n/index";
 import Ajustes from "./paginas/Ajustes";
@@ -22,7 +23,9 @@ function renderAjustes() {
   const user = userEvent.setup();
   render(
     <QueryClientProvider client={cliente}>
-      <Ajustes />
+      <MemoryRouter>
+        <Ajustes />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   return { cliente, user };
@@ -32,6 +35,7 @@ describe("Ajustes", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("crea un token y solo lo muestra al crearlo", async () => {
@@ -326,5 +330,84 @@ describe("Ajustes", () => {
     await user.click(screen.getByRole("button", { name: "Eliminar" }));
     await waitFor(() => expect(borrados).toEqual(["h1"]));
     expect(await screen.findByText(/no hay dispositivos con huella/i)).toBeTruthy();
+  });
+
+  it("cierra las demás sesiones y muestra cuántas se cerraron", async () => {
+    let llamado = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/auth/cerrar-sesiones" && method === "POST") {
+          llamado = true;
+          return new Response(JSON.stringify({ cerradas: 3 }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { user } = renderAjustes();
+    await user.click(await screen.findByRole("button", { name: /cerrar las demás sesiones/i }));
+
+    await waitFor(() => expect(llamado).toBe(true));
+    expect(await screen.findByText(/sesiones cerradas: 3/i)).toBeTruthy();
+  });
+
+  it("pide volver a entrar si la sesión es antigua al activar la huella", async () => {
+    vi.stubGlobal("PublicKeyCredential", {
+      isUserVerifyingPlatformAuthenticatorAvailable: () => Promise.resolve(true),
+    });
+    Object.defineProperty(navigator, "credentials", {
+      configurable: true,
+      value: {
+        create: vi.fn().mockResolvedValue({
+          id: "cred-1",
+          response: {
+            clientDataJSON: new Uint8Array([1]).buffer,
+            getAuthenticatorData: () => new Uint8Array([2]).buffer,
+            getPublicKey: () => new Uint8Array([3]).buffer,
+            getPublicKeyAlgorithm: () => -7,
+          },
+        }),
+      },
+    });
+    let logoutLlamado = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/auth/huella/registro-opciones" && method === "POST") {
+          return new Response(
+            JSON.stringify({
+              mensaje: "Vuelve a entrar para añadir un dispositivo",
+              codigo: "reautenticar",
+            }),
+            { status: 403, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/auth/logout" && method === "POST") {
+          logoutLlamado = true;
+          return new Response(null, { status: 204 });
+        }
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const { user } = renderAjustes();
+    await user.click(await screen.findByRole("button", { name: /activar huella/i }));
+
+    expect(await screen.findByText(/por seguridad, vuelve a entrar/i)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /salir y volver a entrar/i }));
+    await waitFor(() => expect(logoutLlamado).toBe(true));
   });
 });

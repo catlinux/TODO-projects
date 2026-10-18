@@ -4,6 +4,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.8.0] - 2026-10-18
+
+### Añadido
+- `POST /auth/cerrar-sesiones` y botón «Cerrar las demás sesiones» en Ajustes › Acceso.
+
+### Seguridad
+- Con `ORIGEN_PUBLICO` definido, la API rechaza con 403 las escrituras cuyo `Origin` no coincide (protección contra CSRF además de `SameSite=Lax`).
+- Registrar una passkey exige una sesión de menos de 10 minutos; si es más antigua, la web pide salir y volver a entrar.
+- `deploy/fijar-pin.sh` cierra todas las sesiones de los usuarios afectados.
+- Las sesiones caducadas de un usuario se borran al crear una nueva.
+
 ## [0.7.1] - 2026-10-15
 
 ### Cambiado

@@ -86,11 +86,29 @@ export interface ActividadApi {
 
 export class ErrorHttp extends Error {
   status: number;
+  codigo: string | undefined;
 
-  constructor(status: number, mensaje: string) {
+  constructor(status: number, mensaje: string, codigo?: string) {
     super(mensaje);
     this.status = status;
+    this.codigo = codigo;
   }
+}
+
+async function leerError(respuesta: Response): Promise<{ mensaje?: string; codigo?: string }> {
+  try {
+    const cuerpo: unknown = await respuesta.json();
+    if (typeof cuerpo === "object" && cuerpo !== null) {
+      const datos = cuerpo as { mensaje?: unknown; codigo?: unknown };
+      return {
+        ...(typeof datos.mensaje === "string" ? { mensaje: datos.mensaje } : {}),
+        ...(typeof datos.codigo === "string" ? { codigo: datos.codigo } : {}),
+      };
+    }
+  } catch {
+    // Respuesta sin JSON útil.
+  }
+  return {};
 }
 
 export async function peticion<T>(ruta: string, init?: RequestInit): Promise<T> {
@@ -105,34 +123,16 @@ export async function peticion<T>(ruta: string, init?: RequestInit): Promise<T> 
   });
 
   if (respuesta.status === 401) {
-    let mensaje = "No autenticado";
-    try {
-      const cuerpo: unknown = await respuesta.json();
-      if (typeof cuerpo === "object" && cuerpo !== null && "mensaje" in cuerpo) {
-        const valor = (cuerpo as { mensaje?: unknown }).mensaje;
-        if (typeof valor === "string") mensaje = valor;
-      }
-    } catch {
-      // Respuesta sin JSON útil.
-    }
+    const { mensaje = "No autenticado", codigo } = await leerError(respuesta);
     if (window.location.pathname !== "/login") {
       window.location.href = "/login";
     }
-    throw new ErrorHttp(401, mensaje);
+    throw new ErrorHttp(401, mensaje, codigo);
   }
 
   if (!respuesta.ok) {
-    let mensaje = "Error";
-    try {
-      const cuerpo: unknown = await respuesta.json();
-      if (typeof cuerpo === "object" && cuerpo !== null && "mensaje" in cuerpo) {
-        const valor = (cuerpo as { mensaje?: unknown }).mensaje;
-        if (typeof valor === "string") mensaje = valor;
-      }
-    } catch {
-      // Respuesta sin JSON útil.
-    }
-    throw new ErrorHttp(respuesta.status, mensaje);
+    const { mensaje = "Error", codigo } = await leerError(respuesta);
+    throw new ErrorHttp(respuesta.status, mensaje, codigo);
   }
 
   if (respuesta.status === 204) {

@@ -157,6 +157,12 @@
     "accessEmpty": "No hay dispositivos con huella registrados",
     "never": "Nunca",
     "delete": "Eliminar",
-    "deleteConfirm": "¿Eliminar este dispositivo?"
+    "deleteConfirm": "¿Eliminar este dispositivo?",
+    "reauthRequired": "Por seguridad, vuelve a entrar para añadir un dispositivo",
+    "logoutAndReenter": "Salir y volver a entrar",
+    "closeOtherSessions": "Cerrar las demás sesiones",
+    "closeOtherSessionsConfirm": "¿Cerrar todas las demás sesiones?",
+    "sessionsClosed": "Sesiones cerradas: {{n}}",
+    "noOtherSessions": "No había otras sesiones abiertas"
   }
 }

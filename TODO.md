@@ -4,7 +4,7 @@
 
 
 - Decidir la licencia del proyecto (usar la Skill `licencias`) antes de publicar código.
-- Revisión de seguridad de la autenticación por un modelo potente (el fallo del registro simultáneo ya está corregido).
+- Añadir `Strict-Transport-Security` en el vhost 443 de Apache (configuración del sistema: requiere aprobación).
 - Rediseño del aspecto de la web (tablero a ancho completo, columnas compactas, tarjetas limpias, color de acento); secundario frente a lo funcional.
 
 - Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
@@ -15,6 +15,8 @@
 
 - El snapshot de drizzle-kit (`apps/api/drizzle/meta`) no refleja las migraciones escritas a mano (0002, 0009): `drizzle-kit generate` pide renombrados. Regenerarlo antes de volver a generar migraciones.
 - `pnpm test` en paralelo (web y API) hace fallar a veces el `beforeAll` de PGlite por tiempo de espera; por separado pasa siempre.
+- El token de `/agenda.ics?token=` queda en los logs de Apache (solo tiene permiso de calendario); valorar no registrar la query de esa ruta.
+- El bloqueo global del PIN puede mantenerse a 24 h si alguien insiste a propósito (la huella sigue funcionando); se acepta por diseño.
 - Prueba E2E de la huella con el autenticador virtual de Chromium (no hay Playwright en el proyecto).
 
 - Kanban con tarjetas arrastrables (0.2).

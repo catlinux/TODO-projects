@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import {
+  ErrorHttp,
   peticion,
   type ActividadApi,
   type PermisoTokenApi,
@@ -24,6 +26,7 @@ interface HuellaDispositivoApi {
 export default function Ajustes() {
   const { t } = useTranslation();
   const cliente = useQueryClient();
+  const navigate = useNavigate();
 
   const [nombre, setNombre] = useState("");
   const [permiso, setPermiso] = useState<PermisoTokenApi>("lectura");
@@ -33,6 +36,9 @@ export default function Ajustes() {
   const [errorActividad, setErrorActividad] = useState<string | null>(null);
   const [soporta, setSoporta] = useState(false);
   const [errorHuella, setErrorHuella] = useState<string | null>(null);
+  const [reauthHuella, setReauthHuella] = useState(false);
+  const [avisoSesiones, setAvisoSesiones] = useState<string | null>(null);
+  const [errorSesiones, setErrorSesiones] = useState<string | null>(null);
 
   const tokens = useQuery({
     queryKey: ["tokens"],
@@ -106,11 +112,49 @@ export default function Ajustes() {
 
   const activarHuella = useMutation({
     mutationFn: async () => registrarHuella(),
-    onMutate: () => setErrorHuella(null),
+    onMutate: () => {
+      setErrorHuella(null);
+      setReauthHuella(false);
+    },
     onSuccess: async () => {
       await cliente.invalidateQueries({ queryKey: ["huellas"] });
     },
-    onError: (err) => setErrorHuella(err instanceof Error ? err.message : t("auth.error")),
+    onError: (err) => {
+      if (err instanceof ErrorHttp && err.codigo === "reautenticar") {
+        setReauthHuella(true);
+        return;
+      }
+      setErrorHuella(err instanceof Error ? err.message : t("auth.error"));
+    },
+  });
+
+  const cerrarSesion = useMutation({
+    mutationFn: async () => {
+      await peticion("/auth/logout", { method: "POST" });
+    },
+    onSuccess: () => {
+      cliente.clear();
+      navigate("/login");
+    },
+  });
+
+  const cerrarSesiones = useMutation({
+    mutationFn: async () =>
+      peticion<{ cerradas: number }>("/auth/cerrar-sesiones", { method: "POST" }),
+    onMutate: () => {
+      setAvisoSesiones(null);
+      setErrorSesiones(null);
+    },
+    onSuccess: (respuesta) => {
+      setAvisoSesiones(
+        respuesta.cerradas > 0
+          ? t("settings.sessionsClosed", { n: respuesta.cerradas })
+          : t("settings.noOtherSessions"),
+      );
+    },
+    onError: (err) => {
+      setErrorSesiones(err instanceof Error ? err.message : t("auth.error"));
+    },
   });
 
   const urlSuscripcion =
@@ -256,6 +300,18 @@ export default function Ajustes() {
             {t("settings.activateFingerprint")}
           </button>
         )}
+        {reauthHuella && (
+          <p className="error">
+            {t("settings.reauthRequired")}{" "}
+            <button
+              type="button"
+              disabled={cerrarSesion.isPending}
+              onClick={() => cerrarSesion.mutate()}
+            >
+              {t("settings.logoutAndReenter")}
+            </button>
+          </p>
+        )}
         {huellas.isLoading && <p>{t("app.loading")}</p>}
         {huellas.isError && <p className="error">{t("auth.error")}</p>}
         {errorHuella && <p className="error">{errorHuella}</p>}
@@ -285,6 +341,18 @@ export default function Ajustes() {
             ))}
           </ul>
         )}
+        <button
+          type="button"
+          disabled={cerrarSesiones.isPending}
+          onClick={() => {
+            if (!confirm(t("settings.closeOtherSessionsConfirm"))) return;
+            cerrarSesiones.mutate();
+          }}
+        >
+          {t("settings.closeOtherSessions")}
+        </button>
+        {avisoSesiones && <p>{avisoSesiones}</p>}
+        {errorSesiones && <p className="error">{errorSesiones}</p>}
       </section>
     </main>
   );

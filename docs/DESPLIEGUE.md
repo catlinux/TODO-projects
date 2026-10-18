@@ -164,7 +164,7 @@ Aplica los cambios con `docker compose -f docker-compose.prod.yml up -d` y fija 
 deploy/fijar-pin.sh "Tu nombre" [correo-para-avisos]
 ```
 
-El script pide el PIN dos veces sin mostrarlo. Si no hay usuarios, crea el propietario; si ya existe, solo cambia el PIN. Para cambiarlo más adelante, vuelve a ejecutarlo. El correo es opcional y solo sirve para los avisos por correo.
+El script pide el PIN dos veces sin mostrarlo. Si no hay usuarios, crea el propietario; si ya existe, solo cambia el PIN. Para cambiarlo más adelante, vuelve a ejecutarlo: cambiar el PIN cierra todas las sesiones abiertas. El correo es opcional y solo sirve para los avisos por correo.
 
 La huella se activa desde cada dispositivo después de entrar con el PIN. **Las passkeys quedan atadas al dominio de `ORIGEN_PUBLICO`** y exigen HTTPS: si cambia el dominio, hay que borrarlas en Ajustes › Acceso y volver a activarlas.
 
