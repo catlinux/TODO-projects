@@ -145,6 +145,9 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const [vista, setVista] = useState<VistaProyecto>(() => leerVista(proyectoId));
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
+  const [editandoDescripcion, setEditandoDescripcion] = useState(false);
+  const [descripcion, setDescripcion] = useState("");
+  const [errorDescripcion, setErrorDescripcion] = useState<string | null>(null);
   const refDialogo = useRef<HTMLDialogElement>(null);
 
   // Al cambiar de proyecto, la vista guardada de ese proyecto.
@@ -280,6 +283,35 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     },
   });
 
+  const guardarDescripcion = useMutation({
+    mutationFn: async (texto: string) =>
+      peticion(`/proyectos/${proyectoId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ descripcion: texto }),
+      }),
+    onSuccess: async () => {
+      setErrorDescripcion(null);
+      await cliente.invalidateQueries({ queryKey: ["proyecto", proyectoId] });
+      await cliente.invalidateQueries({ queryKey: ["proyectos"] });
+      setEditandoDescripcion(false);
+    },
+    onError: (err: unknown) => {
+      setErrorDescripcion(err instanceof Error ? err.message : t("auth.error"));
+    },
+  });
+
+  function empezarEdicionDescripcion() {
+    setDescripcion(proyecto.data?.descripcion ?? "");
+    setErrorDescripcion(null);
+    setEditandoDescripcion(true);
+  }
+
+  function cancelarEdicionDescripcion() {
+    setDescripcion("");
+    setErrorDescripcion(null);
+    setEditandoDescripcion(false);
+  }
+
   if (proyecto.isLoading || columnas.isLoading || tareas.isLoading) {
     return (
       <main className="proyecto proyecto--estado">
@@ -298,6 +330,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const listaColumnas = (columnas.data ?? []).slice().sort((a, b) => a.posicion - b.posicion);
   const listaEtiquetas = etiquetas.data ?? [];
   const listaTareas = tareas.data ?? [];
+  const descripcionActual = proyecto.data?.descripcion?.trim() ?? "";
   const tareasFiltradas =
     filtroEtiquetas.length === 0
       ? listaTareas
@@ -324,9 +357,75 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
           <span className="cabecera-proyecto__inicial" aria-hidden="true">
             {inicial(proyecto.data?.nombre ?? "")}
           </span>
-          <h1 title={proyecto.data?.nombre ?? t("projects.title")}>
-            {proyecto.data?.nombre ?? t("projects.title")}
-          </h1>
+          <div className="cabecera-proyecto__titulo">
+            <h1 title={proyecto.data?.nombre ?? t("projects.title")}>
+              {proyecto.data?.nombre ?? t("projects.title")}
+            </h1>
+            <div className="cabecera-proyecto__descripcion">
+              {editandoDescripcion ? (
+                <form
+                  className="cabecera-proyecto__descripcion-form"
+                  onSubmit={(evento) => {
+                    evento.preventDefault();
+                    guardarDescripcion.mutate(descripcion.trim());
+                  }}
+                >
+                  <textarea
+                    className="cabecera-proyecto__descripcion-campo"
+                    aria-label={t("projects.description")}
+                    rows={2}
+                    maxLength={5000}
+                    autoFocus
+                    value={descripcion}
+                    onChange={(evento) => setDescripcion(evento.target.value)}
+                    onKeyDown={(evento) => {
+                      if (evento.key === "Escape") {
+                        evento.preventDefault();
+                        cancelarEdicionDescripcion();
+                      }
+                    }}
+                  />
+                  <div className="cabecera-proyecto__descripcion-acciones">
+                    <button
+                      type="submit"
+                      className="boton-cabecera boton-cabecera--blanco"
+                      disabled={guardarDescripcion.isPending}
+                    >
+                      {t("tasks.save")}
+                    </button>
+                    <button
+                      type="button"
+                      className="boton-cabecera"
+                      onClick={cancelarEdicionDescripcion}
+                    >
+                      {t("tasks.cancel")}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  className={`cabecera-proyecto__descripcion-ver${
+                    descripcionActual ? "" : " cabecera-proyecto__descripcion-ver--vacia"
+                  }`}
+                  title={descripcionActual || undefined}
+                  aria-label={
+                    descripcionActual ? t("projects.editDescription") : t("projects.addDescription")
+                  }
+                  onClick={empezarEdicionDescripcion}
+                >
+                  <span className="cabecera-proyecto__descripcion-texto">
+                    {descripcionActual || t("projects.addDescription")}
+                  </span>
+                </button>
+              )}
+              {errorDescripcion && (
+                <p className="error cabecera-proyecto__descripcion-error" role="alert">
+                  {errorDescripcion}
+                </p>
+              )}
+            </div>
+          </div>
           <div className="cabecera-proyecto__acciones">
             <div className="control-vista" role="radiogroup" aria-label={t("projects.view")}>
               <button

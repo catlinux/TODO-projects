@@ -205,9 +205,17 @@ kbd {
   color: #fff;
 }
 
-.cabecera-proyecto h1 {
+.cabecera-proyecto__titulo {
+  display: flex;
   flex: 1 1 160px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   min-width: 0;
+}
+
+.cabecera-proyecto h1 {
+  max-width: 100%;
   margin: 0;
   overflow: hidden;
   font-size: 18px;
@@ -215,6 +223,74 @@ kbd {
   color: #fff;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* Descripción bajo el nombre: pastilla translúcida legible sobre cualquier fondo. */
+.cabecera-proyecto__descripcion {
+  max-width: min(100%, 560px);
+}
+
+.cabecera-proyecto__descripcion-ver {
+  display: block;
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: 6px 10px;
+  color: var(--menu-texto-fuerte);
+  text-align: left;
+  background: color-mix(in srgb, var(--marco) 65%, transparent);
+  border: 0;
+  border-radius: var(--radio-control);
+}
+
+.cabecera-proyecto__descripcion-ver:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--marco) 80%, transparent);
+}
+
+.cabecera-proyecto__descripcion-texto {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--texto-sm);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.cabecera-proyecto__descripcion-ver--vacia .cabecera-proyecto__descripcion-texto {
+  color: var(--menu-tenue);
+}
+
+.cabecera-proyecto__descripcion-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cabecera-proyecto__descripcion-campo {
+  width: 100%;
+  min-height: 64px;
+  font-size: var(--texto-sm);
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.cabecera-proyecto__descripcion-acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.cabecera-proyecto__descripcion-acciones .boton-cabecera {
+  height: auto;
+  min-height: var(--objetivo-tactil);
+}
+
+.cabecera-proyecto__descripcion-error {
+  margin: 4px 0 0;
+  padding: 4px 8px;
+  color: var(--menu-texto-fuerte);
+  background: color-mix(in srgb, var(--marco) 80%, transparent);
+  border-radius: var(--radio-control);
 }
 
 .cabecera-proyecto__inicial {

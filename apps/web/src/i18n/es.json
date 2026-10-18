@@ -43,6 +43,8 @@
     "title": "Proyectos",
     "name": "Nombre",
     "description": "Descripción",
+    "addDescription": "Añadir descripción",
+    "editDescription": "Editar descripción",
     "create": "Crear proyecto",
     "empty": "No hay proyectos todavía",
     "breadcrumb": "Ruta de navegación",

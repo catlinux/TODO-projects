@@ -1195,4 +1195,149 @@ describe("ProyectoDetalle", () => {
     expect(screen.getByRole("radio", { name: "Tablero" }).getAttribute("aria-checked")).toBe("true");
     expect(document.querySelector(".lista-tareas__panel")).toBeNull();
   });
+
+  it("muestra la descripción del proyecto en la cabecera", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              descripcion: "Plan de lanzamiento del producto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("Plan de lanzamiento del producto")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /editar descripción/i })).toBeTruthy();
+  });
+
+  it("edita la descripción del proyecto y envía el PATCH", async () => {
+    let descripcion = "Descripción inicial";
+    let cuerpoPatch: string | null = null;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/proyectos/p1" && method === "GET") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              descripcion,
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1" && method === "PATCH") {
+          cuerpoPatch = String(init?.body ?? "");
+          const datos = JSON.parse(cuerpoPatch) as { descripcion?: string };
+          descripcion = datos.descripcion ?? "";
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              descripcion,
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /editar descripción/i }));
+    const campo = await screen.findByLabelText(/^descripción$/i);
+    await user.clear(campo);
+    await user.type(campo, "Descripción nueva");
+    await user.click(screen.getByRole("button", { name: /^guardar$/i }));
+
+    await waitFor(() => expect(cuerpoPatch).not.toBeNull());
+    expect(JSON.parse(String(cuerpoPatch))).toMatchObject({ descripcion: "Descripción nueva" });
+    expect(await screen.findByText("Descripción nueva")).toBeTruthy();
+    expect(screen.queryByLabelText(/^descripción$/i)).toBeNull();
+  });
+
+  it("muestra el estado vacío de la descripción del proyecto", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const boton = await screen.findByRole("button", { name: /añadir descripción/i });
+    expect(boton.textContent).toContain("Añadir descripción");
+  });
 });
