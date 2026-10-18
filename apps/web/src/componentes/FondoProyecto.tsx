@@ -1,4 +1,7 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import type { FondoProyectoApi } from "../api";
+import { urlArchivo } from "../portada";
 
 /** Trazos de las curvas de nivel de la maqueta aprobada (Tablero3). */
 const TRAZOS_CURVAS = [
@@ -13,6 +16,11 @@ const TRAZOS_CURVAS = [
   "M520 402c0-86 96-136 190-128s162 74 148 148-96 120-190 112-148-46-148-132z",
   "M480 404c0-112 122-176 240-166s204 96 186 192-122 156-240 146-186-60-186-172z",
 ];
+
+/** Duración del fundido cruzado entre imágenes (ms). */
+const DURACION_FUNDIDO_MS = 1200;
+
+const CONSULTA_MOVIMIENTO_REDUCIDO = "(prefers-reduced-motion: reduce)";
 
 /** Luminancia relativa del color (0 negro – 1 blanco), según la WCAG. */
 function luminancia(hex: string): number {
@@ -34,22 +42,160 @@ function luminancia(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+function prefiereMovimientoReducido(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(CONSULTA_MOVIMIENTO_REDUCIDO).matches
+  );
+}
+
+/** Sigue la preferencia del sistema sin animaciones. */
+function useMovimientoReducido(): boolean {
+  const [reducido, setReducido] = useState(prefiereMovimientoReducido);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const consulta = window.matchMedia(CONSULTA_MOVIMIENTO_REDUCIDO);
+    const alCambiar = () => setReducido(consulta.matches);
+    alCambiar();
+    if (typeof consulta.addEventListener === "function") {
+      consulta.addEventListener("change", alCambiar);
+      return () => consulta.removeEventListener("change", alCambiar);
+    }
+    consulta.addListener?.(alCambiar);
+    return () => consulta.removeListener?.(alCambiar);
+  }, []);
+
+  return reducido;
+}
+
 /**
  * Fondo «topográfico» del proyecto: degradado del ambiente (o color liso) con
- * las curvas de nivel. Con imágenes (fase E) se usa el ambiente «bosque» por
- * ahora. El velo oscuro mantiene legible la cabecera sobre colores claros.
+ * las curvas de nivel. Con imágenes, una sola queda fija y varias rotan con un
+ * fundido cruzado. El velo oscuro mantiene legible la cabecera.
  */
 export function FondoProyecto({ fondo }: { fondo?: FondoProyectoApi | null }) {
   const colorLiso = fondo?.tipo === "color" ? fondo.color : null;
   const ambiente = fondo?.tipo === "ambiente" ? fondo.ambiente : "bosque";
-  const clase = colorLiso ? "fondo-proyecto--liso" : `fondo-proyecto--${ambiente}`;
-  const conVelo = colorLiso !== null && luminancia(colorLiso) > 0.179;
+  const intervaloSeg = fondo?.tipo === "imagenes" ? fondo.intervaloSeg : 30;
+
+  // Solo los ids con forma de uuid construyen la URL del archivo.
+  const imagenes = useMemo(() => {
+    if (fondo?.tipo !== "imagenes") return [];
+    return fondo.ids
+      .map((id) => urlArchivo(id))
+      .filter((url): url is string => url !== null);
+  }, [fondo]);
+  const claveImagenes = imagenes.join("|");
+
+  const [indice, setIndice] = useState(0);
+  const [anterior, setAnterior] = useState<number | null>(null);
+  const [visible, setVisible] = useState(
+    () => typeof document === "undefined" || document.visibilityState !== "hidden",
+  );
+  const indiceActual = useRef(0);
+  const refTemporizadorFundido = useRef<number | null>(null);
+  const reducido = useMovimientoReducido();
+
+  // Con otro juego de imágenes se vuelve a empezar por la primera.
+  useEffect(() => {
+    indiceActual.current = 0;
+    setIndice(0);
+    setAnterior(null);
+    if (refTemporizadorFundido.current !== null) {
+      window.clearTimeout(refTemporizadorFundido.current);
+      refTemporizadorFundido.current = null;
+    }
+  }, [claveImagenes]);
+
+  useEffect(() => {
+    const alCambiarVisibilidad = () => setVisible(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", alCambiarVisibilidad);
+    return () => document.removeEventListener("visibilitychange", alCambiarVisibilidad);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (refTemporizadorFundido.current !== null) {
+        window.clearTimeout(refTemporizadorFundido.current);
+      }
+    },
+    [],
+  );
+
+  // Con la pestaña oculta no hay temporizador: se reanuda al volver.
+  useEffect(() => {
+    if (imagenes.length < 2 || !visible) return;
+
+    const intervalo = window.setInterval(() => {
+      const actual = indiceActual.current;
+      const siguiente = (actual + 1) % imagenes.length;
+      indiceActual.current = siguiente;
+      setIndice(siguiente);
+
+      if (reducido) return;
+
+      setAnterior(actual);
+      if (refTemporizadorFundido.current !== null) {
+        window.clearTimeout(refTemporizadorFundido.current);
+      }
+      refTemporizadorFundido.current = window.setTimeout(() => {
+        setAnterior(null);
+        refTemporizadorFundido.current = null;
+      }, DURACION_FUNDIDO_MS);
+    }, Math.max(1, intervaloSeg) * 1000);
+
+    return () => window.clearInterval(intervalo);
+  }, [imagenes.length, intervaloSeg, visible, reducido]);
+
+  // Precarga la siguiente imagen mientras se ve la actual.
+  useEffect(() => {
+    if (imagenes.length < 2) return;
+    const siguiente = imagenes[(indice + 1) % imagenes.length];
+    if (!siguiente) return;
+    const precarga = new Image();
+    precarga.src = siguiente;
+  }, [imagenes, indice]);
+
+  const conImagenes = imagenes.length > 0;
+  const clase = conImagenes
+    ? "fondo-proyecto--imagenes"
+    : colorLiso
+      ? "fondo-proyecto--liso"
+      : `fondo-proyecto--${ambiente}`;
+  const conVelo = conImagenes || (colorLiso !== null && luminancia(colorLiso) > 0.179);
+  const indiceVisible = conImagenes ? indice % imagenes.length : 0;
+  const indiceAnterior =
+    conImagenes && anterior !== null && imagenes.length > 0
+      ? anterior % imagenes.length
+      : null;
+  const imagenVisible = imagenes[indiceVisible];
+  const imagenAnterior = indiceAnterior !== null ? imagenes[indiceAnterior] : undefined;
 
   return (
     <div
       className={`fondo-proyecto ${clase}`}
       style={colorLiso ? { backgroundColor: colorLiso } : undefined}
     >
+      {conImagenes && (
+        <>
+          {imagenVisible && (
+            <div
+              className="fondo-proyecto__capa"
+              aria-hidden="true"
+              style={{ backgroundImage: `url(${imagenVisible})` }}
+            />
+          )}
+          {!reducido && imagenAnterior && (
+            <div
+              key={`anterior-${indice}`}
+              className="fondo-proyecto__capa fondo-proyecto__capa--anterior"
+              aria-hidden="true"
+              style={{ backgroundImage: `url(${imagenAnterior})` }}
+            />
+          )}
+        </>
+      )}
       <svg
         className="fondo-proyecto__curvas"
         aria-hidden="true"

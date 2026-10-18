@@ -67,7 +67,24 @@
       "flatColors": "Colores lisos",
       "customFlat": "Otro color de fondo",
       "images": "Imágenes",
-      "comingSoon": "Próximamente"
+      "imagesHint": "Arrastra imágenes aquí o usa el botón para elegirlas.",
+      "chooseImages": "Elegir imágenes",
+      "addImages": "Añadir imágenes",
+      "uploadingImages": "Subiendo…",
+      "loadingImages": "Cargando imágenes…",
+      "loadImagesError": "No se pudieron cargar las imágenes",
+      "noImages": "Todavía no hay imágenes",
+      "imageTooLarge": "Cada imagen puede ocupar como máximo 10 MB",
+      "imagesMaxReached": "Ya hay 10 imágenes en el proyecto",
+      "imagesMaxExceeded": "Como máximo 10 imágenes por proyecto",
+      "moveUp": "Subir «{{nombre}}»",
+      "moveDown": "Bajar «{{nombre}}»",
+      "remove": "Quitar",
+      "removeImage": "Quitar «{{nombre}}»",
+      "confirmDeleteImage": "¿Quitar la imagen «{{nombre}}»?",
+      "interval": "Intervalo (segundos)",
+      "intervalInvalid": "El intervalo debe estar entre 10 y 600 segundos",
+      "useAsBackground": "Usar imágenes como fondo"
     }
   },
   "tasks": {

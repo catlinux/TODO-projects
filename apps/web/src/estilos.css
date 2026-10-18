@@ -198,11 +198,44 @@ a:hover {
   background: linear-gradient(160deg, #3b1f4a 0%, #7a3e8c 100%);
 }
 
-/* Con un color liso claro, el velo mantiene la cabecera clara legible. */
+/* Con un color liso claro o imágenes, el velo mantiene la cabecera legible. */
 .fondo-proyecto__velo {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.25);
+}
+
+/* Capas del fondo con imágenes: la anterior se funde sobre la nueva. */
+.fondo-proyecto--imagenes {
+  background: #0d3b37;
+}
+
+.fondo-proyecto__capa {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.fondo-proyecto__capa--anterior {
+  animation: fondo-fundido 1.2s ease forwards;
+}
+
+@keyframes fondo-fundido {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fondo-proyecto__capa--anterior {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .cabecera-proyecto {
@@ -1050,9 +1083,122 @@ a:hover {
   color: var(--texto-secundario);
 }
 
-.personalizar__proximamente {
+.personalizar__entrada {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.personalizar__zona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background: var(--chip);
+  border: 1px dashed var(--lineas);
+  border-radius: var(--radio-control-grande);
+}
+
+.personalizar__zona--activa {
+  border-color: var(--acento);
+  background: var(--acento-suave);
+}
+
+.personalizar__ayuda,
+.personalizar__estado {
   margin: 0;
+  font-size: 0.85rem;
   color: var(--texto-secundario);
+}
+
+.personalizar__subir {
+  min-height: var(--objetivo-tactil);
+}
+
+.personalizar__imagenes {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personalizar__imagen {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem;
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-control-grande);
+}
+
+.personalizar__imagen-vista {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  background: var(--chip);
+  border-radius: var(--radio-control);
+}
+
+.personalizar__imagen-miniatura {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.personalizar__imagen-nombre {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personalizar__imagen-acciones {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.personalizar__mover,
+.personalizar__quitar {
+  min-width: var(--objetivo-tactil);
+  min-height: var(--objetivo-tactil);
+  padding: 0 0.4rem;
+}
+
+.personalizar__intervalo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.personalizar__intervalo input {
+  width: 6rem;
+}
+
+.personalizar__usar-fondo {
+  justify-self: start;
+  min-height: var(--objetivo-tactil);
+}
+
+.personalizar__usar-fondo[aria-pressed="true"] {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+  font-weight: 600;
 }
 
 .personalizar__muestras,
