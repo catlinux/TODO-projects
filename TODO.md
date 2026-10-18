@@ -2,8 +2,7 @@
 
 ## Prioridad alta
 
-
-- Añadir `Strict-Transport-Security` en el vhost 443 de Apache (configuración del sistema: requiere aprobación).
+- Aspecto v3 y funciones de tarjeta (etiquetas, checklist, comentarios, búsqueda, bandeja, adjuntos y fondos con imágenes): hoja de ruta en `.agents/plans/v3/v3.PLAN.md` (0.10.0 a 0.14.0).
 
 - Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
 
