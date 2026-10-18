@@ -81,6 +81,39 @@ async function consultarAgenda(app: FastifyInstance, cookie: string, desde: stri
   });
 }
 
+async function columnasDeProyecto(app: FastifyInstance, cookie: string, proyectoId: string) {
+  const respuesta = await app.inject({
+    method: "GET",
+    url: `/proyectos/${proyectoId}/columnas`,
+    headers: { cookie: `sesion=${cookie}` },
+  });
+  return respuesta.json() as Array<{ id: string; posicion: number }>;
+}
+
+async function marcarOcurrencia(
+  app: FastifyInstance,
+  cookie: string,
+  tareaId: string,
+  fecha: string,
+  hecha: boolean,
+) {
+  return app.inject({
+    method: "POST",
+    url: `/tareas/${tareaId}/ocurrencias`,
+    headers: { cookie: `sesion=${cookie}` },
+    payload: { fecha, hecha },
+  });
+}
+
+async function moverTarea(app: FastifyInstance, cookie: string, tareaId: string, columnaId: string) {
+  return app.inject({
+    method: "PATCH",
+    url: `/tareas/${tareaId}`,
+    headers: { cookie: `sesion=${cookie}` },
+    payload: { columnaId },
+  });
+}
+
 interface Ocurrencia {
   tareaId: string;
   titulo: string;
@@ -88,8 +121,11 @@ interface Ocurrencia {
   proyectoNombre: string;
   columnaId: string;
   columnaNombre: string;
+  primeraColumnaId: string;
+  ultimaColumnaId: string;
   fecha: string;
   esRecurrente: boolean;
+  hecha: boolean;
   recordatorioMin: number | null;
 }
 
@@ -289,6 +325,93 @@ describe("agenda", () => {
     );
     expect(respuesta.statusCode).toBe(200);
     expect(respuesta.json()).toEqual([]);
+  });
+
+  it("expone los límites de columna y marca hecha la no recurrente en la última", async () => {
+    const { cookie } = await registrar(app, "hecha-ultima");
+    const proyecto = await crearProyecto(app, cookie, "Hecha última");
+    const [primera, intermedia, ultima] = await columnasDeProyecto(app, cookie, proyecto.id);
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Pendiente",
+      columnaId: primera!.id,
+      venceEn: "2026-05-10T10:00:00.000Z",
+    });
+    const tarea = creacion.json() as { id: string };
+
+    const inicial = await consultarAgenda(
+      app,
+      cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    const antes = inicial.json() as Ocurrencia[];
+    expect(antes).toHaveLength(1);
+    expect(antes[0]).toMatchObject({
+      primeraColumnaId: primera!.id,
+      ultimaColumnaId: ultima!.id,
+      hecha: false,
+    });
+
+    await moverTarea(app, cookie, tarea.id, intermedia!.id);
+    const enIntermedia = await consultarAgenda(
+      app,
+      cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    expect((enIntermedia.json() as Ocurrencia[])[0]!.hecha).toBe(false);
+
+    await moverTarea(app, cookie, tarea.id, ultima!.id);
+    const enUltima = await consultarAgenda(
+      app,
+      cookie,
+      "2026-05-01T00:00:00.000Z",
+      "2026-05-31T23:59:59.000Z",
+    );
+    expect((enUltima.json() as Ocurrencia[])[0]!.hecha).toBe(true);
+  });
+
+  it("marca hecha la ocurrencia recurrente solo en la fecha marcada", async () => {
+    const { cookie } = await registrar(app, "hecha-recurrente");
+    const proyecto = await crearProyecto(app, cookie, "Hecha recurrente");
+    const columnas = await columnasDeProyecto(app, cookie, proyecto.id);
+    const primera = columnas[0]!;
+    const ultima = columnas[columnas.length - 1]!;
+
+    const creacion = await crearTarea(app, cookie, proyecto.id, {
+      titulo: "Semanal",
+      columnaId: primera.id,
+      venceEn: "2026-03-02T08:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+    });
+    const tarea = creacion.json() as { id: string };
+
+    // Aunque la tarea esté en la última columna, una recurrente no se da por
+    // hecha: solo cuenta la ocurrencia marcada.
+    await moverTarea(app, cookie, tarea.id, ultima.id);
+    const marcado = await marcarOcurrencia(
+      app,
+      cookie,
+      tarea.id,
+      "2026-03-09T08:00:00.000Z",
+      true,
+    );
+    expect(marcado.statusCode).toBe(204);
+
+    const respuesta = await consultarAgenda(
+      app,
+      cookie,
+      "2026-03-01T00:00:00.000Z",
+      "2026-03-31T23:59:59.000Z",
+    );
+    const ocurrencias = respuesta.json() as Ocurrencia[];
+    expect(ocurrencias.map((o) => [o.fecha, o.hecha])).toEqual([
+      ["2026-03-02T08:00:00.000Z", false],
+      ["2026-03-09T08:00:00.000Z", true],
+      ["2026-03-16T08:00:00.000Z", false],
+    ]);
+    expect(ocurrencias.every((o) => o.esRecurrente)).toBe(true);
   });
 
   it("borra fecha y recurrencia con PATCH", async () => {

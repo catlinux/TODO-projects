@@ -30,6 +30,8 @@ function ocurrencia(
     proyectoNombre: "Casa",
     columnaId: "c1",
     columnaNombre: "Pendiente",
+    primeraColumnaId: "c1",
+    ultimaColumnaId: "c-last",
     fecha: fecha.toISOString(),
     esRecurrente: false,
     hecha: false,
@@ -53,8 +55,14 @@ function respuestaJson(datos: unknown): Response {
   });
 }
 
+interface PeticionCapturada {
+  method: string;
+  url: string;
+  body: string | null;
+}
+
 function renderHoy(datos: OcurrenciaAgenda[] = agenda) {
-  let cuerpoPost: string | null = null;
+  const mutaciones: PeticionCapturada[] = [];
   let llamadasAgenda = 0;
 
   vi.stubGlobal(
@@ -67,8 +75,12 @@ function renderHoy(datos: OcurrenciaAgenda[] = agenda) {
         llamadasAgenda += 1;
         return respuestaJson(datos);
       }
-      if (url.startsWith("/api/tareas/") && init?.method === "POST") {
-        cuerpoPost = String(init.body ?? "");
+      if (url.startsWith("/api/tareas/")) {
+        mutaciones.push({
+          method: init?.method ?? "GET",
+          url,
+          body: init?.body ? String(init.body) : null,
+        });
         return new Response(null, { status: 204 });
       }
       return new Response(JSON.stringify({}), {
@@ -91,7 +103,7 @@ function renderHoy(datos: OcurrenciaAgenda[] = agenda) {
     </QueryClientProvider>,
   );
 
-  return { user, cuerpoPost: () => cuerpoPost, llamadasAgenda: () => llamadasAgenda };
+  return { user, mutaciones: () => mutaciones, llamadasAgenda: () => llamadasAgenda };
 }
 
 function fila(titulo: string): HTMLElement {
@@ -149,20 +161,52 @@ describe("Hoy", () => {
     expect((within(pendiente).getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
   });
 
-  it("marca como hecha llamando al endpoint y refresca la agenda", async () => {
-    const { user, cuerpoPost, llamadasAgenda } = renderHoy();
+  it("mueve a la última columna al marcar una tarea no recurrente", async () => {
+    const { user, mutaciones, llamadasAgenda } = renderHoy();
 
     await screen.findByRole("heading", { name: "Atrasadas" });
     const antes = llamadasAgenda();
 
     await user.click(within(fila("Hoy pendiente")).getByRole("checkbox"));
 
-    await waitFor(() => expect(cuerpoPost()).not.toBeNull());
-    expect(JSON.parse(String(cuerpoPost()))).toEqual({
-      fecha: agenda[1]!.fecha,
+    await waitFor(() => expect(mutaciones()).toHaveLength(1));
+    expect(mutaciones()[0]).toMatchObject({ method: "PATCH", url: "/api/tareas/t-hoy" });
+    expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({ columnaId: "c-last" });
+    await waitFor(() => expect(llamadasAgenda()).toBeGreaterThan(antes));
+  });
+
+  it("devuelve a la primera columna al desmarcar una no recurrente", async () => {
+    const hecha = ocurrencia("t-hecha", "Ya hecha", 0, { hecha: true });
+    const { user, mutaciones } = renderHoy([hecha]);
+
+    await screen.findByText("Ya hecha");
+    await user.click(within(fila("Ya hecha")).getByRole("checkbox"));
+
+    await waitFor(() => expect(mutaciones()).toHaveLength(1));
+    expect(mutaciones()[0]).toMatchObject({ method: "PATCH", url: "/api/tareas/t-hecha" });
+    expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({ columnaId: "c1" });
+  });
+
+  it("marca la ocurrencia de una recurrente sin cambiarla de columna", async () => {
+    const recurrente = ocurrencia("t-recurrente", "Semanal", 0, {
+      esRecurrente: true,
+      columnaId: "c1",
+      ultimaColumnaId: "c-last",
+    });
+    const { user, mutaciones } = renderHoy([recurrente]);
+
+    await screen.findByText("Semanal");
+    await user.click(within(fila("Semanal")).getByRole("checkbox"));
+
+    await waitFor(() => expect(mutaciones()).toHaveLength(1));
+    expect(mutaciones()[0]).toMatchObject({
+      method: "POST",
+      url: "/api/tareas/t-recurrente/ocurrencias",
+    });
+    expect(JSON.parse(String(mutaciones()[0]!.body))).toEqual({
+      fecha: recurrente.fecha,
       hecha: true,
     });
-    await waitFor(() => expect(llamadasAgenda()).toBeGreaterThan(antes));
   });
 
   it("avisa cuando no hay nada pendiente", async () => {

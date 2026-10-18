@@ -11,6 +11,8 @@ function ocurrencia(cambios: Partial<OcurrenciaAgenda> = {}): OcurrenciaAgenda {
     proyectoNombre: "Proyecto",
     columnaId: "c1",
     columnaNombre: "Pendiente",
+    primeraColumnaId: "c1",
+    ultimaColumnaId: "c-last",
     fecha: "2026-05-10T10:00:00.000Z",
     esRecurrente: false,
     hecha: false,

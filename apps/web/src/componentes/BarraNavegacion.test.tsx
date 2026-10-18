@@ -35,6 +35,8 @@ function ocurrencia(tareaId: string, dias: number, hecha = false): OcurrenciaAge
     proyectoNombre: "Casa",
     columnaId: "c1",
     columnaNombre: "Pendiente",
+    primeraColumnaId: "c1",
+    ultimaColumnaId: "c-last",
     fecha: fecha.toISOString(),
     esRecurrente: false,
     hecha,

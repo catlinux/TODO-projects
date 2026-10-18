@@ -61,6 +61,10 @@ export interface OcurrenciaAgenda {
   proyectoNombre: string;
   columnaId: string;
   columnaNombre: string;
+  /** Columna de menor `posicion` del proyecto (destino al desmarcar). */
+  primeraColumnaId: string;
+  /** Columna de mayor `posicion` del proyecto: estar en ella es estar «hecha». */
+  ultimaColumnaId: string;
   fecha: string;
   esRecurrente: boolean;
   hecha: boolean;

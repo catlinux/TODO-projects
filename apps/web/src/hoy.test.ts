@@ -22,6 +22,8 @@ function ocurrencia(
     proyectoNombre: "Proyecto",
     columnaId: "c1",
     columnaNombre: "Pendiente",
+    primeraColumnaId: "c1",
+    ultimaColumnaId: "c-last",
     fecha: fecha.toISOString(),
     esRecurrente: false,
     hecha: false,

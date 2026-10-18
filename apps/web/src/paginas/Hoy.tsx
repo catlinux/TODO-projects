@@ -32,7 +32,7 @@ function IconoCampana({ etiqueta }: { etiqueta: string }) {
 interface FilaProps {
   ocurrencia: OcurrenciaAgenda;
   color: string;
-  alMarcar(tareaId: string, fecha: string, hecha: boolean): void;
+  alMarcar(ocurrencia: OcurrenciaAgenda, hecha: boolean): void;
 }
 
 function Fila({ ocurrencia, color, alMarcar }: FilaProps) {
@@ -45,9 +45,7 @@ function Fila({ ocurrencia, color, alMarcar }: FilaProps) {
         <input
           type="checkbox"
           checked={ocurrencia.hecha}
-          onChange={(evento) =>
-            alMarcar(ocurrencia.tareaId, ocurrencia.fecha, evento.target.checked)
-          }
+          onChange={(evento) => alMarcar(ocurrencia, evento.target.checked)}
         />
         <span className="visualmente-oculto">
           {ocurrencia.hecha ? t("hoy.markPending") : t("hoy.markDone")}
@@ -79,21 +77,32 @@ export default function Hoy() {
 
   const marcarHecha = useMutation({
     mutationFn: async ({
-      tareaId,
-      fecha,
+      ocurrencia,
       hecha,
     }: {
-      tareaId: string;
-      fecha: string;
+      ocurrencia: OcurrenciaAgenda;
       hecha: boolean;
     }) => {
-      await peticion(`/tareas/${tareaId}/ocurrencias`, {
-        method: "POST",
-        body: JSON.stringify({ fecha, hecha }),
+      // Las recurrentes se marcan por ocurrencia; las demás se mueven entre la
+      // última columna (hecha) y la primera (pendiente).
+      if (ocurrencia.esRecurrente) {
+        await peticion(`/tareas/${ocurrencia.tareaId}/ocurrencias`, {
+          method: "POST",
+          body: JSON.stringify({ fecha: ocurrencia.fecha, hecha }),
+        });
+        return;
+      }
+
+      await peticion(`/tareas/${ocurrencia.tareaId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          columnaId: hecha ? ocurrencia.ultimaColumnaId : ocurrencia.primeraColumnaId,
+        }),
       });
     },
     onSuccess: async () => {
       await cliente.invalidateQueries({ queryKey: ["agenda"] });
+      await cliente.invalidateQueries({ queryKey: ["tareas"] });
     },
   });
 
@@ -118,8 +127,8 @@ export default function Hoy() {
 
   const secciones = useMemo(() => agruparHoy(data ?? [], ahora), [data, ahora]);
 
-  const alMarcar = (tareaId: string, fecha: string, hecha: boolean) =>
-    marcarHecha.mutate({ tareaId, fecha, hecha });
+  const alMarcar = (ocurrencia: OcurrenciaAgenda, hecha: boolean) =>
+    marcarHecha.mutate({ ocurrencia, hecha });
 
   const grupos = [
     { clave: "atrasadas", titulo: t("hoy.overdue"), ocurrencias: secciones.atrasadas },

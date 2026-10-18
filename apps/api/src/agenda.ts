@@ -23,6 +23,10 @@ interface OcurrenciaAgenda {
   proyectoNombre: string;
   columnaId: string;
   columnaNombre: string;
+  /** Columna de menor `posicion` del proyecto (destino al desmarcar). */
+  primeraColumnaId: string;
+  /** Columna de mayor `posicion` del proyecto: estar en ella es estar «hecha». */
+  ultimaColumnaId: string;
   fecha: string;
   esRecurrente: boolean;
   hecha: boolean;
@@ -94,6 +98,28 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
       }
     }
 
+    // Primera y última columna de cada proyecto en una sola consulta. Si el
+    // proyecto tiene una sola columna, primera = última y toda tarea no
+    // recurrente cuenta como hecha.
+    const idsProyectos = [...new Set(filas.map((fila) => fila.proyectoId))];
+    const limitesColumnas = new Map<string, { primera: string; ultima: string }>();
+    if (idsProyectos.length > 0) {
+      const columnasProyecto = await db
+        .select({ id: columnas.id, proyectoId: columnas.proyectoId })
+        .from(columnas)
+        .where(inArray(columnas.proyectoId, idsProyectos))
+        .orderBy(asc(columnas.posicion));
+
+      for (const columna of columnasProyecto) {
+        const limites = limitesColumnas.get(columna.proyectoId);
+        if (limites) {
+          limites.ultima = columna.id;
+        } else {
+          limitesColumnas.set(columna.proyectoId, { primera: columna.id, ultima: columna.id });
+        }
+      }
+    }
+
     const ocurrencias: OcurrenciaAgenda[] = [];
 
     for (const fila of filas) {
@@ -107,6 +133,12 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
         hasta,
       );
 
+      const limites = limitesColumnas.get(fila.proyectoId);
+      const primeraColumnaId = limites?.primera ?? fila.columnaId;
+      const ultimaColumnaId = limites?.ultima ?? fila.columnaId;
+      const esRecurrente = fila.recurrencia !== null;
+      const enUltimaColumna = fila.columnaId === ultimaColumnaId;
+
       for (const fecha of fechas) {
         ocurrencias.push({
           tareaId: fila.tareaId,
@@ -115,9 +147,12 @@ export function registrarRutasAgenda(app: FastifyInstance, db: Database): void {
           proyectoNombre: fila.proyectoNombre,
           columnaId: fila.columnaId,
           columnaNombre: fila.columnaNombre,
+          primeraColumnaId,
+          ultimaColumnaId,
           fecha: fecha.toISOString(),
-          esRecurrente: fila.recurrencia !== null,
-          hecha: marcas.has(`${fila.tareaId}|${fecha.getTime()}`),
+          esRecurrente,
+          hecha:
+            marcas.has(`${fila.tareaId}|${fecha.getTime()}`) || (!esRecurrente && enUltimaColumna),
           recordatorioMin: fila.recordatorioMin,
         });
       }
