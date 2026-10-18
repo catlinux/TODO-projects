@@ -4,6 +4,18 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.10.0] - 2026-10-18
+
+### Añadido
+- Color y fondo propios de cada proyecto (`color` y `fondo` en la API, migración `0010`) y diálogo «Fondo» para personalizar nombre, color y fondo: cinco ambientes con curvas de nivel o color liso.
+- Tema claro, oscuro o del sistema, con selector en el menú.
+- Alta de tarjetas en línea al pie de cada columna y menú «⋯» en cada tarjeta (editar, mover, eliminar).
+- Vista «Hoy» con saludo, cifras y progreso por proyecto; `GET /agenda` devuelve `primeraColumnaId`, `ultimaColumnaId` y `hecha`.
+
+### Cambiado
+- Aspecto v3: tipografía Geist, menú lateral con perfil y contador de Hoy, tablero sobre el fondo del proyecto con columnas translúcidas, agenda con eventos compactos (máximo 2 por día).
+- «Hecha» significa estar en la última columna del proyecto (las tareas recurrentes se siguen marcando por ocurrencia).
+
 ## [0.9.1] - 2026-10-18
 
 ### Corregido
