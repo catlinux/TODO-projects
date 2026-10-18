@@ -46,7 +46,11 @@ export function Disposicion({ children }: { children: ReactNode }) {
     <>
       <div className="disposicion">
         <BarraNavegacion onAbrirBuscar={() => setPaletaAbierta(true)} />
-        <div className="disposicion__contenido">{children}</div>
+        <div
+          className={`disposicion__contenido${proyectoAbiertoId ? " disposicion__contenido--lienzo" : ""}`}
+        >
+          {children}
+        </div>
       </div>
       <Paleta
         abierto={paletaAbierta}

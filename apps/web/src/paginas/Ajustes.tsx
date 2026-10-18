@@ -11,6 +11,7 @@ import {
   type TokenCreadoApi,
 } from "../api";
 import { useCerrarSesion } from "../cerrarSesion";
+import { AvisosNavegador } from "../componentes/AvisosNavegador";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
 import { registrarHuella, soportaHuella } from "../huella";
 
@@ -387,6 +388,13 @@ export default function Ajustes() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="tarjeta-ajustes" aria-labelledby="ajustes-avisos">
+        <div className="tarjeta-ajustes__cabecera">
+          <h2 id="ajustes-avisos">{t("settings.browserNotifications")}</h2>
+        </div>
+        <AvisosNavegador />
       </section>
 
       <section className="tarjeta-ajustes" aria-labelledby="ajustes-sesion">

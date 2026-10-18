@@ -11,6 +11,7 @@
     "hoy": "Hoy",
     "inbox": "Bandeja de entrada",
     "newProject": "Nuevo proyecto",
+    "noProjects": "Aún no hay proyectos",
     "search": "Buscar",
     "sidebar": "Menú lateral",
     "bottom": "Navegación inferior",
@@ -376,6 +377,7 @@
     "error": "No se pudieron cambiar los avisos del navegador"
   },
   "settings": {
+    "browserNotifications": "Avisos en este navegador",
     "title": "Ajustes",
     "tokens": "Tokens de API",
     "tokensDescription": "Tokens para el conector y suscripciones al calendario.",

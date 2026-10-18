@@ -195,7 +195,8 @@ describe("BarraNavegacion", () => {
     expect(enlace.querySelector(".menu-lateral__contador")).toBeNull();
   });
 
-  it("cierra la sesión, limpia la caché y navega a login", async () => {    const { cliente, user, seCerroSesion } = renderMenu("/proyectos");
+  it("cierra la sesión, limpia la caché y navega a login", async () => {
+    const { cliente, user, seCerroSesion } = renderMenu("/proyectos");
 
     expect(
       within(menuLateral())
@@ -257,12 +258,16 @@ describe("BarraNavegacion", () => {
   it("cambia el tema con el selector", async () => {
     const { user } = renderMenu("/hoy");
 
-    const selector = within(menuLateral()).getByLabelText("Tema") as HTMLSelectElement;
-    expect(selector.value).toBe("sistema");
+    const grupo = within(menuLateral()).getByRole("radiogroup", { name: "Tema" });
+    expect(within(grupo).getByRole("radio", { name: "Sistema" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
 
-    await user.selectOptions(selector, "oscuro");
+    await user.click(within(grupo).getByRole("radio", { name: "Oscuro" }));
 
-    expect(selector.value).toBe("oscuro");
+    expect(within(grupo).getByRole("radio", { name: "Oscuro" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
     expect(document.documentElement.dataset.tema).toBe("oscuro");
     expect(localStorage.getItem(CLAVE_TEMA)).toBe("oscuro");
   });

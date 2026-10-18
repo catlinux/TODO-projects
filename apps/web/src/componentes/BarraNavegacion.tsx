@@ -15,9 +15,24 @@ import { colorProyecto } from "../colores";
 import { agruparHoy, pendientesHoy, rangoHoy } from "../hoy";
 import { inicial } from "../inicial";
 import { useTema, type Tema } from "../tema";
-import { AvisosNavegador } from "./AvisosNavegador";
 
 const OPCIONES_TEMA: readonly Tema[] = ["claro", "oscuro", "sistema"];
+
+const ICONOS_TEMA: Record<Tema, React.ReactNode> = {
+  claro: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>
+  ),
+  oscuro: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,
+  sistema: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8M12 16v4" />
+    </>
+  ),
+};
 
 function Icono({ children }: { children: React.ReactNode }) {
   return (
@@ -183,7 +198,20 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
           {t("nav.agenda")}
         </NavLink>
 
-        <h2 className="menu-lateral__titulo">{t("projects.title")}</h2>
+        <div className="menu-lateral__seccion">
+          <h2 className="menu-lateral__titulo">{t("projects.title")}</h2>
+          <NavLink
+            to="/proyectos"
+            end
+            className="menu-lateral__anadir"
+            aria-label={t("nav.newProject")}
+            title={t("nav.newProject")}
+          >
+            <Icono>
+              <path d="M12 5v14M5 12h14" />
+            </Icono>
+          </NavLink>
+        </div>
         <ul className="menu-lateral__proyectos">
           {(proyectos ?? []).map((proyecto, indice) => {
             const color = proyecto.color ?? colorProyecto(indice);
@@ -205,23 +233,9 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
             );
           })}
         </ul>
-        <NavLink to="/proyectos" end className="menu-lateral__nuevo">
-          <Icono>
-            <path d="M12 5v14M5 12h14" />
-          </Icono>
-          {t("nav.newProject")}
-        </NavLink>
+        {proyectos?.length === 0 && <p className="menu-lateral__vacio">{t("nav.noProjects")}</p>}
 
         <div className="menu-lateral__pie">
-          <div className="menu-lateral__perfil">
-            <span className="menu-lateral__avatar" aria-hidden="true">
-              {inicial(usuario?.nombre ?? "")}
-            </span>
-            <span className="menu-lateral__perfil-nombre" title={usuario?.nombre ?? ""}>
-              {usuario?.nombre ?? ""}
-            </span>
-          </div>
-
           <NavLink to="/ajustes" className="menu-lateral__enlace">
             <Icono>
               <path d="M4 7h8M18 7h2M4 17h2M10 17h10" />
@@ -231,31 +245,43 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
             {t("nav.settings")}
           </NavLink>
 
-          <label className="menu-lateral__tema">
-            {t("nav.theme")}
-            <select value={tema} onChange={(evento) => cambiarTema(evento.target.value as Tema)}>
-              {OPCIONES_TEMA.map((opcion) => (
-                <option key={opcion} value={opcion}>
-                  {t(`nav.themeOptions.${opcion}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="menu-lateral__tema" role="radiogroup" aria-label={t("nav.theme")}>
+            {OPCIONES_TEMA.map((opcion) => (
+              <button
+                key={opcion}
+                type="button"
+                role="radio"
+                aria-checked={tema === opcion}
+                aria-label={t(`nav.themeOptions.${opcion}`)}
+                title={t(`nav.themeOptions.${opcion}`)}
+                onClick={() => cambiarTema(opcion)}
+              >
+                <Icono>{ICONOS_TEMA[opcion]}</Icono>
+              </button>
+            ))}
+          </div>
 
-          <AvisosNavegador />
-
-          <button
-            type="button"
-            className="menu-lateral__salir"
-            onClick={() => cerrarSesion.mutate()}
-            disabled={cerrarSesion.isPending}
-          >
-            <Icono>
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <path d="M10 17l5-5-5-5M15 12H3" />
-            </Icono>
-            {t("nav.logout")}
-          </button>
+          <div className="menu-lateral__perfil">
+            <span className="menu-lateral__avatar" aria-hidden="true">
+              {inicial(usuario?.nombre ?? "")}
+            </span>
+            <span className="menu-lateral__perfil-nombre" title={usuario?.nombre ?? ""}>
+              {usuario?.nombre ?? ""}
+            </span>
+            <button
+              type="button"
+              className="menu-lateral__salir"
+              aria-label={t("nav.logout")}
+              title={t("nav.logout")}
+              onClick={() => cerrarSesion.mutate()}
+              disabled={cerrarSesion.isPending}
+            >
+              <Icono>
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <path d="M10 17l5-5-5-5M15 12H3" />
+              </Icono>
+            </button>
+          </div>
         </div>
       </nav>
 
