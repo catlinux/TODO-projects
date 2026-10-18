@@ -151,6 +151,7 @@
   "settings": {
     "title": "Ajustes",
     "tokens": "Tokens de API",
+    "tokensDescription": "Tokens para el conector y suscripciones al calendario.",
     "name": "Nombre",
     "permission": "Permiso",
     "expires": "Caducidad",
@@ -168,6 +169,7 @@
       "calendario": "Calendario (solo suscripción .ics)"
     },
     "activity": "Actividad del conector",
+    "activityDescription": "Lo que han hecho los tokens; puedes deshacer sus cambios.",
     "activityEmpty": "Todavía no hay actividad hecha con tokens",
     "undo": "Deshacer",
     "undone": "Deshecho",
@@ -177,6 +179,7 @@
       "borrar": "Borró"
     },
     "access": "Acceso",
+    "accessDescription": "Cómo entras en este dispositivo y qué sesiones y huellas están activas.",
     "accessPinNote": "El PIN se cambia en el servidor con deploy/fijar-pin.sh",
     "activateFingerprint": "Activar huella en este dispositivo",
     "accessEmpty": "No hay dispositivos con huella registrados",
@@ -188,6 +191,9 @@
     "closeOtherSessions": "Cerrar las demás sesiones",
     "closeOtherSessionsConfirm": "¿Cerrar todas las demás sesiones?",
     "sessionsClosed": "Sesiones cerradas: {{n}}",
-    "noOtherSessions": "No había otras sesiones abiertas"
+    "noOtherSessions": "No había otras sesiones abiertas",
+    "session": "Sesión",
+    "sessionDescription": "Cierra la sesión en este dispositivo.",
+    "actionsColumn": "Acciones"
   }
 }

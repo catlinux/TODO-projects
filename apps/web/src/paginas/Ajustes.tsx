@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 
 import {
   ErrorHttp,
@@ -11,6 +10,7 @@ import {
   type TokenApi,
   type TokenCreadoApi,
 } from "../api";
+import { useCerrarSesion } from "../cerrarSesion";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
 import { registrarHuella, soportaHuella } from "../huella";
 
@@ -26,7 +26,6 @@ interface HuellaDispositivoApi {
 export default function Ajustes() {
   const { t } = useTranslation();
   const cliente = useQueryClient();
-  const navigate = useNavigate();
 
   const [nombre, setNombre] = useState("");
   const [permiso, setPermiso] = useState<PermisoTokenApi>("lectura");
@@ -128,15 +127,7 @@ export default function Ajustes() {
     },
   });
 
-  const cerrarSesion = useMutation({
-    mutationFn: async () => {
-      await peticion("/auth/logout", { method: "POST" });
-    },
-    onSuccess: () => {
-      cliente.clear();
-      navigate("/login");
-    },
-  });
+  const cerrarSesion = useCerrarSesion();
 
   const cerrarSesiones = useMutation({
     mutationFn: async () =>
@@ -163,11 +154,95 @@ export default function Ajustes() {
       : null;
 
   return (
-    <main className="contenedor">
+    <main className="contenedor contenedor--ajustes">
       <h1>{t("settings.title")}</h1>
 
-      <section>
-        <h2>{t("settings.tokens")}</h2>
+      <section className="tarjeta-ajustes" aria-labelledby="ajustes-acceso">
+        <div className="tarjeta-ajustes__cabecera">
+          <h2 id="ajustes-acceso">{t("settings.access")}</h2>
+          <p className="tarjeta-ajustes__descripcion">{t("settings.accessDescription")}</p>
+        </div>
+
+        <p>{t("settings.accessPinNote")}</p>
+        {soporta && (
+          <button
+            type="button"
+            className="boton-principal"
+            disabled={activarHuella.isPending}
+            onClick={() => activarHuella.mutate()}
+          >
+            {t("settings.activateFingerprint")}
+          </button>
+        )}
+        {reauthHuella && (
+          <p className="error">
+            {t("settings.reauthRequired")}{" "}
+            <button
+              type="button"
+              disabled={cerrarSesion.isPending}
+              onClick={() => cerrarSesion.mutate()}
+            >
+              {t("settings.logoutAndReenter")}
+            </button>
+          </p>
+        )}
+        {huellas.isLoading && <p>{t("app.loading")}</p>}
+        {huellas.isError && <p className="error">{t("auth.error")}</p>}
+        {errorHuella && <p className="error">{errorHuella}</p>}
+        {huellas.data && huellas.data.length === 0 && <p>{t("settings.accessEmpty")}</p>}
+        {huellas.data && huellas.data.length > 0 && (
+          <ul className="lista-ajustes">
+            {huellas.data.map((dispositivo) => (
+              <li key={dispositivo.id} className="fila-ajustes">
+                <div className="fila-ajustes__principal">
+                  <span className="fila-ajustes__nombre">{dispositivo.nombre}</span>
+                  <span className="fila-ajustes__detalle">
+                    <span className="mono">
+                      {formatearFechaHoraEs(dispositivo.createdAt) || dispositivo.createdAt}
+                    </span>{" "}
+                    ·{" "}
+                    <span>
+                      {dispositivo.ultimoUso
+                        ? formatearFechaHoraEs(dispositivo.ultimoUso)
+                        : t("settings.never")}
+                    </span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="boton-fila"
+                  disabled={borrarHuella.isPending}
+                  onClick={() => {
+                    if (!confirm(t("settings.deleteConfirm"))) return;
+                    borrarHuella.mutate(dispositivo.id);
+                  }}
+                >
+                  {t("settings.delete")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <button
+          type="button"
+          disabled={cerrarSesiones.isPending}
+          onClick={() => {
+            if (!confirm(t("settings.closeOtherSessionsConfirm"))) return;
+            cerrarSesiones.mutate();
+          }}
+        >
+          {t("settings.closeOtherSessions")}
+        </button>
+        {avisoSesiones && <p>{avisoSesiones}</p>}
+        {errorSesiones && <p className="error">{errorSesiones}</p>}
+      </section>
+
+      <section className="tarjeta-ajustes" aria-labelledby="ajustes-tokens">
+        <div className="tarjeta-ajustes__cabecera">
+          <h2 id="ajustes-tokens">{t("settings.tokens")}</h2>
+          <p className="tarjeta-ajustes__descripcion">{t("settings.tokensDescription")}</p>
+        </div>
+
         <form
           className="formulario"
           onSubmit={(evento) => {
@@ -198,7 +273,7 @@ export default function Ajustes() {
             />
           </label>
           {error && <p className="error">{error}</p>}
-          <button type="submit" disabled={crear.isPending}>
+          <button type="submit" className="boton-principal" disabled={crear.isPending}>
             {t("settings.create")}
           </button>
         </form>
@@ -227,56 +302,82 @@ export default function Ajustes() {
         {tokens.isError && <p className="error">{t("auth.error")}</p>}
         {tokens.data && tokens.data.length === 0 && <p>{t("settings.empty")}</p>}
         {tokens.data && tokens.data.length > 0 && (
-          <table>
-            <thead>
-              <tr>
-                <th>{t("settings.name")}</th>
-                <th>{t("settings.permission")}</th>
-                <th>{t("settings.prefix")}</th>
-                <th>{t("settings.lastUse")}</th>
-                <th>{t("settings.expires")}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {tokens.data.map((token) => (
-                <tr key={token.id} className={token.revocadoEn ? "token-revocado" : undefined}>
-                  <td>{token.nombre}</td>
-                  <td>{t(`settings.permissions.${token.permiso}`)}</td>
-                  <td>{token.prefijo}</td>
-                  <td>{formatearFechaHoraEs(token.ultimoUso) || "—"}</td>
-                  <td>{formatearFechaHoraEs(token.expiraEn) || "—"}</td>
-                  <td>
-                    {!token.revocadoEn && (
-                      <button type="button" onClick={() => revocar.mutate(token.id)}>
-                        {t("settings.revoke")}
-                      </button>
-                    )}
-                  </td>
+          <div className="tabla-desplazable">
+            <table className="tabla-tokens">
+              <thead>
+                <tr>
+                  <th>{t("settings.name")}</th>
+                  <th>{t("settings.permission")}</th>
+                  <th>{t("settings.prefix")}</th>
+                  <th>{t("settings.lastUse")}</th>
+                  <th>{t("settings.expires")}</th>
+                  <th>
+                    <span className="visualmente-oculto">{t("settings.actionsColumn")}</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tokens.data.map((token) => (
+                  <tr key={token.id} className={token.revocadoEn ? "token-revocado" : undefined}>
+                    <td>
+                      <strong>{token.nombre}</strong>
+                    </td>
+                    <td>{t(`settings.permissions.${token.permiso}`)}</td>
+                    <td className="mono celda-secundaria">{token.prefijo}</td>
+                    <td className="mono celda-secundaria">
+                      {formatearFechaHoraEs(token.ultimoUso) || "—"}
+                    </td>
+                    <td className="mono celda-secundaria">
+                      {formatearFechaHoraEs(token.expiraEn) || "—"}
+                    </td>
+                    <td className="celda-accion">
+                      {!token.revocadoEn && (
+                        <button
+                          type="button"
+                          className="boton-fila"
+                          onClick={() => revocar.mutate(token.id)}
+                        >
+                          {t("settings.revoke")}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
-      <section>
-        <h2>{t("settings.activity")}</h2>
+      <section className="tarjeta-ajustes" aria-labelledby="ajustes-actividad">
+        <div className="tarjeta-ajustes__cabecera">
+          <h2 id="ajustes-actividad">{t("settings.activity")}</h2>
+          <p className="tarjeta-ajustes__descripcion">{t("settings.activityDescription")}</p>
+        </div>
+
         {actividad.isLoading && <p>{t("app.loading")}</p>}
         {actividad.isError && <p className="error">{t("auth.error")}</p>}
         {actividad.data && actividad.data.length === 0 && <p>{t("settings.activityEmpty")}</p>}
         {errorActividad && <p className="error">{errorActividad}</p>}
         {actividad.data && actividad.data.length > 0 && (
-          <ul className="actividad">
+          <ul className="lista-ajustes">
             {actividad.data.map((registro) => (
-              <li key={registro.id} className={registro.deshechoEn ? "token-revocado" : undefined}>
-                <span>
-                  {t(`settings.actions.${registro.accion}`)}: {registro.titulo ?? "—"}
-                </span>{" "}
-                <span>{registro.tokenNombre ?? "—"}</span>{" "}
-                <span>{formatearFechaHoraEs(registro.createdAt)}</span>{" "}
+              <li
+                key={registro.id}
+                className={`fila-ajustes${registro.deshechoEn ? " token-revocado" : ""}`}
+              >
+                <div className="fila-ajustes__principal">
+                  <span className="fila-ajustes__nombre">
+                    {t(`settings.actions.${registro.accion}`)}: {registro.titulo ?? "—"}
+                  </span>
+                  <span className="fila-ajustes__detalle">
+                    <span>{registro.tokenNombre ?? "—"}</span> ·{" "}
+                    <span className="mono">{formatearFechaHoraEs(registro.createdAt)}</span>
+                  </span>
+                </div>
                 <button
                   type="button"
+                  className="boton-fila"
                   disabled={registro.deshechoEn !== null}
                   onClick={() => deshacer.mutate(registro.id)}
                 >
@@ -288,71 +389,19 @@ export default function Ajustes() {
         )}
       </section>
 
-      <section>
-        <h2>{t("settings.access")}</h2>
-        <p>{t("settings.accessPinNote")}</p>
-        {soporta && (
-          <button
-            type="button"
-            disabled={activarHuella.isPending}
-            onClick={() => activarHuella.mutate()}
-          >
-            {t("settings.activateFingerprint")}
-          </button>
-        )}
-        {reauthHuella && (
-          <p className="error">
-            {t("settings.reauthRequired")}{" "}
-            <button
-              type="button"
-              disabled={cerrarSesion.isPending}
-              onClick={() => cerrarSesion.mutate()}
-            >
-              {t("settings.logoutAndReenter")}
-            </button>
-          </p>
-        )}
-        {huellas.isLoading && <p>{t("app.loading")}</p>}
-        {huellas.isError && <p className="error">{t("auth.error")}</p>}
-        {errorHuella && <p className="error">{errorHuella}</p>}
-        {huellas.data && huellas.data.length === 0 && <p>{t("settings.accessEmpty")}</p>}
-        {huellas.data && huellas.data.length > 0 && (
-          <ul className="actividad">
-            {huellas.data.map((dispositivo) => (
-              <li key={dispositivo.id}>
-                <span>{dispositivo.nombre}</span>{" "}
-                <span>{formatearFechaHoraEs(dispositivo.createdAt) || dispositivo.createdAt}</span>{" "}
-                <span>
-                  {dispositivo.ultimoUso
-                    ? formatearFechaHoraEs(dispositivo.ultimoUso)
-                    : t("settings.never")}
-                </span>{" "}
-                <button
-                  type="button"
-                  disabled={borrarHuella.isPending}
-                  onClick={() => {
-                    if (!confirm(t("settings.deleteConfirm"))) return;
-                    borrarHuella.mutate(dispositivo.id);
-                  }}
-                >
-                  {t("settings.delete")}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="tarjeta-ajustes" aria-labelledby="ajustes-sesion">
+        <div className="tarjeta-ajustes__cabecera">
+          <h2 id="ajustes-sesion">{t("settings.session")}</h2>
+          <p className="tarjeta-ajustes__descripcion">{t("settings.sessionDescription")}</p>
+        </div>
         <button
           type="button"
-          disabled={cerrarSesiones.isPending}
-          onClick={() => {
-            if (!confirm(t("settings.closeOtherSessionsConfirm"))) return;
-            cerrarSesiones.mutate();
-          }}
+          className="boton-principal"
+          disabled={cerrarSesion.isPending}
+          onClick={() => cerrarSesion.mutate()}
         >
-          {t("settings.closeOtherSessions")}
+          {t("nav.logout")}
         </button>
-        {avisoSesiones && <p>{avisoSesiones}</p>}
-        {errorSesiones && <p className="error">{errorSesiones}</p>}
       </section>
     </main>
   );

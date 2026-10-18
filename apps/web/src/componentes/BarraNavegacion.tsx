@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import { peticion, type OcurrenciaAgenda, type ProyectoApi } from "../api";
+import { useCerrarSesion } from "../cerrarSesion";
 import { colorProyecto } from "../colores";
 import { agruparHoy, pendientesHoy, rangoHoy } from "../hoy";
 import { AvisosNavegador } from "./AvisosNavegador";
@@ -29,8 +30,6 @@ function Icono({ children }: { children: React.ReactNode }) {
 
 export function BarraNavegacion() {
   const { t } = useTranslation();
-  const cliente = useQueryClient();
-  const navigate = useNavigate();
   const [ahora] = useState(() => new Date());
   const rango = useMemo(() => rangoHoy(ahora), [ahora]);
 
@@ -50,15 +49,7 @@ export function BarraNavegacion() {
 
   const pendientes = pendientesHoy(agruparHoy(ocurrencias ?? [], ahora));
 
-  const cerrarSesion = useMutation({
-    mutationFn: async () => {
-      await peticion("/auth/logout", { method: "POST" });
-    },
-    onSuccess: () => {
-      cliente.clear();
-      navigate("/login");
-    },
-  });
+  const cerrarSesion = useCerrarSesion();
 
   return (
     <>

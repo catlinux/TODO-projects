@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { peticion } from "../api";
+import { Marca } from "../componentes/Marca";
 
 export default function Registro() {
   const { t } = useTranslation();
@@ -31,34 +32,42 @@ export default function Registro() {
   }
 
   return (
-    <main className="contenedor-formulario">
-      <h1>{t("auth.register")}</h1>
-      <form onSubmit={enviar}>
-        <label>
-          {t("auth.email")}
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          {t("auth.name")}
-          <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-        </label>
-        <label>
-          {t("auth.password")}
-          <input
-            type="password"
-            value={contrasena}
-            onChange={(e) => setContrasena(e.target.value)}
-            required
-          />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={enviando}>
-          {t("auth.submitRegister")}
-        </button>
-      </form>
-      <p>
-        {t("auth.hasAccount")} <a href="/login">{t("auth.login")}</a>
-      </p>
+    <main className="pantalla-acceso">
+      <div className="tarjeta-acceso">
+        <Marca />
+        <h1>{t("auth.register")}</h1>
+        <form className="formulario-acceso" onSubmit={enviar}>
+          <label>
+            {t("auth.email")}
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            {t("auth.name")}
+            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          </label>
+          <label>
+            {t("auth.password")}
+            <input
+              type="password"
+              value={contrasena}
+              onChange={(e) => setContrasena(e.target.value)}
+              required
+            />
+          </label>
+          {error && <p className="error">{error}</p>}
+          <button type="submit" className="boton-principal boton-ancho" disabled={enviando}>
+            {t("auth.submitRegister")}
+          </button>
+        </form>
+        <p className="tarjeta-acceso__pie">
+          {t("auth.hasAccount")} <a href="/login">{t("auth.login")}</a>
+        </p>
+      </div>
     </main>
   );
 }

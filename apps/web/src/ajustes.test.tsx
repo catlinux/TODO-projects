@@ -410,4 +410,27 @@ describe("Ajustes", () => {
     await user.click(screen.getByRole("button", { name: /salir y volver a entrar/i }));
     await waitFor(() => expect(logoutLlamado).toBe(true));
   });
+
+  it("cierra la sesión desde Ajustes", async () => {
+    let logoutLlamado = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/auth/logout" && method === "POST") {
+          logoutLlamado = true;
+          return new Response(null, { status: 204 });
+        }
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const { user } = renderAjustes();
+    await user.click(await screen.findByRole("button", { name: /^cerrar sesión$/i }));
+
+    await waitFor(() => expect(logoutLlamado).toBe(true));
+  });
 });
