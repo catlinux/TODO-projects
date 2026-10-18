@@ -92,6 +92,7 @@ describe("ProyectoDetalle", () => {
     expect((await screen.findAllByText("Pendiente")).length).toBeGreaterThan(0);
     expect(await screen.findByText("En curso", { selector: "h3" })).toBeTruthy();
     expect(await screen.findByText("Tarea inicial")).toBeTruthy();
+    expect(document.querySelector(".fondo-proyecto--bosque")).toBeTruthy();
   });
 
   it("crea una columna", async () => {

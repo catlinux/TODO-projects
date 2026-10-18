@@ -158,18 +158,138 @@ a:hover {
   font-weight: 500;
 }
 
+/* Zona del proyecto: el fondo topográfico cubre cabecera y tablero. */
+.proyecto {
+  position: relative;
+  overflow: hidden;
+  min-height: 60vh;
+  padding: 1.25rem;
+  border-radius: var(--radio-dialogo);
+}
+
+.proyecto__contenido {
+  position: relative;
+  z-index: 1;
+}
+
+.fondo-proyecto {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.fondo-proyecto--bosque {
+  background: linear-gradient(160deg, #0d3b37 0%, #14574f 55%, #1c6e5f 100%);
+}
+
+.fondo-proyecto--noche {
+  background: linear-gradient(160deg, #141a3a 0%, #23306b 60%, #34408a 100%);
+}
+
+.fondo-proyecto--coral {
+  background: linear-gradient(160deg, #5a1e2a 0%, #9a3b3b 55%, #c2603f 100%);
+}
+
+.fondo-proyecto--pizarra {
+  background: linear-gradient(160deg, #1f2933 0%, #3e4c59 100%);
+}
+
+.fondo-proyecto--ciruela {
+  background: linear-gradient(160deg, #3b1f4a 0%, #7a3e8c 100%);
+}
+
+/* Con un color liso claro, el velo mantiene la cabecera clara legible. */
+.fondo-proyecto__velo {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+}
+
 .cabecera-proyecto {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
+  color: #fff;
 }
 
 .cabecera-proyecto h1 {
   margin: 0;
-  font-size: 1.6rem;
+  margin-right: auto;
+  font-size: 21px;
+  font-weight: 650;
+  color: #fff;
+}
+
+.cabecera-proyecto__inicial {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: var(--radio-control);
+}
+
+.cabecera-proyecto__vista {
+  display: flex;
+  padding: 0.15rem;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 10px;
+}
+
+.cabecera-proyecto__vista-activa {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #15171c;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.cabecera-proyecto__acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boton-cabecera {
+  min-height: 34px;
+  padding: 0 0.9rem;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: transparent;
+  border-radius: var(--radio-control);
+}
+
+.boton-cabecera:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: transparent;
+}
+
+.boton-cabecera--blanco {
+  color: #15171c;
+  background: #fff;
+}
+
+.boton-cabecera--blanco:hover:not(:disabled) {
+  color: #15171c;
+  background: #fff;
+  border-color: transparent;
+}
+
+/* El foco ha de verse sobre el fondo oscuro del proyecto. */
+.cabecera-proyecto :focus-visible,
+.columna-agregar:focus-visible {
+  outline-color: #fff;
 }
 
 .contenedor--tablero {
@@ -649,41 +769,46 @@ fieldset {
 }
 
 .columna-kanban {
-  min-width: 240px;
-  max-width: 340px;
+  flex: 0 0 276px;
+  width: 276px;
+  padding: 8px;
   background: var(--columna);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-radius: var(--radio-columna);
-  padding: 0.75rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  flex: 1 1 240px;
 }
 
 .columna-agregar {
-  flex: 1 1 240px;
-  min-width: 240px;
-  max-width: 340px;
+  flex: 0 0 276px;
+  width: 276px;
   min-height: 6rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 0;
   padding: 0.75rem;
-  color: var(--texto-secundario);
+  color: #fff;
   text-align: left;
-  background: transparent;
-  border: 1px dashed var(--borde);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: var(--radio-columna);
 }
 
 .columna-agregar:hover:not(:disabled) {
-  color: var(--acento);
-  border-color: var(--acento);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .columna-agregar input {
   min-width: 0;
+  color: var(--texto);
 }
 
 .columna-kanban__cabecera {
@@ -705,8 +830,11 @@ fieldset {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  min-width: var(--objetivo-tactil);
-  padding: 0.25rem 0.5rem;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
   font-size: 1.1rem;
   line-height: 1;
   color: var(--texto-secundario);
@@ -766,13 +894,13 @@ fieldset {
 
 .columna-kanban__cabecera h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
 .columna-kanban__contador {
   padding: 0.05rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: 11.5px;
   color: var(--texto-secundario);
   background: var(--superficie);
   border-radius: 999px;
@@ -1467,11 +1595,10 @@ fieldset {
     flex-direction: column;
   }
 
-  .columna-kanban {
-    max-width: none;
-  }
-
+  .columna-kanban,
   .columna-agregar {
+    flex: 0 0 auto;
+    width: auto;
     max-width: none;
   }
 }

@@ -5,8 +5,19 @@ import { useEffect, useRef, useState } from "react";
 
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
+import { FondoProyecto } from "../componentes/FondoProyecto";
 import { Tablero } from "../componentes/Tablero";
 import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
+
+/** Inicial del nombre, en mayúscula, para el cuadrado de la cabecera. */
+function inicial(nombre: string): string {
+  return nombre.trim().charAt(0).toLocaleUpperCase("es-ES");
+}
+
+export interface PropiedadesProyectoDetalle {
+  /** Aún sin conectar: A6 abrirá el diálogo de personalizar el proyecto. */
+  onAbrirFondo?: () => void;
+}
 
 function valoresIniciales(): ValoresFormularioTarea {
   return {
@@ -37,7 +48,7 @@ function IconoCerrar() {
   );
 }
 
-export default function ProyectoDetalle() {
+export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDetalle) {
   const { t } = useTranslation();
   const { id } = useParams();
   const proyectoId = id ?? "";
@@ -190,29 +201,50 @@ export default function ProyectoDetalle() {
         <span className="migas__actual">{proyecto.data?.nombre ?? t("projects.title")}</span>
       </nav>
 
-      <header className="cabecera-proyecto">
-        <h1>{proyecto.data?.nombre ?? t("projects.title")}</h1>
-        <button
-          type="button"
-          className="boton-principal"
-          aria-haspopup="dialog"
-          onClick={() => setDialogoTareaAbierto(true)}
-        >
-          {t("tasks.new")}
-        </button>
-      </header>
-
       {errorColumna && <p className="error">{errorColumna}</p>}
 
-      <Tablero
-        proyectoId={proyectoId}
-        columnas={listaColumnas}
-        tareas={listaTareas}
-        onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
-        onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
-        onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
-        onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
-      />
+      <div className="proyecto">
+        <FondoProyecto fondo={proyecto.data?.fondo ?? null} />
+        <div className="proyecto__contenido">
+          <header className="cabecera-proyecto">
+            <span className="cabecera-proyecto__inicial" aria-hidden="true">
+              {inicial(proyecto.data?.nombre ?? "")}
+            </span>
+            <h1>{proyecto.data?.nombre ?? t("projects.title")}</h1>
+            {/* Lista y Calendario aún no existen (A5/B4): solo la vista activa. */}
+            <div className="cabecera-proyecto__vista" role="group" aria-label={t("projects.view")}>
+              <span className="cabecera-proyecto__vista-activa" aria-current="true">
+                {t("projects.board")}
+              </span>
+            </div>
+            <div className="cabecera-proyecto__acciones">
+              {onAbrirFondo && (
+                <button type="button" className="boton-cabecera" onClick={onAbrirFondo}>
+                  {t("projects.background")}
+                </button>
+              )}
+              <button
+                type="button"
+                className="boton-cabecera boton-cabecera--blanco"
+                aria-haspopup="dialog"
+                onClick={() => setDialogoTareaAbierto(true)}
+              >
+                {t("tasks.new")}
+              </button>
+            </div>
+          </header>
+
+          <Tablero
+            proyectoId={proyectoId}
+            columnas={listaColumnas}
+            tareas={listaTareas}
+            onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
+            onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
+            onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
+            onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
+          />
+        </div>
+      </div>
 
       <dialog
         ref={refDialogo}

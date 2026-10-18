@@ -42,7 +42,10 @@
     "description": "Descripción",
     "create": "Crear proyecto",
     "empty": "No hay proyectos todavía",
-    "breadcrumb": "Ruta de navegación"
+    "breadcrumb": "Ruta de navegación",
+    "view": "Vista",
+    "board": "Tablero",
+    "background": "Fondo"
   },
   "tasks": {
     "title": "Tareas",

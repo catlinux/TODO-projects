@@ -4,11 +4,19 @@ export interface UsuarioApi {
   nombre: string;
 }
 
+export type AmbienteFondoApi = "bosque" | "noche" | "coral" | "pizarra" | "ciruela";
+
+export type FondoProyectoApi =
+  | { tipo: "ambiente"; ambiente: AmbienteFondoApi }
+  | { tipo: "color"; color: string }
+  | { tipo: "imagenes"; ids: string[]; intervaloSeg: number };
+
 export interface ProyectoApi {
   id: string;
   nombre: string;
   descripcion?: string | null;
   color?: string | null;
+  fondo?: FondoProyectoApi | null;
   propietarioId: string;
   createdAt: string;
   updatedAt: string;
