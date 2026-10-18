@@ -2486,6 +2486,73 @@ form.columna-agregar button {
   color: #fff;
 }
 
+/* Elementos del checklist en la tarjeta: lista compacta y marcable sin abrirla. */
+.tarjeta-kanban__checklist {
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--superficie);
+  border-top: 1px solid color-mix(in srgb, var(--lineas) 70%, transparent);
+}
+
+.tarjeta-kanban__checklist-lista {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarjeta-kanban__checklist-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 3px;
+  font-size: 13px;
+  color: var(--texto);
+  cursor: pointer;
+  border-radius: var(--radio-control);
+}
+
+.tarjeta-kanban__checklist-item:hover {
+  background: var(--chip);
+}
+
+.tarjeta-kanban__checklist-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.tarjeta-kanban__checklist-item input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.tarjeta-kanban__checklist-texto {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tarjeta-kanban__checklist-item--hecho .tarjeta-kanban__checklist-texto {
+  color: var(--secundario);
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.tarjeta-kanban__checklist-mas {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 3px;
+  font-size: 12px;
+}
+
 /* Fila compacta bajo la portada: etiquetas e indicadores. */
 .tarjeta-kanban__pie {
   display: flex;

@@ -49,6 +49,13 @@ export function esImagenPermitida(mime: string): boolean {
   return /^image\/(png|jpeg|webp|gif)$/.test(mime);
 }
 
+/** Elemento del checklist tal como lo pinta la tarjeta del tablero. */
+export interface ElementoChecklistTarjetaApi {
+  id: string;
+  texto: string;
+  hecho: boolean;
+}
+
 export interface TareaApi {
   id: string;
   proyectoId: string;
@@ -62,8 +69,8 @@ export interface TareaApi {
   recordatorioMin?: number | null;
   portada?: PortadaTareaApi | null;
   etiquetas?: string[];
-  /** Resumen del checklist; lo devuelve `GET /tareas/:id` (fase B). */
-  checklist?: { hechos: number; total: number };
+  /** Resumen del checklist; `GET /proyectos/:id/tareas` incluye además los elementos. */
+  checklist?: { hechos: number; total: number; items?: ElementoChecklistTarjetaApi[] };
   /** Número de comentarios; lo devuelven `GET /tareas/:id` y `GET /proyectos/:id/tareas`. */
   comentarios?: number;
   /** Número de adjuntos; lo devuelven `GET /tareas/:id` y `GET /proyectos/:id/tareas`. */

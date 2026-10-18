@@ -49,6 +49,34 @@ interface TarjetaProps {
   hecha: boolean;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
+  alternarElemento(elementoId: string, hecho: boolean): Promise<void>;
+}
+
+/** Elementos del checklist que se ven en la tarjeta antes del «+N más». */
+const MAX_ELEMENTOS_EN_TARJETA = 4;
+
+/** Aplica el cambio de un elemento en la lista de tareas sin esperar a la API. */
+function alternarElementoEnTareas(
+  tareas: TareaApi[],
+  elementoId: string,
+  hecho: boolean,
+): TareaApi[] {
+  return tareas.map((tarea) => {
+    const checklist = tarea.checklist;
+    const items = checklist?.items;
+    if (!checklist || !items || !items.some((item) => item.id === elementoId)) {
+      return tarea;
+    }
+    const actualizados = items.map((item) => (item.id === elementoId ? { ...item, hecho } : item));
+    return {
+      ...tarea,
+      checklist: {
+        hechos: actualizados.filter((item) => item.hecho).length,
+        total: checklist.total,
+        items: actualizados,
+      },
+    };
+  });
 }
 
 function TarjetaArrastrable({
@@ -59,6 +87,7 @@ function TarjetaArrastrable({
   hecha,
   borrarTarea,
   moverTarea,
+  alternarElemento,
 }: TarjetaProps) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -101,6 +130,9 @@ function TarjetaArrastrable({
   const checklist = tarea.checklist;
   const tieneChecklist = Boolean(checklist && checklist.total > 0);
   const checklistCompleto = Boolean(checklist && checklist.total > 0 && checklist.hechos === checklist.total);
+  const elementosChecklist = checklist?.items ?? [];
+  const elementosVisibles = elementosChecklist.slice(0, MAX_ELEMENTOS_EN_TARJETA);
+  const elementosRestantes = elementosChecklist.length - elementosVisibles.length;
 
   return (
     <li
@@ -167,6 +199,38 @@ function TarjetaArrastrable({
           <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
         </Link>
       </div>
+
+      {elementosVisibles.length > 0 && (
+        <div className="tarjeta-kanban__checklist">
+          <ul className="tarjeta-kanban__checklist-lista">
+            {elementosVisibles.map((elemento) => (
+              <li key={elemento.id}>
+                <label
+                  className={`tarjeta-kanban__checklist-item${
+                    elemento.hecho ? " tarjeta-kanban__checklist-item--hecho" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={elemento.hecho}
+                    onChange={() => void alternarElemento(elemento.id, !elemento.hecho)}
+                  />
+                  <span className="tarjeta-kanban__checklist-texto">{elemento.texto}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          {elementosRestantes > 0 && (
+            <Link
+              className="tarjeta-kanban__checklist-mas"
+              to={rutaTarjeta}
+              onClick={() => cerrarMenu(false)}
+            >
+              {t("tasks.checklistMore", { n: elementosRestantes })}
+            </Link>
+          )}
+        </div>
+      )}
 
       {(etiquetasDeTarea.length > 0 ||
         chip ||
@@ -324,6 +388,26 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
       body: JSON.stringify({ columnaId }),
     });
     await cliente.invalidateQueries({ queryKey });
+  }
+
+  async function alternarElemento(elementoId: string, hecho: boolean) {
+    const anteriores = cliente.getQueryData<TareaApi[]>(queryKey);
+    if (anteriores) {
+      cliente.setQueryData(queryKey, alternarElementoEnTareas(anteriores, elementoId, hecho));
+    }
+
+    try {
+      await peticion(`/checklist/${elementoId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ hecho }),
+      });
+      await cliente.invalidateQueries({ queryKey });
+    } catch {
+      if (anteriores) {
+        cliente.setQueryData(queryKey, anteriores);
+      }
+      await cliente.invalidateQueries({ queryKey });
+    }
   }
 
   function buscarColumnaDeTarea(tareaId: string): string | null {
@@ -569,6 +653,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                           hecha={indice === columnasOrdenadas.length - 1}
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}
+                          alternarElemento={alternarElemento}
                         />
                       ))
                     )}

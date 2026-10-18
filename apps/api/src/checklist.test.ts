@@ -328,8 +328,8 @@ describe("checklist por tarea", () => {
     const tareaVacia = await crearTarea(cookie, proyectoId, "Tarea sin pasos");
 
     const primero = await crearElemento(cookie, tareaConPasos, "Uno");
-    await crearElemento(cookie, tareaConPasos, "Dos");
-    await crearElemento(cookie, tareaConPasos, "Tres");
+    const segundo = await crearElemento(cookie, tareaConPasos, "Dos");
+    const tercero = await crearElemento(cookie, tareaConPasos, "Tres");
 
     await app.inject({
       method: "PATCH",
@@ -347,16 +347,26 @@ describe("checklist por tarea", () => {
     const tareas = listado.json() as Array<{
       id: string;
       etiquetas: string[];
-      checklist: { hechos: number; total: number };
+      checklist: {
+        hechos: number;
+        total: number;
+        items: Array<{ id: string; texto: string; hecho: boolean }>;
+      };
     }>;
 
     expect(tareas.find((tarea) => tarea.id === tareaConPasos)?.checklist).toEqual({
       hechos: 1,
       total: 3,
+      items: [
+        { id: primero, texto: "Uno", hecho: true },
+        { id: segundo, texto: "Dos", hecho: false },
+        { id: tercero, texto: "Tres", hecho: false },
+      ],
     });
     expect(tareas.find((tarea) => tarea.id === tareaVacia)?.checklist).toEqual({
       hechos: 0,
       total: 0,
+      items: [],
     });
 
     const detalle = await app.inject({
@@ -368,6 +378,53 @@ describe("checklist por tarea", () => {
       hechos: 0,
       total: 0,
     });
+  });
+
+  it("devuelve los elementos ordenados por posición y solo de sus tareas", async () => {
+    const { cookie } = await registrar(app, "items");
+    const proyectoId = await crearProyecto(cookie, "Proyecto items");
+    const tareaA = await crearTarea(cookie, proyectoId, "Tarea A");
+    const tareaB = await crearTarea(cookie, proyectoId, "Tarea B");
+
+    const uno = await crearElemento(cookie, tareaA, "Uno");
+    const dos = await crearElemento(cookie, tareaA, "Dos");
+    const deB = await crearElemento(cookie, tareaB, "De B");
+
+    // Otro proyecto del mismo usuario: sus elementos no deben colarse.
+    const otroProyecto = await crearProyecto(cookie, "Proyecto ajeno al listado");
+    const tareaOtro = await crearTarea(cookie, otroProyecto, "Tarea de otro proyecto");
+    const elementoOtro = await crearElemento(cookie, tareaOtro, "No debe aparecer");
+
+    // «Dos» pasa al primer puesto: el listado debe respetar la posición.
+    await app.inject({
+      method: "PATCH",
+      url: `/checklist/${dos}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { posicion: 0 },
+    });
+
+    const listado = await app.inject({
+      method: "GET",
+      url: `/proyectos/${proyectoId}/tareas`,
+      headers: { cookie: `sesion=${cookie}` },
+    });
+    expect(listado.statusCode).toBe(200);
+    const tareas = listado.json() as Array<{
+      id: string;
+      checklist: { items: Array<{ id: string; texto: string; hecho: boolean }> };
+    }>;
+
+    expect(tareas.map((tarea) => tarea.id).sort()).toEqual([tareaA, tareaB].sort());
+    expect(tareas.find((tarea) => tarea.id === tareaA)?.checklist.items).toEqual([
+      { id: dos, texto: "Dos", hecho: false },
+      { id: uno, texto: "Uno", hecho: false },
+    ]);
+    expect(tareas.find((tarea) => tarea.id === tareaB)?.checklist.items).toEqual([
+      { id: deB, texto: "De B", hecho: false },
+    ]);
+    expect(tareas.flatMap((tarea) => tarea.checklist.items.map((item) => item.id))).not.toContain(
+      elementoOtro,
+    );
   });
 
   it("borrar la tarea borra sus elementos", async () => {

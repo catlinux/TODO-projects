@@ -374,6 +374,93 @@ describe("Tablero", () => {
     expect(screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__insignia")).toBeNull();
   });
 
+  it("muestra los cuatro primeros elementos y «+N más» enlazando a la tarjeta", () => {
+    renderConEtiquetas(
+      [
+        {
+          ...tareasIniciales[0]!,
+          checklist: {
+            hechos: 1,
+            total: 6,
+            items: [
+              { id: "e1", texto: "Primero", hecho: false },
+              { id: "e2", texto: "Segundo", hecho: true },
+              { id: "e3", texto: "Tercero", hecho: false },
+              { id: "e4", texto: "Cuarto", hecho: false },
+              { id: "e5", texto: "Quinto", hecho: false },
+              { id: "e6", texto: "Sexto", hecho: false },
+            ],
+          },
+        },
+      ],
+      [],
+    );
+
+    const tarjeta = screen.getByText("Tarea inicial").closest("li");
+    expect(tarjeta?.querySelectorAll(".tarjeta-kanban__checklist-item")).toHaveLength(4);
+    expect(tarjeta?.querySelector(".tarjeta-kanban__checklist-item--hecho")?.textContent).toBe(
+      "Segundo",
+    );
+    // El elemento hecho conserva su casilla marcada.
+    expect((screen.getByRole("checkbox", { name: "Segundo" }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+
+    const mas = screen.getByRole("link", { name: "+2 más" });
+    expect(mas.getAttribute("href")).toBe("/proyectos/p1/tareas/t1");
+  });
+
+  it("marcar un elemento llama a la API con el valor correcto", async () => {
+    const user = userEvent.setup();
+    const peticiones: Array<{ url: string; method: string; body: unknown }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        peticiones.push({
+          url,
+          method: String(init?.method ?? "GET").toUpperCase(),
+          body: init?.body ? JSON.parse(String(init.body)) : null,
+        });
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    renderConEtiquetas(
+      [
+        {
+          ...tareasIniciales[0]!,
+          checklist: {
+            hechos: 0,
+            total: 1,
+            items: [{ id: "e1", texto: "Primero", hecho: false }],
+          },
+        },
+      ],
+      [],
+    );
+
+    await user.click(screen.getByRole("checkbox", { name: "Primero" }));
+
+    await waitFor(() => {
+      expect(peticiones).toContainEqual({
+        url: "/api/checklist/e1",
+        method: "PATCH",
+        body: { hecho: true },
+      });
+    });
+  });
+
+  it("no pinta la lista del checklist si la tarea no tiene elementos", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, checklist: { hechos: 0, total: 0 } }], []);
+
+    expect(
+      screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__checklist"),
+    ).toBeNull();
+  });
+
   it("muestra la insignia de comentarios si la tarea tiene", () => {
     renderConEtiquetas([{ ...tareasIniciales[0]!, comentarios: 3 }], []);
 

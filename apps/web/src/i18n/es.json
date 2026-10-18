@@ -157,6 +157,7 @@
     "addDescription": "Añadir una descripción…",
     "editDescription": "Editar descripción",
     "checklistBadge": "Checklist: {{hechos}} de {{total}}",
+    "checklistMore": "+{{n}} más",
     "commentBadge": "Comentarios: {{n}}",
     "attachmentBadge": "Adjuntos: {{n}}",
     "listEmpty": "Aún no hay tareas en este proyecto. Crea la primera.",

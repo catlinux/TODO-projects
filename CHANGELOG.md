@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.20.0] - 2026-10-18
+
+### Añadido
+- Las tarjetas del tablero llevan siempre portada: si la tarea no tiene, se genera una automática y estable (derivada de su id), con degradados suaves integrados con el tema. El título va dentro de la portada; las de imagen llevan un velo para que se lea. En el selector de portada, «Automática» es la opción por defecto.
+- Los elementos del checklist se ven en la tarjeta (los 4 primeros y «+N más») y se pueden marcar sin abrirla. `GET /proyectos/:id/tareas` devuelve `checklist.items`.
+- La descripción del proyecto se muestra y se edita en su cabecera.
+- Favicon de la web.
+
 ## [0.19.0] - 2026-10-18
 
 ### Añadido

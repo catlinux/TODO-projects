@@ -104,6 +104,36 @@ async function checklistPorTarea(
   return porTarea;
 }
 
+/** Elementos (id, texto, hecho) del checklist de varias tareas en una sola consulta. */
+async function itemsChecklistPorTarea(
+  db: Database,
+  tareaIds: string[],
+): Promise<Map<string, Array<{ id: string; texto: string; hecho: boolean }>>> {
+  const porTarea = new Map<string, Array<{ id: string; texto: string; hecho: boolean }>>();
+  if (tareaIds.length === 0) {
+    return porTarea;
+  }
+
+  const filas = await db
+    .select({
+      tareaId: checklistItems.tareaId,
+      id: checklistItems.id,
+      texto: checklistItems.texto,
+      hecho: checklistItems.hecho,
+    })
+    .from(checklistItems)
+    .where(inArray(checklistItems.tareaId, tareaIds))
+    .orderBy(asc(checklistItems.posicion));
+
+  for (const fila of filas) {
+    const lista = porTarea.get(fila.tareaId) ?? [];
+    lista.push({ id: fila.id, texto: fila.texto, hecho: fila.hecho });
+    porTarea.set(fila.tareaId, lista);
+  }
+
+  return porTarea;
+}
+
 /** Recuento de comentarios de varias tareas en una sola consulta agregada. */
 async function comentariosPorTarea(db: Database, tareaIds: string[]): Promise<Map<string, number>> {
   const porTarea = new Map<string, number>();
@@ -126,9 +156,14 @@ async function comentariosPorTarea(db: Database, tareaIds: string[]): Promise<Ma
 
 /**
  * Tareas de un proyecto con etiquetas, checklist y recuento de comentarios.
- * Lo comparten `GET /proyectos/:id/tareas` y `GET /bandeja`.
+ * Lo comparten `GET /proyectos/:id/tareas` y `GET /bandeja`. Solo el tablero
+ * pide los elementos del checklist; la bandeja se queda con el resumen.
  */
-export async function listarTareasDeProyecto(db: Database, proyectoId: string) {
+export async function listarTareasDeProyecto(
+  db: Database,
+  proyectoId: string,
+  opciones: { conItemsChecklist?: boolean } = {},
+) {
   const filas = await db
     .select()
     .from(tareas)
@@ -140,16 +175,22 @@ export async function listarTareasDeProyecto(db: Database, proyectoId: string) {
 
   const etiquetas = await etiquetasPorTarea(db, ids);
   const checklist = await checklistPorTarea(db, ids);
+  const itemsChecklist = opciones.conItemsChecklist ? await itemsChecklistPorTarea(db, ids) : null;
   const recuentoComentarios = await comentariosPorTarea(db, ids);
   const recuentoAdjuntos = await adjuntosPorTarea(db, ids);
 
-  return filas.map((fila) => ({
-    ...fila.tareas,
-    etiquetas: etiquetas.get(fila.tareas.id) ?? [],
-    checklist: checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 },
-    comentarios: recuentoComentarios.get(fila.tareas.id) ?? 0,
-    adjuntos: recuentoAdjuntos.get(fila.tareas.id) ?? 0,
-  }));
+  return filas.map((fila) => {
+    const resumenChecklist = checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 };
+    return {
+      ...fila.tareas,
+      etiquetas: etiquetas.get(fila.tareas.id) ?? [],
+      checklist: itemsChecklist
+        ? { ...resumenChecklist, items: itemsChecklist.get(fila.tareas.id) ?? [] }
+        : resumenChecklist,
+      comentarios: recuentoComentarios.get(fila.tareas.id) ?? 0,
+      adjuntos: recuentoAdjuntos.get(fila.tareas.id) ?? 0,
+    };
+  });
 }
 
 export function registrarRutasTareas(
@@ -181,7 +222,7 @@ export function registrarRutasTareas(
       return;
     }
 
-    return listarTareasDeProyecto(db, params.data.id);
+    return listarTareasDeProyecto(db, params.data.id, { conItemsChecklist: true });
   });
 
   app.post("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
