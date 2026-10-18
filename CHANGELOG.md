@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.17.0] - 2026-10-18
+
+### Añadido
+- Vista «Lista» por proyecto, además del tablero: tareas agrupadas por columna (plegables) con casilla de «hecha», etiquetas, fecha, indicadores y orden por posición, fecha o título. El filtro por etiquetas también se aplica a la lista y la vista elegida se recuerda por proyecto en el navegador.
+
 ## [0.16.2] - 2026-10-18
 
 ### Corregido

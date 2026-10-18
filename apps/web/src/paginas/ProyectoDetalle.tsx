@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { peticion, type ColumnaApi, type EtiquetaApi, type ProyectoApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { FondoProyecto } from "../componentes/FondoProyecto";
+import { ListaTareas } from "../componentes/ListaTareas";
 import { PersonalizarProyecto } from "../componentes/PersonalizarProyecto";
 import { PastillaEtiqueta } from "../componentes/SelectorEtiquetas";
 import { Tablero } from "../componentes/Tablero";
@@ -15,6 +16,27 @@ import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from ".
 export interface PropiedadesProyectoDetalle {
   /** Abre el diálogo de personalizar. Sin él, lo abre el estado de la propia página (A6). */
   onAbrirFondo?: () => void;
+}
+
+type VistaProyecto = "tablero" | "lista";
+
+/** Vista elegida para el proyecto; ausente, ilegible o inválida → «tablero». */
+function leerVista(proyectoId: string): VistaProyecto {
+  try {
+    return window.localStorage.getItem(`todo.vista.${proyectoId}`) === "lista"
+      ? "lista"
+      : "tablero";
+  } catch {
+    return "tablero";
+  }
+}
+
+function guardarVista(proyectoId: string, vista: VistaProyecto): void {
+  try {
+    window.localStorage.setItem(`todo.vista.${proyectoId}`, vista);
+  } catch {
+    // Sin localStorage (modo privado): la elección dura lo que la página.
+  }
 }
 
 function valoresIniciales(): ValoresFormularioTarea {
@@ -120,9 +142,15 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const [personalizarAbierto, setPersonalizarAbierto] = useState(false);
   const [filtroEtiquetas, setFiltroEtiquetas] = useState<string[]>([]);
   const [filtroAbierto, setFiltroAbierto] = useState(false);
+  const [vista, setVista] = useState<VistaProyecto>(() => leerVista(proyectoId));
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
   const refDialogo = useRef<HTMLDialogElement>(null);
+
+  // Al cambiar de proyecto, la vista guardada de ese proyecto.
+  useEffect(() => {
+    setVista(leerVista(proyectoId));
+  }, [proyectoId]);
 
   useEffect(() => {
     if (!columnaSeleccionada && columnas.data && columnas.data.length > 0 && columnas.data[0]) {
@@ -283,6 +311,11 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     );
   }
 
+  function cambiarVista(nueva: VistaProyecto) {
+    setVista(nueva);
+    guardarVista(proyectoId, nueva);
+  }
+
   return (
     <main className="proyecto">
       <FondoProyecto fondo={proyecto.data?.fondo ?? null} />
@@ -295,6 +328,30 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
             {proyecto.data?.nombre ?? t("projects.title")}
           </h1>
           <div className="cabecera-proyecto__acciones">
+            <div className="control-vista" role="radiogroup" aria-label={t("projects.view")}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={vista === "tablero"}
+                className={`boton-cabecera control-vista__opcion${
+                  vista === "tablero" ? " boton-cabecera--blanco" : ""
+                }`}
+                onClick={() => cambiarVista("tablero")}
+              >
+                {t("projects.board")}
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={vista === "lista"}
+                className={`boton-cabecera control-vista__opcion${
+                  vista === "lista" ? " boton-cabecera--blanco" : ""
+                }`}
+                onClick={() => cambiarVista("lista")}
+              >
+                {t("projects.list")}
+              </button>
+            </div>
             <button
               type="button"
               className="boton-cabecera"
@@ -371,17 +428,30 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
 
         {errorColumna && <p className="error proyecto__error">{errorColumna}</p>}
 
-        <Tablero
-          proyectoId={proyectoId}
-          columnas={listaColumnas}
-          tareas={tareasFiltradas}
-          etiquetas={listaEtiquetas}
-          onCrearTarea={(columnaId, titulo) => crearTareaRapida.mutate({ columnaId, titulo })}
-          onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
-          onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
-          onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
-          onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
-        />
+        {vista === "lista" ? (
+          <ListaTareas
+            proyectoId={proyectoId}
+            columnas={listaColumnas}
+            tareas={tareasFiltradas}
+            etiquetas={listaEtiquetas}
+            filtroActivo={filtroEtiquetas.length > 0}
+            onNuevaTarea={() => setDialogoTareaAbierto(true)}
+          />
+        ) : (
+          <Tablero
+            proyectoId={proyectoId}
+            columnas={listaColumnas}
+            tareas={tareasFiltradas}
+            etiquetas={listaEtiquetas}
+            onCrearTarea={(columnaId, titulo) => crearTareaRapida.mutate({ columnaId, titulo })}
+            onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
+            onRenombrarColumna={(columnaId, nombre) =>
+              renombrarColumna.mutate({ columnaId, nombre })
+            }
+            onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
+            onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
+          />
+        )}
       </div>
 
       <dialog

@@ -21,6 +21,7 @@ import { peticion, type ColumnaApi, type EtiquetaApi, type TareaApi } from "../a
 import { chipFecha } from "../fechas";
 import { esPortadaImagen, estiloPortada } from "../portada";
 import { moverTareaEnLista } from "../tablero-utils";
+import { IconoAdjunto, IconoCampana, IconoComentario, IconoRepeticion } from "./IconosTarea";
 import { PastillaEtiqueta } from "./SelectorEtiquetas";
 
 export interface PropiedadesTablero {
@@ -48,90 +49,6 @@ interface TarjetaProps {
   hecha: boolean;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
-}
-
-function IconoCampana({ etiqueta }: { etiqueta: string }) {
-  return (
-    <svg
-      className="tarjeta-kanban__icono"
-      role="img"
-      aria-label={etiqueta}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-    </svg>
-  );
-}
-
-function IconoRepeticion({ etiqueta }: { etiqueta: string }) {
-  return (
-    <svg
-      className="tarjeta-kanban__icono"
-      role="img"
-      aria-label={etiqueta}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17 2l4 4-4 4" />
-      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-      <path d="M7 22l-4-4 4-4" />
-      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-    </svg>
-  );
-}
-
-function IconoComentario({ etiqueta }: { etiqueta: string }) {
-  return (
-    <svg
-      className="tarjeta-kanban__icono"
-      role="img"
-      aria-label={etiqueta}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function IconoAdjunto({ etiqueta }: { etiqueta: string }) {
-  return (
-    <svg
-      className="tarjeta-kanban__icono"
-      role="img"
-      aria-label={etiqueta}
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21.4 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-    </svg>
-  );
 }
 
 function TarjetaArrastrable({

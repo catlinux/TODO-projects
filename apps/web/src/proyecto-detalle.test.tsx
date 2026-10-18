@@ -12,6 +12,7 @@ describe("ProyectoDetalle", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    window.localStorage.clear();
   });
 
   it("muestra columnas y tareas", async () => {
@@ -1031,5 +1032,167 @@ describe("ProyectoDetalle", () => {
     await user.click(await screen.findByRole("button", { name: /^fondo$/i }));
     expect(await screen.findByRole("dialog")).toBeTruthy();
     expect(await screen.findByText("Personalizar proyecto")).toBeTruthy();
+  });
+
+  it("alterna entre Tablero y Lista y guarda la elección por proyecto", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "t1",
+                proyectoId: "p1",
+                columnaId: "c1",
+                titulo: "Tarea compartida",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("Tarea compartida")).toBeTruthy();
+    const radioTablero = screen.getByRole("radio", { name: "Tablero" });
+    const radioLista = screen.getByRole("radio", { name: "Lista" });
+    expect(radioTablero.getAttribute("aria-checked")).toBe("true");
+    expect(document.querySelector(".lista-tareas__panel")).toBeNull();
+
+    await user.click(radioLista);
+    expect(screen.getByRole("radio", { name: "Lista" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("radio", { name: "Tablero" }).getAttribute("aria-checked")).toBe(
+      "false",
+    );
+    expect(document.querySelector(".lista-tareas__panel")).toBeTruthy();
+    expect(window.localStorage.getItem("todo.vista.p1")).toBe("lista");
+  });
+
+  it("recuerda la vista guardada y cae en Tablero con un valor inválido", async () => {
+    const respuestas = (url: string) => {
+      if (url === "/api/proyectos/p1") {
+        return JSON.stringify({
+          id: "p1",
+          nombre: "Proyecto",
+          propietarioId: "u1",
+          createdAt: "",
+          updatedAt: "",
+        });
+      }
+      if (url === "/api/proyectos/p1/columnas") {
+        return JSON.stringify([
+          {
+            id: "c1",
+            proyectoId: "p1",
+            nombre: "Pendiente",
+            posicion: 0,
+            createdAt: "",
+            updatedAt: "",
+          },
+        ]);
+      }
+      if (url === "/api/proyectos/p1/tareas") {
+        return JSON.stringify([
+          {
+            id: "t1",
+            proyectoId: "p1",
+            columnaId: "c1",
+            titulo: "Tarea compartida",
+            posicion: 0,
+            createdAt: "",
+            updatedAt: "",
+          },
+        ]);
+      }
+      return null;
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const cuerpo = respuestas(url);
+        if (cuerpo === null) {
+          return new Response(JSON.stringify({}), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(cuerpo, {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    window.localStorage.setItem("todo.vista.p1", "lista");
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const montar = () =>
+      render(
+        <QueryClientProvider client={cliente}>
+          <MemoryRouter initialEntries={["/proyectos/p1"]}>
+            <Routes>
+              <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>,
+      );
+
+    montar();
+    expect(await screen.findByText("Tarea compartida")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Lista" }).getAttribute("aria-checked")).toBe("true");
+    expect(document.querySelector(".lista-tareas__panel")).toBeTruthy();
+
+    cleanup();
+    window.localStorage.setItem("todo.vista.p1", "otra-cosa");
+    montar();
+    expect(await screen.findByText("Tarea compartida")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Tablero" }).getAttribute("aria-checked")).toBe("true");
+    expect(document.querySelector(".lista-tareas__panel")).toBeNull();
   });
 });

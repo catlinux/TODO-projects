@@ -2488,6 +2488,203 @@ form.columna-agregar button {
   font-weight: 500;
 }
 
+/* Control segmentado «Tablero | Lista» de la cabecera del proyecto. */
+.control-vista {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--radio-control);
+}
+
+.control-vista .boton-cabecera {
+  color: #fff;
+  background: transparent;
+}
+
+.control-vista .boton-cabecera:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.control-vista .boton-cabecera--blanco,
+.control-vista .boton-cabecera--blanco:hover:not(:disabled) {
+  color: #16181d;
+  background: #fff;
+}
+
+/* Vista Lista: panel ancho con grupos plegables y filas, sobre el fondo. */
+.lista-tareas {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.lista-tareas__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  max-width: 1120px;
+  min-height: 0;
+  margin: 0 24px 24px;
+  overflow-y: auto;
+}
+
+.lista-tareas__barra {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.lista-tareas__orden {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.lista-tareas__orden select {
+  min-height: 32px;
+}
+
+.lista-tareas__error {
+  margin: 0 0 12px;
+}
+
+/* Sin tareas: mensaje amable y acceso a crear la primera. */
+.lista-tareas__vacia {
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 24px 24px;
+}
+
+.lista-tareas__vacia-texto {
+  margin: 0;
+  color: var(--secundario);
+}
+
+.lista-grupo + .lista-grupo {
+  margin-top: 4px;
+}
+
+.lista-grupo__cabecera {
+  margin: 0;
+}
+
+.lista-grupo__boton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--texto);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radio-control);
+  box-shadow: none;
+}
+
+.lista-grupo__boton:hover {
+  background: var(--chip);
+}
+
+.lista-grupo__nombre {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lista-grupo__cuenta {
+  flex: 0 0 auto;
+  font-size: var(--texto-xs);
+  color: var(--secundario);
+}
+
+.lista-filas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--lineas);
+}
+
+.lista-fila__casilla {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+}
+
+.lista-fila__casilla-etiqueta {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.lista-fila__casilla input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.lista-fila__contenido {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lista-fila__titulo {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  color: var(--texto);
+  text-decoration: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lista-fila__titulo:hover {
+  color: var(--acento-hover);
+}
+
+.lista-fila__metadatos {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 12px;
+}
+
+/* Tareas de la última columna: tachadas y atenuadas. */
+.lista-fila--hecha .lista-fila__titulo {
+  color: var(--secundario);
+  text-decoration: line-through;
+}
+
+.lista-fila--hecha .lista-fila__metadatos {
+  opacity: 0.7;
+}
+
 .agenda-lista h2 {
   margin: 0 0 8px;
   font-size: 14px;
@@ -3477,8 +3674,37 @@ form.columna-agregar button {
     margin-left: 16px;
   }
 
+  /* Lista en móvil: título arriba y metadatos abajo, con objetivos de 40 px. */
+  .lista-tareas__panel,
+  .lista-tareas__vacia {
+    margin-right: 16px;
+    margin-left: 16px;
+  }
+
+  .lista-fila {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .lista-fila__contenido {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .lista-fila__titulo {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .lista-fila__metadatos {
+    justify-content: flex-start;
+  }
+
   /* En táctil, los controles densos también alcanzan el objetivo de 40 px. */
   .control-segmentado button,
+  .control-vista .boton-cabecera,
+  .lista-tareas__orden select,
   .agenda__principal .fc .fc-button {
     min-height: 40px;
   }

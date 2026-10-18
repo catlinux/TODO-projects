@@ -48,6 +48,7 @@
     "breadcrumb": "Ruta de navegación",
     "view": "Vista",
     "board": "Tablero",
+    "list": "Lista",
     "background": "Fondo",
     "filter": "Filtrar",
     "filterPanel": "Filtrar por etiqueta",
@@ -155,7 +156,13 @@
     "editDescription": "Editar descripción",
     "checklistBadge": "Checklist: {{hechos}} de {{total}}",
     "commentBadge": "Comentarios: {{n}}",
-    "attachmentBadge": "Adjuntos: {{n}}"
+    "attachmentBadge": "Adjuntos: {{n}}",
+    "listEmpty": "Aún no hay tareas en este proyecto. Crea la primera.",
+    "filterEmptyList": "Ninguna tarea coincide con el filtro.",
+    "sortBy": "Ordenar por:",
+    "sortPosition": "Posición",
+    "sortDate": "Fecha",
+    "sortTitle": "Título"
   },
   "labels": {
     "section": "Etiquetas",
