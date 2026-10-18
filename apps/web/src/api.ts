@@ -46,11 +46,12 @@ export interface TareaApi {
   recurrencia?: string | null;
   zona?: string | null;
   recordatorioMin?: number | null;
-  /** La fase C la añadirá a la API; la de imagen se ignora hasta la fase E. */
   portada?: PortadaTareaApi | null;
   etiquetas?: string[];
   /** Resumen del checklist; lo devuelve `GET /tareas/:id` (fase B). */
   checklist?: { hechos: number; total: number };
+  /** Número de comentarios; lo devuelven `GET /tareas/:id` y `GET /proyectos/:id/tareas`. */
+  comentarios?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +72,39 @@ export interface ChecklistItemApi {
   hecho: boolean;
   posicion: number;
   createdAt: string;
+}
+
+export interface ElementoComentarioApi {
+  tipo: "comentario";
+  id: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  creadoEn: string;
+  texto: string;
+}
+
+/** Entrada de historial: los datos propios del tipo van al mismo nivel. */
+export interface ElementoHistorialApi {
+  tipo: "historial";
+  id: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  creadoEn: string;
+  historialTipo: string;
+  desde?: string | null;
+  hasta?: string | null;
+  accion?: string;
+  nombre?: string;
+  texto?: string;
+  antes?: unknown;
+  despues?: unknown;
+}
+
+export type ElementoActividadApi = ElementoComentarioApi | ElementoHistorialApi;
+
+export interface RespuestaActividadApi {
+  elementos: ElementoActividadApi[];
+  hayMas: boolean;
 }
 
 export interface OcurrenciaAgenda {

@@ -6,8 +6,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { peticion, type ColumnaApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { Checklist } from "../componentes/Checklist";
+import { PanelActividad } from "../componentes/PanelActividad";
 import { SelectorEtiquetas } from "../componentes/SelectorEtiquetas";
+import { SelectorPortada } from "../componentes/SelectorPortada";
 import { formatearTexto } from "../formato";
+import { estiloPortada } from "../portada";
 import {
   aIsoUtc,
   aValorLocal,
@@ -35,11 +38,6 @@ function valoresDesdeTarea(tarea: TareaApi): ValoresFormularioTarea {
     recurrencia: analizarRegla(tarea.recurrencia),
     recordatorioMin: tarea.recordatorioMin ?? null,
   };
-}
-
-/** Color de la portada; la portada de imagen se ignora hasta la fase E. */
-function colorDePortada(tarea: TareaApi): string | null {
-  return tarea.portada?.tipo === "color" ? tarea.portada.valor : null;
 }
 
 function IconoCerrar() {
@@ -133,6 +131,7 @@ export default function TarjetaDetalle() {
   const ultimaColumnaId = columnasOrdenadas[columnasOrdenadas.length - 1]?.id ?? "";
 
   const tareaActual = tarea.data;
+  const estiloPortadaActual = estiloPortada(tareaActual?.portada);
   const esRecurrente = Boolean(tareaActual?.recurrencia);
   const hecha = Boolean(tareaActual && ultimaColumnaId && tareaActual.columnaId === ultimaColumnaId);
 
@@ -234,178 +233,184 @@ export default function TarjetaDetalle() {
         </div>
       ) : (
         <div className="tarjeta-detalle__marco">
-          {colorDePortada(tareaActual) && (
-            <span
-              className="tarjeta-detalle__portada"
-              style={{ background: colorDePortada(tareaActual)! }}
-              aria-hidden="true"
-            />
+          {estiloPortadaActual && (
+            <span className="tarjeta-detalle__portada" style={estiloPortadaActual} aria-hidden="true" />
           )}
 
           <div className="tarjeta-detalle__cuerpo">
-            <header className="tarjeta-detalle__cabecera">
-              <label className="tarjeta-detalle__columna">
-                {t("tasks.column")}
-                <select
-                  value={tareaActual.columnaId}
-                  onChange={(evento) => guardar.mutate({ columnaId: evento.target.value })}
-                >
-                  {columnasOrdenadas.map((columna) => (
-                    <option key={columna.id} value={columna.id}>
-                      {columna.nombre}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button
-                type="button"
-                className="dialogo-tarea__cerrar"
-                aria-label={t("tasks.closeDialog")}
-                onClick={cerrar}
-              >
-                <IconoCerrar />
-              </button>
-            </header>
-
-            <div className="tarjeta-detalle__titulo-fila">
-              <h2 id="titulo-tarjeta" className="tarjeta-detalle__titulo">
-                {editandoTitulo ? (
-                  <input
-                    aria-label={t("tasks.taskTitle")}
-                    value={valores.titulo}
-                    autoFocus
-                    onChange={(evento) =>
-                      setValores((actuales) => ({ ...actuales, titulo: evento.target.value }))
-                    }
-                    onKeyDown={(evento) => {
-                      if (evento.key === "Enter") {
-                        evento.preventDefault();
-                        confirmarTitulo();
-                      } else if (evento.key === "Escape") {
-                        evento.preventDefault();
-                        cancelarTitulo();
-                      }
-                    }}
-                    onBlur={confirmarTitulo}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    ref={refTitulo}
-                    className="tarjeta-detalle__titulo-boton"
-                    onClick={() => setEditandoTitulo(true)}
+            <div className="tarjeta-detalle__principal">
+              <header className="tarjeta-detalle__cabecera">
+                <label className="tarjeta-detalle__columna">
+                  {t("tasks.column")}
+                  <select
+                    value={tareaActual.columnaId}
+                    onChange={(evento) => guardar.mutate({ columnaId: evento.target.value })}
                   >
-                    {tareaActual.titulo}
-                  </button>
-                )}
-              </h2>
-
-              {!esRecurrente && (
-                <label className="tarjeta-detalle__hecha">
-                  <input
-                    type="checkbox"
-                    checked={hecha}
-                    onChange={(evento) => {
-                      const columnaId = evento.target.checked ? ultimaColumnaId : primeraColumnaId;
-                      if (columnaId && columnaId !== tareaActual.columnaId) {
-                        guardar.mutate({ columnaId });
-                      }
-                    }}
-                  />
-                  {t("tasks.done")}
+                    {columnasOrdenadas.map((columna) => (
+                      <option key={columna.id} value={columna.id}>
+                        {columna.nombre}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-              )}
-            </div>
+                <button
+                  type="button"
+                  className="dialogo-tarea__cerrar"
+                  aria-label={t("tasks.closeDialog")}
+                  onClick={cerrar}
+                >
+                  <IconoCerrar />
+                </button>
+              </header>
 
-            <section className="tarjeta-detalle__seccion">
-              <form
-                className="tarjeta-detalle__datos"
-                onSubmit={(evento) => {
-                  evento.preventDefault();
-                  confirmarDatos();
-                }}
-              >
-                <CamposTarea
-                  valores={valores}
-                  onCambio={setValores}
-                  ocultar={["titulo", "descripcion"]}
-                />
-                {hayCambiosDatos && (
-                  <div className="acciones">
-                    <button type="submit" className="boton-principal" disabled={guardar.isPending}>
-                      {t("tasks.save")}
+              <div className="tarjeta-detalle__titulo-fila">
+                <h2 id="titulo-tarjeta" className="tarjeta-detalle__titulo">
+                  {editandoTitulo ? (
+                    <input
+                      aria-label={t("tasks.taskTitle")}
+                      value={valores.titulo}
+                      autoFocus
+                      onChange={(evento) =>
+                        setValores((actuales) => ({ ...actuales, titulo: evento.target.value }))
+                      }
+                      onKeyDown={(evento) => {
+                        if (evento.key === "Enter") {
+                          evento.preventDefault();
+                          confirmarTitulo();
+                        } else if (evento.key === "Escape") {
+                          evento.preventDefault();
+                          cancelarTitulo();
+                        }
+                      }}
+                      onBlur={confirmarTitulo}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      ref={refTitulo}
+                      className="tarjeta-detalle__titulo-boton"
+                      onClick={() => setEditandoTitulo(true)}
+                    >
+                      {tareaActual.titulo}
                     </button>
-                  </div>
-                )}
-              </form>
-            </section>
+                  )}
+                </h2>
 
-            <SelectorEtiquetas
-              tareaId={tareaId ?? ""}
-              proyectoId={proyectoId}
-              asignadas={tareaActual.etiquetas ?? []}
-            />
-
-            <section className="tarjeta-detalle__seccion">
-              <div className="tarjeta-detalle__seccion-cabecera">
-                <h3>{t("tasks.description")}</h3>
-                {!editandoDescripcion && (
-                  <button
-                    type="button"
-                    className="boton-texto"
-                    onClick={() => setEditandoDescripcion(true)}
-                  >
-                    {t("tasks.editDescription")}
-                  </button>
+                {!esRecurrente && (
+                  <label className="tarjeta-detalle__hecha">
+                    <input
+                      type="checkbox"
+                      checked={hecha}
+                      onChange={(evento) => {
+                        const columnaId = evento.target.checked ? ultimaColumnaId : primeraColumnaId;
+                        if (columnaId && columnaId !== tareaActual.columnaId) {
+                          guardar.mutate({ columnaId });
+                        }
+                      }}
+                    />
+                    {t("tasks.done")}
+                  </label>
                 )}
               </div>
 
-              {editandoDescripcion ? (
+              <SelectorPortada
+                tareaId={tareaId ?? ""}
+                proyectoId={proyectoId}
+                portada={tareaActual.portada ?? null}
+              />
+
+              <section className="tarjeta-detalle__seccion">
                 <form
+                  className="tarjeta-detalle__datos"
                   onSubmit={(evento) => {
                     evento.preventDefault();
-                    confirmarDescripcion();
+                    confirmarDatos();
                   }}
                 >
-                  <textarea
-                    className="tarjeta-detalle__descripcion-textarea"
-                    aria-label={t("tasks.description")}
-                    rows={6}
-                    autoFocus
-                    value={valores.descripcion}
-                    onChange={(evento) =>
-                      setValores((actuales) => ({ ...actuales, descripcion: evento.target.value }))
-                    }
-                    onKeyDown={(evento) => {
-                      if (evento.key === "Escape") {
-                        evento.preventDefault();
-                        cancelarDescripcion();
-                      }
-                    }}
+                  <CamposTarea
+                    valores={valores}
+                    onCambio={setValores}
+                    ocultar={["titulo", "descripcion"]}
                   />
-                  <div className="acciones">
-                    <button type="submit" className="boton-principal" disabled={guardar.isPending}>
-                      {t("tasks.save")}
-                    </button>
-                    <button type="button" onClick={cancelarDescripcion}>
-                      {t("tasks.cancel")}
-                    </button>
-                  </div>
+                  {hayCambiosDatos && (
+                    <div className="acciones">
+                      <button type="submit" className="boton-principal" disabled={guardar.isPending}>
+                        {t("tasks.save")}
+                      </button>
+                    </div>
+                  )}
                 </form>
-              ) : valores.descripcion.trim() ? (
-                <div className="tarjeta-detalle__descripcion">{formatearTexto(valores.descripcion)}</div>
-              ) : (
-                <button
-                  type="button"
-                  className="tarjeta-detalle__descripcion-vacia"
-                  onClick={() => setEditandoDescripcion(true)}
-                >
-                  {t("tasks.addDescription")}
-                </button>
-              )}
-            </section>
+              </section>
 
-            <Checklist tareaId={tareaId ?? ""} proyectoId={proyectoId} />
+              <SelectorEtiquetas
+                tareaId={tareaId ?? ""}
+                proyectoId={proyectoId}
+                asignadas={tareaActual.etiquetas ?? []}
+              />
+
+              <section className="tarjeta-detalle__seccion">
+                <div className="tarjeta-detalle__seccion-cabecera">
+                  <h3>{t("tasks.description")}</h3>
+                  {!editandoDescripcion && (
+                    <button
+                      type="button"
+                      className="boton-texto"
+                      onClick={() => setEditandoDescripcion(true)}
+                    >
+                      {t("tasks.editDescription")}
+                    </button>
+                  )}
+                </div>
+
+                {editandoDescripcion ? (
+                  <form
+                    onSubmit={(evento) => {
+                      evento.preventDefault();
+                      confirmarDescripcion();
+                    }}
+                  >
+                    <textarea
+                      className="tarjeta-detalle__descripcion-textarea"
+                      aria-label={t("tasks.description")}
+                      rows={6}
+                      autoFocus
+                      value={valores.descripcion}
+                      onChange={(evento) =>
+                        setValores((actuales) => ({ ...actuales, descripcion: evento.target.value }))
+                      }
+                      onKeyDown={(evento) => {
+                        if (evento.key === "Escape") {
+                          evento.preventDefault();
+                          cancelarDescripcion();
+                        }
+                      }}
+                    />
+                    <div className="acciones">
+                      <button type="submit" className="boton-principal" disabled={guardar.isPending}>
+                        {t("tasks.save")}
+                      </button>
+                      <button type="button" onClick={cancelarDescripcion}>
+                        {t("tasks.cancel")}
+                      </button>
+                    </div>
+                  </form>
+                ) : valores.descripcion.trim() ? (
+                  <div className="tarjeta-detalle__descripcion">{formatearTexto(valores.descripcion)}</div>
+                ) : (
+                  <button
+                    type="button"
+                    className="tarjeta-detalle__descripcion-vacia"
+                    onClick={() => setEditandoDescripcion(true)}
+                  >
+                    {t("tasks.addDescription")}
+                  </button>
+                )}
+              </section>
+
+              <Checklist tareaId={tareaId ?? ""} proyectoId={proyectoId} />
+            </div>
+
+            <PanelActividad tareaId={tareaId ?? ""} proyectoId={proyectoId} />
           </div>
         </div>
       )}

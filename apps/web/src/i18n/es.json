@@ -132,7 +132,8 @@
     "backToBoard": "Volver al tablero",
     "addDescription": "Añadir una descripción…",
     "editDescription": "Editar descripción",
-    "checklistBadge": "Checklist: {{hechos}} de {{total}}"
+    "checklistBadge": "Checklist: {{hechos}} de {{total}}",
+    "commentBadge": "Comentarios: {{n}}"
   },
   "labels": {
     "section": "Etiquetas",
@@ -179,6 +180,51 @@
     "hideDone": "Ocultar hechos",
     "showDone": "Mostrar hechos",
     "empty": "No hay elementos en el checklist"
+  },
+  "cover": {
+    "section": "Portada",
+    "button": "Portada",
+    "choose": "Elegir portada",
+    "none": "Sin portada",
+    "remove": "Quitar portada",
+    "patterns": {
+      "rayas-ambar": "Rayas ámbar",
+      "cuadros-azul": "Cuadros azul",
+      "puntos-rosa": "Puntos rosa",
+      "ondas-verde": "Ondas verde"
+    }
+  },
+  "activity": {
+    "section": "Actividad",
+    "commentField": "Escribe un comentario",
+    "commentPlaceholder": "Añade un comentario…",
+    "commentButton": "Comentar",
+    "commentHint": "Ctrl+Intro o ⌘+Intro para enviar",
+    "empty": "Todavía no hay comentarios ni cambios",
+    "loadError": "No se pudo cargar la actividad",
+    "loadMore": "Cargar más",
+    "editComment": "Editar comentario",
+    "edit": "Editar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Borrar",
+    "deleteConfirm": "¿Borrar este comentario?",
+    "deleteYes": "Borrar",
+    "history": {
+      "creada": "creó la tarjeta",
+      "movida": "movió la tarjeta de {{desde}} a {{hasta}}",
+      "movidaSinColumnas": "movió la tarjeta",
+      "fecha": "cambió la fecha",
+      "fechaPuesta": "puso una fecha",
+      "fechaQuitada": "quitó la fecha",
+      "etiquetaAnadida": "añadió la etiqueta {{nombre}}",
+      "etiquetaQuitada": "quitó la etiqueta {{nombre}}",
+      "checklist": "completó «{{texto}}»",
+      "portada": "cambió la portada",
+      "adjunto": "añadió un adjunto",
+      "proyecto": "movió la tarjeta de proyecto",
+      "desconocido": "hizo un cambio"
+    }
   },
   "columns": {
     "title": "Columnas",

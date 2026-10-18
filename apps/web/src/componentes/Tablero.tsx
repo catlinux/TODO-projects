@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 
 import { peticion, type ColumnaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
+import { estiloPortada } from "../portada";
 import { moverTareaEnLista } from "../tablero-utils";
 import { PastillaEtiqueta } from "./SelectorEtiquetas";
 
@@ -93,9 +94,24 @@ function IconoRepeticion({ etiqueta }: { etiqueta: string }) {
   );
 }
 
-/** Color de la portada; la portada de imagen se ignora hasta la fase E. */
-function colorDePortada(tarea: TareaApi): string | null {
-  return tarea.portada?.tipo === "color" ? tarea.portada.valor : null;
+function IconoComentario({ etiqueta }: { etiqueta: string }) {
+  return (
+    <svg
+      className="tarjeta-kanban__icono"
+      role="img"
+      aria-label={etiqueta}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
 }
 
 function TarjetaArrastrable({
@@ -136,7 +152,9 @@ function TarjetaArrastrable({
   const estadoChip = hecha ? "hecha" : chip?.estado;
   const tieneAviso = tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined;
   const tieneRecurrencia = Boolean(tarea.recurrencia);
-  const colorPortada = colorDePortada(tarea);
+  const estiloPortadaTarea = estiloPortada(tarea.portada);
+  const comentarios = tarea.comentarios ?? 0;
+  const tieneComentarios = comentarios > 0;
 
   const asignadas = tarea.etiquetas ?? [];
   const etiquetasDeTarea = etiquetas.filter((etiqueta) => asignadas.includes(etiqueta.id));
@@ -185,12 +203,8 @@ function TarjetaArrastrable({
         </button>
       </div>
 
-      {colorPortada && (
-        <span
-          className="tarjeta-kanban__portada"
-          style={{ background: colorPortada }}
-          aria-hidden="true"
-        />
+      {estiloPortadaTarea && (
+        <span className="tarjeta-kanban__portada" style={estiloPortadaTarea} aria-hidden="true" />
       )}
 
       <Link
@@ -207,7 +221,7 @@ function TarjetaArrastrable({
             ))}
           </span>
         )}
-        {(chip || tieneAviso || tieneRecurrencia || tieneChecklist) && (
+        {(chip || tieneAviso || tieneRecurrencia || tieneChecklist || tieneComentarios) && (
           <span className="tarjeta-kanban__indicadores">
             {chip && (
               <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
@@ -225,6 +239,14 @@ function TarjetaArrastrable({
                 })}
               >
                 {checklist.hechos}/{checklist.total}
+              </span>
+            )}
+            {tieneComentarios && (
+              <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--comentarios">
+                <IconoComentario etiqueta={t("tasks.commentBadge", { n: comentarios })} />
+                <span className="mono" aria-hidden="true">
+                  {comentarios}
+                </span>
               </span>
             )}
           </span>

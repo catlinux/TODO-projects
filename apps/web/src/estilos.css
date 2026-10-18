@@ -2670,3 +2670,166 @@ fieldset {
     max-width: none;
   }
 }
+
+/* Tarjeta abierta (C2): a partir de 900 px el panel de actividad va a la derecha. */
+.tarjeta-detalle__principal {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .tarjeta-detalle {
+    width: min(1040px, calc(100vw - 2rem));
+  }
+
+  .tarjeta-detalle__cuerpo {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+}
+
+.panel-actividad {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: var(--chip);
+  border-radius: var(--radio-control-grande);
+}
+
+.panel-actividad__titulo {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.panel-actividad__formulario,
+.panel-actividad__edicion {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.panel-actividad__formulario textarea,
+.panel-actividad__edicion textarea {
+  width: 100%;
+  font: inherit;
+  resize: vertical;
+}
+
+.panel-actividad__ayuda {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--texto-secundario);
+}
+
+.panel-actividad__lista {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 26rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.panel-actividad__elemento {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--lineas);
+}
+
+.panel-actividad__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--texto-secundario);
+}
+
+.panel-actividad__autor {
+  color: var(--texto);
+}
+
+.panel-actividad__fecha {
+  font-family: var(--fuente-mono);
+  font-size: 0.75rem;
+}
+
+/* Texto plano con saltos de línea: nunca se interpreta como HTML. */
+.panel-actividad__texto {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.panel-actividad__acciones,
+.panel-actividad__confirmar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+}
+
+.panel-actividad__vacia {
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+/* Selector de portada: 10 muestras con nombre accesible y marca de selección. */
+.selector-portada {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background: var(--chip);
+  border-radius: var(--radio-control-grande);
+}
+
+.selector-portada__actual {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.selector-portada__muestras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 0.4rem;
+}
+
+.selector-portada__muestra {
+  display: grid;
+  place-items: center;
+  min-height: var(--objetivo-tactil);
+  padding: 0;
+  font-size: 1rem;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  border: 2px solid transparent;
+  border-radius: var(--radio-control);
+}
+
+.selector-portada__muestra[aria-checked="true"] {
+  border-color: var(--texto);
+}
+
+.selector-portada__acciones {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Insignia de comentarios del tablero: icono + recuento. */
+.tarjeta-kanban__insignia--comentarios {
+  gap: 3px;
+}
+
+.tarjeta-kanban__insignia--comentarios .tarjeta-kanban__icono {
+  color: inherit;
+}

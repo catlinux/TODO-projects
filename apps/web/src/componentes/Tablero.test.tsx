@@ -358,4 +358,25 @@ describe("Tablero", () => {
 
     expect(screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__insignia")).toBeNull();
   });
+
+  it("muestra la insignia de comentarios si la tarea tiene", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, comentarios: 3 }], []);
+
+    const insignia = screen
+      .getByText("Tarea inicial")
+      .closest("li")
+      ?.querySelector(".tarjeta-kanban__insignia--comentarios");
+    expect(insignia?.textContent).toContain("3");
+  });
+
+  it("no pinta la insignia de comentarios si no hay ninguno", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, comentarios: 0 }], []);
+
+    expect(
+      screen
+        .getByText("Tarea inicial")
+        .closest("li")
+        ?.querySelector(".tarjeta-kanban__insignia--comentarios"),
+    ).toBeNull();
+  });
 });
