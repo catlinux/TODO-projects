@@ -316,3 +316,24 @@ export type DatosConfigAsistente = z.infer<typeof esquemaConfigAsistente>;
 export const esquemaPruebaAsistente = esquemaConfigAsistente.partial();
 
 export type DatosPruebaAsistente = z.infer<typeof esquemaPruebaAsistente>;
+
+/** Mensaje del chat del asistente: el cliente envía el historial acotado en cada petición. */
+export const esquemaMensajeAsistente = z.object({
+  rol: z.enum(["user", "assistant"], { message: "Rol de mensaje no válido" }),
+  texto: z
+    .string()
+    .trim()
+    .min(1, "El mensaje no puede estar vacío")
+    .max(4000, "El mensaje es demasiado largo"),
+});
+
+export const esquemaChatAsistente = z.object({
+  mensajes: z
+    .array(esquemaMensajeAsistente)
+    .min(1, "Hace falta al menos un mensaje")
+    .max(20, "El historial no puede superar los 20 mensajes"),
+  zona: esquemaZona.optional(),
+});
+
+export type DatosMensajeAsistente = z.infer<typeof esquemaMensajeAsistente>;
+export type DatosChatAsistente = z.infer<typeof esquemaChatAsistente>;

@@ -24,7 +24,7 @@ Escrito por Sonnet el 2026-10-18. Ejecuta Sonnet delegando en AgentRelay, un pas
 Archivos: `apps/api/src/db/schema.ts` + migración `asistente_config`, `apps/api/src/asistente/config.ts` (+ cifrado), rutas en `app.ts`, `packages/shared/src/schemas.ts`, tests.
 Hecho cuando: `GET/PUT/DELETE /asistente/config` y `POST /asistente/probar` (una llamada mínima al modelo para validar clave, base y modelo); presets; clave cifrada y nunca devuelta; tests de cifrado, aislamiento entre usuarios y clave de cifrado ausente. Versión: sin subir (se publica en el paso 5).
 
-### 2 · API: chat con herramientas · AgentRelay alto · [ ]
+### 2 · API: chat con herramientas · AgentRelay alto · [x]
 Archivos: `apps/api/src/asistente/{cliente,herramientas,sistema,chat}.ts`, ruta `POST /asistente/chat`, tests con un servidor LLM falso.
 Hecho cuando: bucle de herramientas con los límites anteriores, errores del proveedor traducidos a mensajes claros, respuesta `{mensaje, acciones:[{herramienta, resumen, enlace?}]}`; tests de: crear tarea con fecha relativa, mover de columna, aislamiento entre usuarios, tope de vueltas, proveedor caído, sin configurar.
 

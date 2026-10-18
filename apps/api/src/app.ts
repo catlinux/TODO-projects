@@ -17,6 +17,7 @@ import {
   registrarRutasAsistente,
   type OpcionesAsistente,
 } from "./asistente/config.js";
+import { registrarRutasChat, type OpcionesChat } from "./asistente/chat.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasBandeja } from "./bandeja.js";
 import { registrarRutasBuscar } from "./buscar.js";
@@ -58,6 +59,8 @@ export interface OpcionesApp {
   asistente?: {
     claveCifrado?: Buffer | null;
     tiempoMaximoPruebaMs?: number;
+    /** Ajustes del chat (vueltas, tiempo, tokens y límite por usuario). */
+    chat?: Omit<OpcionesChat, "claveCifrado">;
   };
 }
 
@@ -278,6 +281,10 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
     tiempoMaximoPruebaMs: opciones.asistente?.tiempoMaximoPruebaMs ?? TIEMPO_MAXIMO_PRUEBA_MS,
   };
   registrarRutasAsistente(app, db, opcionesAsistente);
+  registrarRutasChat(app, db, {
+    claveCifrado: opcionesAsistente.claveCifrado,
+    ...(opciones.asistente?.chat ?? {}),
+  });
 
   return app;
 }
