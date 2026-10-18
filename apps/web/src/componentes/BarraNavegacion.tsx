@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, useNavigate } from "react-router-dom";
 
-import { peticion, type ProyectoApi } from "../api";
+import { peticion, type OcurrenciaAgenda, type ProyectoApi } from "../api";
 import { colorProyecto } from "../colores";
+import { agruparHoy, pendientesHoy, rangoHoy } from "../hoy";
 import { AvisosNavegador } from "./AvisosNavegador";
 
 function Icono({ children }: { children: React.ReactNode }) {
@@ -29,11 +31,24 @@ export function BarraNavegacion() {
   const { t } = useTranslation();
   const cliente = useQueryClient();
   const navigate = useNavigate();
+  const [ahora] = useState(() => new Date());
+  const rango = useMemo(() => rangoHoy(ahora), [ahora]);
 
   const { data: proyectos } = useQuery({
     queryKey: ["proyectos"],
     queryFn: () => peticion<ProyectoApi[]>("/proyectos"),
   });
+
+  // Misma consulta y clave que la página «Hoy», así no se pide dos veces.
+  const { data: ocurrencias } = useQuery({
+    queryKey: ["agenda", rango.desde, rango.hasta],
+    queryFn: () =>
+      peticion<OcurrenciaAgenda[]>(
+        `/agenda?desde=${encodeURIComponent(rango.desde)}&hasta=${encodeURIComponent(rango.hasta)}`,
+      ),
+  });
+
+  const pendientes = pendientesHoy(agruparHoy(ocurrencias ?? [], ahora));
 
   const cerrarSesion = useMutation({
     mutationFn: async () => {
@@ -65,6 +80,24 @@ export function BarraNavegacion() {
           </span>
           <span className="menu-lateral__nombre">{t("app.title")}</span>
         </div>
+
+        <NavLink to="/hoy" className="menu-lateral__enlace">
+          <Icono>
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12.5 2.5 2.4 4.5-5.2" />
+          </Icono>
+          {t("nav.hoy")}
+          {pendientes > 0 && (
+            <>
+              <span className="visualmente-oculto">
+                {t("hoy.pendingCount", { n: pendientes })}
+              </span>
+              <span className="menu-lateral__contador" aria-hidden="true">
+                {pendientes}
+              </span>
+            </>
+          )}
+        </NavLink>
 
         <NavLink to="/agenda" className="menu-lateral__enlace">
           <Icono>
@@ -122,6 +155,13 @@ export function BarraNavegacion() {
       </nav>
 
       <nav className="barra-inferior" aria-label={t("nav.bottom")}>
+        <NavLink to="/hoy" className="barra-inferior__enlace">
+          <Icono>
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12.5 2.5 2.4 4.5-5.2" />
+          </Icono>
+          {t("nav.hoy")}
+        </NavLink>
         <NavLink to="/proyectos" className="barra-inferior__enlace">
           <Icono>
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />

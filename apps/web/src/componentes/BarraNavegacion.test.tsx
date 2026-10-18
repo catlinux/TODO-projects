@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
-import type { ProyectoApi } from "../api";
+import type { OcurrenciaAgenda, ProyectoApi } from "../api";
 import { BarraNavegacion } from "./BarraNavegacion";
 
 const proyectos: ProyectoApi[] = [
@@ -13,13 +13,37 @@ const proyectos: ProyectoApi[] = [
   { id: "p2", nombre: "Trabajo", propietarioId: "u1", createdAt: "", updatedAt: "" },
 ];
 
-function renderMenu(ruta: string) {
+function ocurrencia(tareaId: string, dias: number, hecha = false): OcurrenciaAgenda {
+  const fecha = new Date();
+  fecha.setHours(9, 0, 0, 0);
+  fecha.setDate(fecha.getDate() + dias);
+  return {
+    tareaId,
+    titulo: `Tarea ${tareaId}`,
+    proyectoId: "p1",
+    proyectoNombre: "Casa",
+    columnaId: "c1",
+    columnaNombre: "Pendiente",
+    fecha: fecha.toISOString(),
+    esRecurrente: false,
+    hecha,
+    recordatorioMin: null,
+  };
+}
+
+function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
   let logoutLlamado = false;
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
       if (url === "/api/proyectos") {
         return new Response(JSON.stringify(proyectos), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (url.startsWith("/api/agenda?")) {
+        return new Response(JSON.stringify(ocurrencias), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
@@ -100,6 +124,24 @@ describe("BarraNavegacion", () => {
     expect(
       within(inferior).getByRole("link", { name: /proyectos/i }).getAttribute("aria-current"),
     ).toBeNull();
+  });
+
+  it("abre con «Hoy» y cuenta las pendientes en el menú", async () => {
+    renderMenu("/hoy", [
+      ocurrencia("atrasada", -1),
+      ocurrencia("hoy", 0),
+      ocurrencia("hoy-hecha", 0, true),
+      ocurrencia("manana", 1),
+    ]);
+
+    const menu = menuLateral();
+    const hoy = within(menu).getByRole("link", { name: /hoy/i });
+    expect(hoy.getAttribute("href")).toBe("/hoy");
+    expect(await within(hoy).findByText("2")).toBeTruthy();
+    expect(menu.querySelector("a")?.getAttribute("href")).toBe("/hoy");
+
+    const inferior = screen.getByRole("navigation", { name: "Navegación inferior" });
+    expect(within(inferior).getByRole("link", { name: /hoy/i }).getAttribute("href")).toBe("/hoy");
   });
 });
 

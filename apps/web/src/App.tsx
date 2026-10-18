@@ -6,6 +6,7 @@ import { peticion, type UsuarioApi } from "./api";
 import { Disposicion } from "./componentes/Disposicion";
 import Login from "./paginas/Login";
 import Registro from "./paginas/Registro";
+import Hoy from "./paginas/Hoy";
 import Proyectos from "./paginas/Proyectos";
 import ProyectoDetalle from "./paginas/ProyectoDetalle";
 import Agenda from "./paginas/Agenda";
@@ -32,7 +33,15 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
-      <Route path="/" element={<Navigate to="/proyectos" replace />} />
+      <Route path="/" element={<Navigate to="/hoy" replace />} />
+      <Route
+        path="/hoy"
+        element={
+          <RutaProtegida>
+            <Hoy />
+          </RutaProtegida>
+        }
+      />
       <Route
         path="/proyectos"
         element={

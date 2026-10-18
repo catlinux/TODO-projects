@@ -26,10 +26,14 @@ Maqueta aprobada por el usuario: https://claude.ai/artifact/UneU1zYrzgqnNWkwrgJs
 - Archivos: `apps/api/src/agenda.ts` (+ test: añadir `recordatorioMin` a cada ocurrencia), `apps/web/src/api.ts`, `paginas/Agenda.tsx`, `estilos.css`.
 - FullCalendar con el tema (eventos con el color del proyecto, hoy resaltado) y panel lateral «Próximos avisos» (siguientes 7 días con aviso: hora del aviso = fecha − `recordatorioMin`). Botones de `.ics` existentes, con el nuevo estilo.
 
-### Paso 4 — Vista «Hoy» · AgentRelay, esfuerzo medio · [ ]
+### Paso 4 — Vista «Hoy» · AgentRelay, esfuerzo medio · [x]
 - Archivos: `paginas/Hoy.tsx` (nuevo) + test, `App.tsx`, `componentes/BarraNavegacion.tsx`, `i18n/es.json`.
 - Ruta `/hoy`, que pasa a ser la de inicio (`/` redirige allí): Atrasadas, Hoy y Próximos 7 días a partir de `GET /agenda`, con enlace a su proyecto. Casilla para completar solo si ya existe una forma de marcar como hecha (mover a la última columna); si no, sin casilla. Primera entrada de la barra lateral y de la inferior.
 
-### Paso 5 — Pulido y versión · la propia sesión (Sonnet, esfuerzo bajo) · [ ]
-- Login, Ajustes y formularios con el nuevo estilo; revisión a 390 px.
+### Paso 5 — Página del proyecto · AgentRelay, esfuerzo medio · [ ]
+- Archivos: `paginas/ProyectoDetalle.tsx` (+ test), `componentes/Tablero.tsx`, `componentes/CamposTarea.tsx`, `estilos.css`, `i18n/es.json`.
+- El tablero arriba y a todo el ancho (sin `max-width` de formulario). «Nueva tarea» abre un `<dialog>` con el formulario actual. La gestión de columnas (renombrar, mover, eliminar) pasa a un menú «⋯» en la cabecera de cada columna; «+ Columna» al final del tablero. Desaparecen las secciones «Columnas» y «Tareas del proyecto» como formularios sueltos.
+
+### Paso 6 — Pulido y versión · AgentRelay (esfuerzo bajo) + revisión de la sesión · [ ]
+- Login y Ajustes con el nuevo estilo: Ajustes en tarjetas por sección (Acceso, Tokens de API, Actividad del conector) y botón «Cerrar sesión» en Ajustes (en el móvil no está en la barra inferior). Revisión a 390 px.
 - Versión 0.9.0 (menor: vista nueva y rediseño compatible), CHANGELOG, README (estado) y `docs/HOJA-DE-RUTA.md` (las versiones de la tabla se desplazan una posición).

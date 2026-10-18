@@ -8,6 +8,7 @@
     "logout": "Cerrar sesión",
     "agenda": "Agenda",
     "settings": "Ajustes",
+    "hoy": "Hoy",
     "newProject": "Nuevo proyecto",
     "sidebar": "Menú lateral",
     "bottom": "Navegación inferior"
@@ -110,6 +111,16 @@
       "end": "Se soltó {{item}}",
       "cancel": "Se canceló el arrastre de {{item}}"
     }
+  },
+  "hoy": {
+    "title": "Hoy",
+    "overdue": "Atrasadas",
+    "today": "Hoy",
+    "upcoming": "Próximos días",
+    "empty": "No hay nada pendiente. ¡Buen trabajo!",
+    "markDone": "Marcar como hecha",
+    "markPending": "Marcar como pendiente",
+    "pendingCount": "{{n}} pendientes"
   },
   "agenda": {
     "title": "Agenda",
