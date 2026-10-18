@@ -10,6 +10,15 @@ export const COLORES_PROYECTO = [
 
 export type ColorProyecto = (typeof COLORES_PROYECTO)[number];
 
+// Muestras para elegir el color del proyecto (A6): la paleta cíclica y cuatro tonos más.
+export const PALETA_PROYECTO = [
+  ...COLORES_PROYECTO,
+  "#c8303a",
+  "#18794e",
+  "#8a4f06",
+  "#4b5563",
+] as const;
+
 export function colorProyecto(indice: number): ColorProyecto {
   return COLORES_PROYECTO[indice % COLORES_PROYECTO.length] ?? COLORES_PROYECTO[0];
 }

@@ -793,4 +793,58 @@ describe("ProyectoDetalle", () => {
     await waitFor(() => expect(cuerpoPatch).not.toBeNull());
     expect(JSON.parse(String(cuerpoPatch))).toMatchObject({ recordatorioMin: null });
   });
+
+  it("abre el diálogo de personalizar con el botón Fondo", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              color: "#2f4bc4",
+              fondo: { tipo: "ambiente", ambiente: "bosque" },
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /^fondo$/i }));
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+    expect(await screen.findByText("Personalizar proyecto")).toBeTruthy();
+  });
 });

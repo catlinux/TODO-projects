@@ -45,7 +45,24 @@
     "breadcrumb": "Ruta de navegación",
     "view": "Vista",
     "board": "Tablero",
-    "background": "Fondo"
+    "background": "Fondo",
+    "personalize": {
+      "title": "Personalizar proyecto",
+      "color": "Color del proyecto",
+      "automatic": "Automático",
+      "customColor": "Otro color",
+      "ambientes": {
+        "bosque": "Bosque",
+        "noche": "Noche",
+        "coral": "Coral",
+        "pizarra": "Pizarra",
+        "ciruela": "Ciruela"
+      },
+      "flatColors": "Colores lisos",
+      "customFlat": "Otro color de fondo",
+      "images": "Imágenes",
+      "comingSoon": "Próximamente"
+    }
   },
   "tasks": {
     "title": "Tareas",

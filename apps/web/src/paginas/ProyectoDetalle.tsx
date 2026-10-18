@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { FondoProyecto } from "../componentes/FondoProyecto";
+import { PersonalizarProyecto } from "../componentes/PersonalizarProyecto";
 import { Tablero } from "../componentes/Tablero";
 import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
 
@@ -15,7 +16,7 @@ function inicial(nombre: string): string {
 }
 
 export interface PropiedadesProyectoDetalle {
-  /** Aún sin conectar: A6 abrirá el diálogo de personalizar el proyecto. */
+  /** Abre el diálogo de personalizar. Sin él, lo abre el estado de la propia página (A6). */
   onAbrirFondo?: () => void;
 }
 
@@ -74,6 +75,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
 
   const [valores, setValores] = useState<ValoresFormularioTarea>(valoresIniciales);
   const [dialogoTareaAbierto, setDialogoTareaAbierto] = useState(false);
+  const [personalizarAbierto, setPersonalizarAbierto] = useState(false);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
   const refDialogo = useRef<HTMLDialogElement>(null);
@@ -232,11 +234,14 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
               </span>
             </div>
             <div className="cabecera-proyecto__acciones">
-              {onAbrirFondo && (
-                <button type="button" className="boton-cabecera" onClick={onAbrirFondo}>
-                  {t("projects.background")}
-                </button>
-              )}
+              <button
+                type="button"
+                className="boton-cabecera"
+                aria-haspopup="dialog"
+                onClick={onAbrirFondo ?? (() => setPersonalizarAbierto(true))}
+              >
+                {t("projects.background")}
+              </button>
               <button
                 type="button"
                 className="boton-cabecera boton-cabecera--blanco"
@@ -319,6 +324,13 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
           </div>
         )}
       </dialog>
+      {proyecto.data && (
+        <PersonalizarProyecto
+          proyecto={proyecto.data}
+          abierto={personalizarAbierto}
+          onCerrar={() => setPersonalizarAbierto(false)}
+        />
+      )}
     </main>
   );
 }

@@ -348,6 +348,86 @@ a:hover {
   margin-bottom: 0;
 }
 
+.dialogo-personalizar {
+  width: min(620px, calc(100vw - 2rem));
+  overflow-y: auto;
+}
+
+.personalizar__grupo {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.personalizar__etiqueta {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.personalizar__proximamente {
+  margin: 0;
+  color: var(--texto-secundario);
+}
+
+.personalizar__muestras,
+.personalizar__ambientes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.personalizar__automatico {
+  min-height: var(--objetivo-tactil);
+}
+
+.personalizar__automatico[aria-pressed="true"] {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+  font-weight: 600;
+}
+
+.personalizar__muestra {
+  width: var(--objetivo-tactil);
+  height: var(--objetivo-tactil);
+  min-height: var(--objetivo-tactil);
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+}
+
+.personalizar__muestra[aria-pressed="true"] {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.personalizar__color {
+  width: var(--objetivo-tactil);
+  min-height: var(--objetivo-tactil);
+  padding: 2px;
+}
+
+.personalizar__ambiente {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  border-radius: var(--radio-control);
+}
+
+.personalizar__ambiente[aria-pressed="true"] {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+  font-weight: 600;
+}
+
+.personalizar__miniatura {
+  display: block;
+  width: 72px;
+  height: var(--objetivo-tactil);
+  border-radius: 6px;
+}
+
 .rejilla-proyectos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
