@@ -21,6 +21,7 @@ function acciones(): AccionesAtajos {
     onHoy: vi.fn(),
     onBandeja: vi.fn(),
     onAgenda: vi.fn(),
+    onAsistente: vi.fn(),
     onAyuda: vi.fn(),
   };
 }
@@ -93,6 +94,16 @@ describe("useAtajos", () => {
     fireEvent.keyDown(document.body, { key: "b" });
 
     expect(espia.onBandeja).toHaveBeenCalledTimes(1);
+  });
+
+  it("«G» seguido de «C» va al Asistente", () => {
+    const espia = acciones();
+    render(<Arnes {...espia} />);
+
+    fireEvent.keyDown(document.body, { key: "g" });
+    fireEvent.keyDown(document.body, { key: "c" });
+
+    expect(espia.onAsistente).toHaveBeenCalledTimes(1);
   });
 
   it("una «G» sola no navega", () => {

@@ -4538,3 +4538,193 @@ form.columna-agregar button {
   display: grid;
   gap: 12px;
 }
+
+/*
+ * Asistente: tarjeta de configuración en Ajustes y chat. El hilo ocupa el alto
+ * disponible y scrollea; el redactor queda anclado abajo. Los colores salen de
+ * los tokens del tema activo.
+ */
+.asistente-ajustes__privacidad {
+  margin: 0 0 12px;
+  font-size: var(--texto-sm);
+  color: var(--secundario);
+}
+
+.asistente-ajustes__clave {
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--secundario);
+}
+
+.asistente-ajustes__ok {
+  margin: 0;
+  color: var(--hecho-texto);
+}
+
+.pagina--chat {
+  max-width: 820px;
+}
+
+.asistente {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.asistente .pagina__cabecera {
+  margin-bottom: 16px;
+}
+
+.asistente__hilo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 2px;
+}
+
+.asistente__vacio {
+  margin: auto 0;
+  text-align: center;
+}
+
+.asistente__vacio-titulo {
+  margin: 0 0 4px;
+  font-size: var(--texto-lg);
+}
+
+.asistente__vacio-texto {
+  margin: 0 0 16px;
+  font-size: var(--texto-sm);
+  color: var(--secundario);
+}
+
+.asistente__ejemplos {
+  display: grid;
+  gap: 8px;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.asistente__ejemplo {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: var(--objetivo-tactil);
+  text-align: left;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--lineas-fuertes);
+}
+
+.asistente__ejemplo:hover:not(:disabled) {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.asistente__mensaje {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 82%;
+}
+
+.asistente__mensaje--usuario {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.asistente__mensaje--asistente {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.asistente__burbuja {
+  margin: 0;
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--superficie-2);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+}
+
+.asistente__mensaje--usuario .asistente__burbuja {
+  background: var(--acento-suave);
+  border-color: transparent;
+}
+
+.asistente__pensando {
+  font-style: italic;
+  color: var(--secundario);
+}
+
+.asistente__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.asistente__accion {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--objetivo-tactil);
+  padding: 0 12px;
+  font-size: var(--texto-sm);
+  font-weight: 500;
+  color: var(--texto);
+  text-decoration: none;
+  background: var(--superficie);
+  border: 1px solid var(--lineas-fuertes);
+  border-radius: 999px;
+}
+
+a.asistente__accion {
+  color: var(--acento-texto);
+}
+
+a.asistente__accion:hover {
+  color: var(--acento-hover);
+  background: var(--chip);
+}
+
+.asistente__redactor {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.asistente__cuadro {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--objetivo-tactil);
+  max-height: 160px;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+.asistente__redactor-botones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Hueco reservado para el botón de voz (paso 4). */
+.asistente__hueco-voz {
+  width: var(--objetivo-tactil);
+}
+
+@media (max-width: 740px) {
+  .asistente__mensaje {
+    max-width: 92%;
+  }
+}

@@ -198,6 +198,14 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
           {t("nav.agenda")}
         </NavLink>
 
+        <NavLink to="/asistente" className="menu-lateral__enlace">
+          <Icono>
+            <path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.2A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z" />
+            <path d="M12 8.5l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" />
+          </Icono>
+          {t("nav.assistant")}
+        </NavLink>
+
         <div className="menu-lateral__seccion">
           <h2 className="menu-lateral__titulo">{t("projects.title")}</h2>
           <NavLink
@@ -299,6 +307,13 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
             <path d="M8 2v4M16 2v4M3 10h18" />
           </Icono>
           {t("nav.agenda")}
+        </NavLink>
+        <NavLink to="/asistente" className="barra-inferior__enlace">
+          <Icono>
+            <path d="M21 11.5a8.4 8.4 0 0 1-8.9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-4.2A8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z" />
+            <path d="M12 8.5l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" />
+          </Icono>
+          {t("nav.assistant")}
         </NavLink>
         <NavLink to="/proyectos" className="barra-inferior__enlace">
           <Icono>

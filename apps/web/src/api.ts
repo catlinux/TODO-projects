@@ -215,6 +215,33 @@ export interface ActividadApi {
   titulo: string | null;
 }
 
+export type PresetAsistenteApi = "deepseek" | "openai" | "personalizado";
+
+export type RazonamientoAsistenteApi = "none" | "low" | "medium" | "high";
+
+/** Estado del proveedor del asistente; la clave nunca se devuelve entera. */
+export interface ConfigAsistenteApi {
+  disponible: boolean;
+  configurado: boolean;
+  preset: PresetAsistenteApi | null;
+  baseUrl: string | null;
+  modelo: string | null;
+  razonamiento: RazonamientoAsistenteApi | null;
+  claveTermina: string | null;
+}
+
+/** Escritura realizada por una herramienta del asistente. */
+export interface AccionAsistenteApi {
+  herramienta: string;
+  resumen: string;
+  enlace?: string;
+}
+
+export interface RespuestaChatAsistenteApi {
+  mensaje: string;
+  acciones: AccionAsistenteApi[];
+}
+
 export class ErrorHttp extends Error {
   status: number;
   codigo: string | undefined;

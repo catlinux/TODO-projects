@@ -13,6 +13,7 @@ import ProyectoDetalle from "./paginas/ProyectoDetalle";
 import TarjetaDetalle from "./paginas/TarjetaDetalle";
 import Agenda from "./paginas/Agenda";
 import Ajustes from "./paginas/Ajustes";
+import Asistente from "./paginas/Asistente";
 
 function useSesion() {
   return useQuery({
@@ -83,6 +84,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Ajustes />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/asistente"
+        element={
+          <RutaProtegida>
+            <Asistente />
           </RutaProtegida>
         }
       />

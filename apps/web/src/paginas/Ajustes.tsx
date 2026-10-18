@@ -11,6 +11,7 @@ import {
   type TokenCreadoApi,
 } from "../api";
 import { useCerrarSesion } from "../cerrarSesion";
+import { AjustesAsistente } from "../componentes/AjustesAsistente";
 import { AvisosNavegador } from "../componentes/AvisosNavegador";
 import { VersionApp } from "../componentes/VersionApp";
 import { ESTILOS, useEstilo, type Estilo } from "../estilo";
@@ -249,6 +250,8 @@ export default function Ajustes() {
           ))}
         </div>
       </section>
+
+      <AjustesAsistente />
 
       <section className="panel-tarjeta" aria-labelledby="ajustes-acceso">
         <div className="panel-tarjeta__cabecera">

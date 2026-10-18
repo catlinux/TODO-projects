@@ -28,7 +28,7 @@ Hecho cuando: `GET/PUT/DELETE /asistente/config` y `POST /asistente/probar` (una
 Archivos: `apps/api/src/asistente/{cliente,herramientas,sistema,chat}.ts`, ruta `POST /asistente/chat`, tests con un servidor LLM falso.
 Hecho cuando: bucle de herramientas con los límites anteriores, errores del proveedor traducidos a mensajes claros, respuesta `{mensaje, acciones:[{herramienta, resumen, enlace?}]}`; tests de: crear tarea con fecha relativa, mover de columna, aislamiento entre usuarios, tope de vueltas, proveedor caído, sin configurar.
 
-### 3 · Web: ajustes y chat · AgentRelay alto · [ ]
+### 3 · Web: ajustes y chat · AgentRelay alto · [x]
 Archivos: `apps/web/src/paginas/Asistente.tsx`, tarjeta «Asistente» en `Ajustes.tsx`, ruta y entrada de menú, i18n, estilos, tests.
 Hecho cuando: en Ajustes se elige proveedor (preset), modelo y clave (campo de contraseña) y se prueba; el chat muestra la conversación, un indicador de «pensando», las acciones realizadas con enlaces, y refresca las consultas de tareas/agenda; si no está configurado, lleva a Ajustes.
 

@@ -7,6 +7,7 @@
     "projects": "Proyectos",
     "logout": "Cerrar sesión",
     "agenda": "Agenda",
+    "assistant": "Asistente",
     "settings": "Ajustes",
     "hoy": "Hoy",
     "inbox": "Bandeja de entrada",
@@ -387,6 +388,7 @@
     "today": { "teclas": "G H", "texto": "Ir a Hoy" },
     "inbox": { "teclas": "G B", "texto": "Ir a la Bandeja de entrada" },
     "agenda": { "teclas": "G A", "texto": "Ir a Agenda" },
+    "assistant": { "teclas": "G C", "texto": "Ir al Asistente" },
     "help": { "teclas": "?", "texto": "Mostrar esta ayuda" },
     "escape": { "teclas": "Esc", "texto": "Cerrar diálogos" }
   },
@@ -399,6 +401,63 @@
     "bloqueado": "Permiso bloqueado en el navegador",
     "sinConfigurar": "Los avisos del servidor no están configurados",
     "error": "No se pudieron cambiar los avisos del navegador"
+  },
+  "asistente": {
+    "title": "Asistente",
+    "subtitle": "Pídele lo que necesites: crea tareas, consulta tu agenda y más.",
+    "settingsDescription": "Configura el proveedor de IA que responde en el chat del asistente.",
+    "privacy": "Privacidad: el texto del chat y los datos de tus tareas se envían al proveedor elegido.",
+    "noDisponible": "El asistente no está disponible porque falta la variable de entorno ASISTENTE_CLAVE_CIFRADO en el servidor.",
+    "presets": {
+      "deepseek": "DeepSeek",
+      "openai": "OpenAI",
+      "personalizado": "Personalizado"
+    },
+    "razonamientos": {
+      "none": "Sin razonamiento",
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto"
+    },
+    "config": {
+      "proveedor": "Proveedor",
+      "baseUrl": "URL base",
+      "modelo": "Modelo",
+      "razonamiento": "Razonamiento",
+      "razonamientoAuto": "El que use el proveedor",
+      "clave": "Clave de API",
+      "claveReemplazar": "Nueva clave",
+      "claveDejar": "Déjala vacía para conservar la guardada",
+      "claveGuardada": "Guardada, termina en {{cola}}",
+      "save": "Guardar",
+      "saved": "Configuración guardada.",
+      "test": "Probar conexión",
+      "testOk": "El proveedor ha respondido correctamente.",
+      "testError": "No se pudo comprobar el proveedor.",
+      "remove": "Quitar configuración",
+      "removeConfirm": "¿Quitar la configuración del asistente?",
+      "removed": "Configuración eliminada."
+    },
+    "placeholder": "Escribe un mensaje…",
+    "send": "Enviar",
+    "newConversation": "Nueva conversación",
+    "thinking": "Pensando…",
+    "logLabel": "Conversación con el asistente",
+    "messageLabel": "Mensaje para el asistente",
+    "emptyTitle": "¿En qué te ayudo?",
+    "emptyHint": "Pídeme o pregúntame lo que quieras. Por ejemplo:",
+    "ejemplos": {
+      "crearTarea": "Crea una tarea mañana a las 10 para llamar al banco",
+      "semana": "¿Qué tengo esta semana?",
+      "proyectos": "¿Qué proyectos tengo?"
+    },
+    "actionsLabel": "Acciones realizadas",
+    "retry": "Reintentar",
+    "notConfigured": "El asistente no está configurado. Configúralo en Ajustes.",
+    "goToSettings": "Ir a Ajustes",
+    "errorProvider": "No se pudo contactar con el proveedor. Inténtalo de nuevo.",
+    "errorLimit": "Has hecho demasiadas peticiones seguidas. Espera un momento y reinténtalo.",
+    "errorNetwork": "No hay conexión con el servidor. Comprueba tu red y vuelve a intentarlo."
   },
   "settings": {
     "version": "Versión",

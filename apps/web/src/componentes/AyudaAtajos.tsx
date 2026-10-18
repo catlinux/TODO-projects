@@ -59,6 +59,11 @@ export function AyudaAtajos({ abierto, onCerrar }: PropiedadesAyudaAtajos) {
     { id: "hoy", teclas: t("shortcuts.today.teclas"), texto: t("shortcuts.today.texto") },
     { id: "bandeja", teclas: t("shortcuts.inbox.teclas"), texto: t("shortcuts.inbox.texto") },
     { id: "agenda", teclas: t("shortcuts.agenda.teclas"), texto: t("shortcuts.agenda.texto") },
+    {
+      id: "asistente",
+      teclas: t("shortcuts.assistant.teclas"),
+      texto: t("shortcuts.assistant.texto"),
+    },
     { id: "ayuda", teclas: t("shortcuts.help.teclas"), texto: t("shortcuts.help.texto") },
     { id: "cerrar", teclas: t("shortcuts.escape.teclas"), texto: t("shortcuts.escape.texto") },
   ];

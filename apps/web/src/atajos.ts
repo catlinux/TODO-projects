@@ -12,6 +12,8 @@ export interface AccionesAtajos {
   onBandeja: () => void;
   /** «G» seguido de «A»: ir a la Agenda. */
   onAgenda: () => void;
+  /** «G» seguido de «C»: ir al Asistente. */
+  onAsistente: () => void;
   /** «?»: abrir la ayuda de atajos. */
   onAyuda: () => void;
 }
@@ -104,6 +106,10 @@ export function useAtajos(acciones: AccionesAtajos): void {
           evento.preventDefault();
           olvidarG();
           actuales.onAgenda();
+        } else if (tecla === "c") {
+          evento.preventDefault();
+          olvidarG();
+          actuales.onAsistente();
         }
       }
     };
