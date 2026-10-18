@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.14.0] - 2026-10-18
+
+### Añadido
+- Adjuntos en la tarjeta (subir con botón o arrastrando, miniaturas, abrir, borrar) y portada con imagen: `POST /tareas/:id/archivos`, `GET /tareas/:id/archivos`, `GET /archivos/:id` y `DELETE /archivos/:id`. El tipo de imagen se decide por los primeros bytes del fichero, el resto se sirve como descarga, y las respuestas llevan `nosniff` y una CSP restrictiva. Límite `ARCHIVOS_MAX_MB` (10) y directorio `ARCHIVOS_DIR` (`/data/archivos`). Migración `0015`.
+- Fondos de proyecto con imágenes: una fija o varias en carrusel con fundido (intervalo configurable, sin animación con «reducir movimiento» y en pausa con la pestaña oculta); `POST /proyectos/:id/fondos`.
+
 ## [0.13.0] - 2026-10-18
 
 ### Añadido

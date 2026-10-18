@@ -2,7 +2,7 @@
 
 Gestor de tareas, agenda y proyectos con esteroides: tablero Kanban con tarjetas arrastrables, calendario, avisos por correo y notificaciones, trabajo en equipo en el mismo proyecto y un conector para que una IA pueda gestionarlo.
 
-> **Estado: v0.13.0.** Acceso personal con PIN y huella, vista «Hoy», proyectos, tareas con fecha y recurrencia, tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
+> **Estado: v0.14.0.** Acceso personal con PIN y huella, vista «Hoy», proyectos, tareas con fecha y recurrencia, tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
 
 - **Autor y mantenedor:** CatLinux
 - **Idioma:** todo el proyecto (interfaz, documentación y commits) está en español.
