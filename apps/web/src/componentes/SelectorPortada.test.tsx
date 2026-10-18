@@ -15,14 +15,16 @@ function json(cuerpo: unknown): Response {
   });
 }
 
-function montarFetch() {
+function montarFetch(imagenes: unknown[] = []) {
   const peticiones: Array<{ url: string; method: string; body: unknown }> = [];
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
+      const method = String(init?.method ?? "GET").toUpperCase();
+      if (url === "/api/tareas/t1/archivos" && method === "GET") return json(imagenes);
       peticiones.push({
         url,
-        method: String(init?.method ?? "GET").toUpperCase(),
+        method,
         body: init?.body ? (JSON.parse(String(init.body)) as unknown) : null,
       });
       return json({ ok: true });
@@ -98,13 +100,39 @@ describe("SelectorPortada", () => {
     );
   });
 
-  it("estiloPortada devuelve el color y el patrón, e ignora la imagen", () => {
+  it("ofrece las imágenes adjuntas y elige una como portada", async () => {
+    const uuid = "11111111-1111-1111-1111-111111111111";
+    const { peticiones } = montarFetch([
+      { id: uuid, nombre: "foto.png", mime: "image/png", tamano: 10, createdAt: "" },
+    ]);
+    const user = userEvent.setup();
+    renderSelector();
+
+    await user.click(screen.getByRole("button", { name: "Portada" }));
+    await user.click(await screen.findByRole("radio", { name: "foto.png" }));
+
+    await waitFor(() =>
+      expect(peticiones).toContainEqual({
+        url: "/api/tareas/t1",
+        method: "PATCH",
+        body: { portada: { tipo: "imagen", archivoId: uuid } },
+      }),
+    );
+  });
+
+  it("estiloPortada devuelve el color, el patrón y la imagen con uuid válido", () => {
     expect(estiloPortada({ tipo: "color", valor: "#2563D9" })).toEqual({ backgroundColor: "#2563D9" });
 
     const patron = estiloPortada({ tipo: "color", valor: "puntos-rosa" });
     expect(typeof patron?.backgroundImage).toBe("string");
     expect(patron?.backgroundImage).toContain("gradient");
 
+    const uuid = "11111111-1111-1111-1111-111111111111";
+    const imagen = estiloPortada({ tipo: "imagen", archivoId: uuid });
+    expect(imagen?.backgroundImage).toBe(`url(/api/archivos/${uuid})`);
+    expect(imagen?.backgroundSize).toBe("cover");
+
+    // Un id que no es uuid no construye ninguna URL.
     expect(estiloPortada({ tipo: "imagen", archivoId: "a1" })).toBeNull();
     expect(estiloPortada(null)).toBeNull();
   });

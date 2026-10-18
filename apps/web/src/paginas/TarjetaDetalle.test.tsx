@@ -62,6 +62,7 @@ function montarFetch({ tarea, errorTarea }: OpcionesFetch = {}) {
         return json(actual);
       }
       if (url === "/api/proyectos/p1/columnas") return json(columnas);
+      if (url === "/api/tareas/t1/archivos") return json([]);
       if (url === "/api/proyectos/p1/tareas") return json([]);
       return json({ mensaje: "no encontrado" }, 404);
     }),

@@ -35,6 +35,20 @@ export type PortadaTareaApi =
   | { tipo: "color"; valor: string }
   | { tipo: "imagen"; archivoId: string };
 
+/** Adjunto de una tarea o fondo de un proyecto (fase E). */
+export interface ArchivoApi {
+  id: string;
+  nombre: string;
+  mime: string;
+  tamano: number;
+  createdAt: string;
+}
+
+/** Mime de imagen que la API sirve en línea; el resto va como octet-stream. */
+export function esImagenPermitida(mime: string): boolean {
+  return /^image\/(png|jpeg|webp|gif)$/.test(mime);
+}
+
 export interface TareaApi {
   id: string;
   proyectoId: string;
@@ -52,6 +66,8 @@ export interface TareaApi {
   checklist?: { hechos: number; total: number };
   /** Número de comentarios; lo devuelven `GET /tareas/:id` y `GET /proyectos/:id/tareas`. */
   comentarios?: number;
+  /** Número de adjuntos; lo devuelven `GET /tareas/:id` y `GET /proyectos/:id/tareas`. */
+  adjuntos?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -225,6 +241,31 @@ export async function peticion<T>(ruta: string, init?: RequestInit): Promise<T> 
     },
   });
 
+  return interpretar<T>(respuesta);
+}
+
+/**
+ * Sube un fichero por multipart reutilizando la base y las credenciales. No se
+ * fija Content-Type: el navegador añade el boundary de FormData.
+ */
+export async function subirArchivo<T>(
+  ruta: string,
+  campo: string,
+  fichero: File,
+): Promise<T> {
+  const datos = new FormData();
+  datos.append(campo, fichero);
+
+  const respuesta = await fetch(`/api${ruta}`, {
+    method: "POST",
+    credentials: "same-origin",
+    body: datos,
+  });
+
+  return interpretar<T>(respuesta);
+}
+
+async function interpretar<T>(respuesta: Response): Promise<T> {
   if (respuesta.status === 401) {
     const { mensaje = "No autenticado", codigo } = await leerError(respuesta);
     if (window.location.pathname !== "/login") {

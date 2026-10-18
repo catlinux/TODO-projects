@@ -135,7 +135,8 @@
     "addDescription": "Añadir una descripción…",
     "editDescription": "Editar descripción",
     "checklistBadge": "Checklist: {{hechos}} de {{total}}",
-    "commentBadge": "Comentarios: {{n}}"
+    "commentBadge": "Comentarios: {{n}}",
+    "attachmentBadge": "Adjuntos: {{n}}"
   },
   "labels": {
     "section": "Etiquetas",
@@ -189,12 +190,30 @@
     "choose": "Elegir portada",
     "none": "Sin portada",
     "remove": "Quitar portada",
+    "image": "Imagen",
+    "images": "Imágenes adjuntas",
     "patterns": {
       "rayas-ambar": "Rayas ámbar",
       "cuadros-azul": "Cuadros azul",
       "puntos-rosa": "Puntos rosa",
       "ondas-verde": "Ondas verde"
     }
+  },
+  "attachments": {
+    "section": "Adjuntos",
+    "add": "Adjuntar archivo",
+    "choose": "Elegir archivo",
+    "dropHint": "Arrastra archivos aquí o usa el botón para elegirlos.",
+    "uploading": "Subiendo…",
+    "tooLarge": "El archivo es demasiado grande",
+    "empty": "No hay adjuntos todavía",
+    "open": "Abrir",
+    "download": "Descargar",
+    "useCover": "Usar como portada",
+    "delete": "Borrar",
+    "deleteNamed": "Borrar «{{nombre}}»",
+    "confirmDelete": "¿Borrar el adjunto «{{nombre}}»?",
+    "loadError": "No se pudieron cargar los adjuntos"
   },
   "activity": {
     "section": "Actividad",

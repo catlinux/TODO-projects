@@ -291,7 +291,7 @@ describe("Tablero", () => {
     expect(pendiente?.className).not.toContain("tarjeta-kanban--hecha");
   });
 
-  it("pinta la portada de color e ignora la de imagen", () => {
+  it("pinta la portada de color e ignora la de imagen con id no válido", () => {
     usarTablero();
 
     const conColor = screen.getByText("Tarea inicial").closest("li");
@@ -377,6 +377,50 @@ describe("Tablero", () => {
         .getByText("Tarea inicial")
         .closest("li")
         ?.querySelector(".tarjeta-kanban__insignia--comentarios"),
+    ).toBeNull();
+  });
+
+  it("pinta la portada de imagen cuando el id es un uuid", () => {
+    const uuid = "11111111-1111-1111-1111-111111111111";
+    renderConEtiquetas(
+      [{ ...tareasIniciales[0]!, portada: { tipo: "imagen", archivoId: uuid } }],
+      [],
+    );
+
+    const portada = screen
+      .getByText("Tarea inicial")
+      .closest("li")
+      ?.querySelector<HTMLElement>(".tarjeta-kanban__portada--imagen");
+    expect(portada).not.toBeNull();
+    expect(portada?.style.backgroundImage).toContain(`/api/archivos/${uuid}`);
+  });
+
+  it("ignora la portada de imagen si el id no es un uuid", () => {
+    renderConEtiquetas(
+      [{ ...tareasIniciales[0]!, portada: { tipo: "imagen", archivoId: "a1" } }],
+      [],
+    );
+
+    expect(
+      screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__portada"),
+    ).toBeNull();
+  });
+
+  it("muestra la insignia de adjuntos si la tarea tiene", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, adjuntos: 2 }], []);
+
+    const insignia = screen
+      .getByText("Tarea inicial")
+      .closest("li")
+      ?.querySelector(".tarjeta-kanban__insignia--adjuntos");
+    expect(insignia?.textContent).toContain("2");
+  });
+
+  it("no pinta la insignia de adjuntos si no hay ninguno", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, adjuntos: 0 }], []);
+
+    expect(
+      screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__insignia--adjuntos"),
     ).toBeNull();
   });
 });

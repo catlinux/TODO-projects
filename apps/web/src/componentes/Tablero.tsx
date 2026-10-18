@@ -19,7 +19,7 @@ import { Link } from "react-router-dom";
 
 import { peticion, type ColumnaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
-import { estiloPortada } from "../portada";
+import { esPortadaImagen, estiloPortada } from "../portada";
 import { moverTareaEnLista } from "../tablero-utils";
 import { PastillaEtiqueta } from "./SelectorEtiquetas";
 
@@ -114,6 +114,26 @@ function IconoComentario({ etiqueta }: { etiqueta: string }) {
   );
 }
 
+function IconoAdjunto({ etiqueta }: { etiqueta: string }) {
+  return (
+    <svg
+      className="tarjeta-kanban__icono"
+      role="img"
+      aria-label={etiqueta}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21.4 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
 function TarjetaArrastrable({
   tarea,
   proyectoId,
@@ -153,8 +173,11 @@ function TarjetaArrastrable({
   const tieneAviso = tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined;
   const tieneRecurrencia = Boolean(tarea.recurrencia);
   const estiloPortadaTarea = estiloPortada(tarea.portada);
+  const portadaEsImagen = esPortadaImagen(tarea.portada);
   const comentarios = tarea.comentarios ?? 0;
   const tieneComentarios = comentarios > 0;
+  const adjuntos = tarea.adjuntos ?? 0;
+  const tieneAdjuntos = adjuntos > 0;
 
   const asignadas = tarea.etiquetas ?? [];
   const etiquetasDeTarea = etiquetas.filter((etiqueta) => asignadas.includes(etiqueta.id));
@@ -204,7 +227,13 @@ function TarjetaArrastrable({
       </div>
 
       {estiloPortadaTarea && (
-        <span className="tarjeta-kanban__portada" style={estiloPortadaTarea} aria-hidden="true" />
+        <span
+          className={`tarjeta-kanban__portada${
+            portadaEsImagen ? " tarjeta-kanban__portada--imagen" : ""
+          }`}
+          style={estiloPortadaTarea}
+          aria-hidden="true"
+        />
       )}
 
       <Link
@@ -221,7 +250,7 @@ function TarjetaArrastrable({
             ))}
           </span>
         )}
-        {(chip || tieneAviso || tieneRecurrencia || tieneChecklist || tieneComentarios) && (
+        {(chip || tieneAviso || tieneRecurrencia || tieneChecklist || tieneComentarios || tieneAdjuntos) && (
           <span className="tarjeta-kanban__indicadores">
             {chip && (
               <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
@@ -246,6 +275,14 @@ function TarjetaArrastrable({
                 <IconoComentario etiqueta={t("tasks.commentBadge", { n: comentarios })} />
                 <span className="mono" aria-hidden="true">
                   {comentarios}
+                </span>
+              </span>
+            )}
+            {tieneAdjuntos && (
+              <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--adjuntos">
+                <IconoAdjunto etiqueta={t("tasks.attachmentBadge", { n: adjuntos })} />
+                <span className="mono" aria-hidden="true">
+                  {adjuntos}
                 </span>
               </span>
             )}

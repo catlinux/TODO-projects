@@ -436,6 +436,10 @@ a:hover {
   background: var(--chip);
 }
 
+.tarjeta-detalle__portada--imagen {
+  height: 140px;
+}
+
 .tarjeta-detalle__cuerpo {
   display: grid;
   gap: 1rem;
@@ -868,6 +872,135 @@ a:hover {
 
 .checklist__anadir input {
   flex: 1 1 auto;
+}
+
+/* Adjuntos de la tarjeta (paso E3): subida, lista y acciones. */
+.adjuntos__entrada {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.adjuntos__zona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background: var(--chip);
+  border: 1px dashed var(--lineas);
+  border-radius: var(--radio-control-grande);
+}
+
+.adjuntos__zona--activa {
+  border-color: var(--acento);
+  background: var(--acento-suave);
+}
+
+.adjuntos__ayuda {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.adjuntos__boton {
+  min-height: var(--objetivo-tactil);
+}
+
+.adjuntos__estado {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.adjuntos__lista {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adjuntos__vacia {
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.adjuntos__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem;
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-control-grande);
+}
+
+.adjuntos__vista {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  background: var(--chip);
+  border-radius: var(--radio-control);
+}
+
+.adjuntos__miniatura {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adjuntos__icono {
+  display: grid;
+  place-items: center;
+  color: var(--texto-secundario);
+}
+
+.adjuntos__datos {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.adjuntos__nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adjuntos__tamano {
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+.adjuntos__acciones {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.adjuntos__abrir {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--objetivo-tactil);
+  padding: 0 0.5rem;
+}
+
+/* Acciones de cada adjunto: objetivos táctiles de 40 px. */
+.adjuntos__acciones .boton-texto {
+  min-height: var(--objetivo-tactil);
 }
 
 /* Subconjunto de formato de las descripciones (formato.tsx). */
@@ -1637,6 +1770,10 @@ fieldset {
   display: block;
   height: 80px;
   background: var(--chip);
+}
+
+.tarjeta-kanban__portada--imagen {
+  height: 140px;
 }
 
 .tarjeta-kanban__cuerpo {
@@ -2825,12 +2962,46 @@ fieldset {
   justify-content: flex-start;
 }
 
-/* Insignia de comentarios del tablero: icono + recuento. */
-.tarjeta-kanban__insignia--comentarios {
+/* Imágenes adjuntas elegibles como portada. */
+.selector-portada__etiqueta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+.selector-portada__imagenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 0.4rem;
+}
+
+.selector-portada__imagen {
+  display: grid;
+  place-items: center;
+  min-height: 56px;
+  padding: 0;
+  font-size: 1rem;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  background-color: var(--chip);
+  background-size: cover;
+  background-position: center;
+  border: 2px solid transparent;
+  border-radius: var(--radio-control);
+}
+
+.selector-portada__imagen[aria-checked="true"] {
+  border-color: var(--texto);
+}
+
+/* Insignia de comentarios y de adjuntos del tablero: icono + recuento. */
+.tarjeta-kanban__insignia--comentarios,
+.tarjeta-kanban__insignia--adjuntos {
   gap: 3px;
 }
 
-.tarjeta-kanban__insignia--comentarios .tarjeta-kanban__icono {
+.tarjeta-kanban__insignia--comentarios .tarjeta-kanban__icono,
+.tarjeta-kanban__insignia--adjuntos .tarjeta-kanban__icono {
   color: inherit;
 }
 

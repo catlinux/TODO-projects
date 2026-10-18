@@ -1,9 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { peticion, type PortadaTareaApi } from "../api";
-import { COLORES_PORTADA, PATRONES_PORTADA, estiloPortada } from "../portada";
+import { esImagenPermitida, peticion, type ArchivoApi, type PortadaTareaApi } from "../api";
+import { COLORES_PORTADA, PATRONES_PORTADA, estiloPortada, urlArchivo } from "../portada";
 import { nombreColor } from "./SelectorEtiquetas";
 
 export interface PropiedadesSelectorPortada {
@@ -23,8 +23,18 @@ export function SelectorPortada({
   const [error, setError] = useState<string | null>(null);
   const refBoton = useRef<HTMLButtonElement>(null);
 
-  // La de imagen se ignora hasta la fase E: aquí solo cuenta el color/patrón.
+  const archivos = useQuery({
+    queryKey: ["archivos", tareaId],
+    queryFn: () => peticion<ArchivoApi[]>(`/tareas/${tareaId}/archivos`),
+    enabled: Boolean(tareaId),
+  });
+  const imagenes = (Array.isArray(archivos.data) ? archivos.data : []).filter(
+    (archivo) => esImagenPermitida(archivo.mime) && urlArchivo(archivo.id) !== null,
+  );
+
+  // La de imagen no compite con las muestras de color/patrón: es otra fila.
   const valorActual = portada?.tipo === "color" ? portada.valor : null;
+  const imagenActual = portada?.tipo === "imagen" ? portada.archivoId : null;
 
   const opciones = [
     ...COLORES_PORTADA.map((color) => ({
@@ -37,7 +47,9 @@ export function SelectorPortada({
     })),
   ];
 
-  const nombreActual = opciones.find((opcion) => opcion.valor === valorActual)?.nombre;
+  const nombreActual = imagenActual
+    ? (imagenes.find((archivo) => archivo.id === imagenActual)?.nombre ?? t("cover.image"))
+    : opciones.find((opcion) => opcion.valor === valorActual)?.nombre;
 
   function invalidar() {
     void cliente.invalidateQueries({ queryKey: ["tarea", tareaId] });
@@ -119,6 +131,37 @@ export function SelectorPortada({
               );
             })}
           </div>
+
+          {imagenes.length > 0 && (
+            <>
+              <p className="selector-portada__etiqueta">{t("cover.images")}</p>
+              <div
+                className="selector-portada__imagenes"
+                role="radiogroup"
+                aria-label={t("cover.images")}
+              >
+                {imagenes.map((archivo) => {
+                  const seleccionada = archivo.id === imagenActual;
+                  const url = urlArchivo(archivo.id);
+                  return (
+                    <button
+                      key={archivo.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={seleccionada}
+                      aria-label={archivo.nombre}
+                      className="selector-portada__imagen"
+                      style={url ? { backgroundImage: `url(${url})` } : undefined}
+                      disabled={guardar.isPending}
+                      onClick={() => guardar.mutate({ tipo: "imagen", archivoId: archivo.id })}
+                    >
+                      {seleccionada && <span aria-hidden="true">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           <div className="selector-portada__acciones">
             <button

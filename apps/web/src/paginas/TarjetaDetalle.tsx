@@ -4,13 +4,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { peticion, type ColumnaApi, type TareaApi } from "../api";
+import { Adjuntos } from "../componentes/Adjuntos";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
 import { Checklist } from "../componentes/Checklist";
 import { PanelActividad } from "../componentes/PanelActividad";
 import { SelectorEtiquetas } from "../componentes/SelectorEtiquetas";
 import { SelectorPortada } from "../componentes/SelectorPortada";
 import { formatearTexto } from "../formato";
-import { estiloPortada } from "../portada";
+import { esPortadaImagen, estiloPortada } from "../portada";
 import {
   aIsoUtc,
   aValorLocal,
@@ -234,7 +235,13 @@ export default function TarjetaDetalle() {
       ) : (
         <div className="tarjeta-detalle__marco">
           {estiloPortadaActual && (
-            <span className="tarjeta-detalle__portada" style={estiloPortadaActual} aria-hidden="true" />
+            <span
+              className={`tarjeta-detalle__portada${
+                esPortadaImagen(tareaActual.portada) ? " tarjeta-detalle__portada--imagen" : ""
+              }`}
+              style={estiloPortadaActual}
+              aria-hidden="true"
+            />
           )}
 
           <div className="tarjeta-detalle__cuerpo">
@@ -314,6 +321,12 @@ export default function TarjetaDetalle() {
               </div>
 
               <SelectorPortada
+                tareaId={tareaId ?? ""}
+                proyectoId={proyectoId}
+                portada={tareaActual.portada ?? null}
+              />
+
+              <Adjuntos
                 tareaId={tareaId ?? ""}
                 proyectoId={proyectoId}
                 portada={tareaActual.portada ?? null}

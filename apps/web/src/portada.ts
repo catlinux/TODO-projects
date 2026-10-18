@@ -43,14 +43,36 @@ const PATRONES: Record<PatronPortada, CSSProperties> = {
 };
 
 /**
- * Estilo de la portada de una tarea. La portada de imagen se ignora hasta la
- * fase E; devuelve `null` cuando no hay nada que pintar.
+ * Estilo de la portada de una tarea. La portada de imagen se pinta con
+ * `background-image` sobre la URL real del archivo; devuelve `null` cuando no
+ * hay nada que pintar.
  */
 export function estiloPortada(
   portada: PortadaTareaApi | null | undefined,
 ): CSSProperties | null {
-  if (!portada || portada.tipo !== "color") return null;
+  if (!portada) return null;
+
+  if (portada.tipo === "imagen") {
+    const url = urlArchivo(portada.archivoId);
+    return url
+      ? { backgroundImage: `url(${url})`, backgroundSize: "cover", backgroundPosition: "center" }
+      : null;
+  }
+
   if (portada.valor.startsWith("#")) return { backgroundColor: portada.valor };
   const patron = PATRONES[portada.valor as PatronPortada];
   return patron ?? null;
+}
+
+/** El id de archivo de la API es un uuid: no se construye la URL con otra cosa. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** URL para servir un archivo, o `null` si el id no es un uuid válido. */
+export function urlArchivo(archivoId: string): string | null {
+  return UUID.test(archivoId) ? `/api/archivos/${archivoId}` : null;
+}
+
+/** `true` si la portada es una imagen adjunta con un id válido. */
+export function esPortadaImagen(portada: PortadaTareaApi | null | undefined): boolean {
+  return Boolean(portada?.tipo === "imagen" && urlArchivo(portada.archivoId));
 }
