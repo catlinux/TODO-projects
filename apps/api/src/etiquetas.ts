@@ -7,6 +7,7 @@ import { esquemaEtiqueta, esquemaEtiquetaParcial, esquemaEtiquetasTarea } from "
 import { etiquetas, proyectos, tareasEtiquetas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 import { instantaneaTarea, registrarActividad } from "./actividad.js";
+import { registrarHistorial } from "./historial.js";
 import { obtenerTareaPropia } from "./tareas.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
@@ -246,6 +247,19 @@ export function registrarRutasEtiquetas(app: FastifyInstance, db: Database): voi
     const antes = actuales.map((relacion) => relacion.etiquetaId).sort();
     const despues = [...ids].sort();
 
+    const anadidas = despues.filter((etiquetaId) => !antes.includes(etiquetaId));
+    const quitadas = antes.filter((etiquetaId) => !despues.includes(etiquetaId));
+
+    const idsConNombre = [...new Set([...antes, ...despues])];
+    const filasNombres =
+      idsConNombre.length > 0
+        ? await db
+            .select({ id: etiquetas.id, nombre: etiquetas.nombre })
+            .from(etiquetas)
+            .where(inArray(etiquetas.id, idsConNombre))
+        : [];
+    const nombres = new Map(filasNombres.map((fila) => [fila.id, fila.nombre]));
+
     await db.transaction(async (tx) => {
       await tx.delete(tareasEtiquetas).where(eq(tareasEtiquetas.tareaId, params.data.id));
 
@@ -253,6 +267,32 @@ export function registrarRutasEtiquetas(app: FastifyInstance, db: Database): voi
         await tx
           .insert(tareasEtiquetas)
           .values(ids.map((etiquetaId) => ({ tareaId: params.data.id, etiquetaId })));
+      }
+
+      for (const etiquetaId of anadidas) {
+        await registrarHistorial(tx, {
+          tareaId: params.data.id,
+          usuarioId: usuario.id,
+          tipo: "etiqueta",
+          datos: {
+            accion: "añadida",
+            etiquetaId,
+            nombre: nombres.get(etiquetaId) ?? "",
+          },
+        });
+      }
+
+      for (const etiquetaId of quitadas) {
+        await registrarHistorial(tx, {
+          tareaId: params.data.id,
+          usuarioId: usuario.id,
+          tipo: "etiqueta",
+          datos: {
+            accion: "quitada",
+            etiquetaId,
+            nombre: nombres.get(etiquetaId) ?? "",
+          },
+        });
       }
 
       if (request.tokenId && JSON.stringify(antes) !== JSON.stringify(despues)) {

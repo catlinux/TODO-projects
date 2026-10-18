@@ -73,6 +73,8 @@ export const tareas = pgTable("tareas", {
   recurrencia: text("recurrencia"),
   zona: text("zona").notNull().default("Europe/Madrid"),
   recordatorioMin: integer("recordatorio_min"),
+  // Portada de la tarjeta: color/patrón fijo o imagen (fase E). Nulo = sin portada.
+  portada: jsonb("portada"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -125,6 +127,43 @@ export const checklistItems = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (tabla) => [index("checklist_items_tarea_idx").on(tabla.tareaId)],
+);
+
+export const comentarios = pgTable(
+  "comentarios",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    usuarioId: uuid("usuario_id")
+      .notNull()
+      .references(() => usuarios.id),
+    texto: text("texto").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (tabla) => [index("comentarios_tarea_created_idx").on(tabla.tareaId, tabla.createdAt)],
+);
+
+export const historialTarea = pgTable(
+  "historial_tarea",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tareaId: uuid("tarea_id")
+      .notNull()
+      .references(() => tareas.id, { onDelete: "cascade" }),
+    usuarioId: uuid("usuario_id")
+      .notNull()
+      .references(() => usuarios.id),
+    tipo: text("tipo").notNull(),
+    datos: jsonb("datos").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (tabla) => [index("historial_tarea_tarea_created_idx").on(tabla.tareaId, tabla.createdAt)],
 );
 
 export const sesiones = pgTable("sesiones", {

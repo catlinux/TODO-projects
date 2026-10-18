@@ -78,6 +78,35 @@ export const esquemaProyectoParcial = esquemaProyecto.partial().extend({
   fondo: esquemaFondoProyecto.optional(),
 });
 
+/** Portadas fijas de tarea: 6 colores sólidos hex y 4 patrones con nombre. */
+export const PORTADAS_TAREA = [
+  "#6E4FE6",
+  "#C8303A",
+  "#2563D9",
+  "#18794E",
+  "#B4530A",
+  "#0E7490",
+  "rayas-ambar",
+  "cuadros-azul",
+  "puntos-rosa",
+  "ondas-verde",
+] as const;
+
+export type ValorPortada = (typeof PORTADAS_TAREA)[number];
+
+export const esquemaPortada = z.discriminatedUnion("tipo", [
+  z.object({
+    tipo: z.literal("color"),
+    valor: z.enum(PORTADAS_TAREA, { message: "Portada no válida" }),
+  }),
+  z.object({
+    tipo: z.literal("imagen"),
+    archivoId: z.string().uuid("Archivo no válido"),
+  }),
+]);
+
+export type Portada = z.infer<typeof esquemaPortada>;
+
 export const esquemaTareaBase = z.object({
   titulo: z.string().trim().min(1, "Título obligatorio").max(300, "Título demasiado largo"),
   descripcion: z.string().max(5000, "Descripción demasiado larga").optional(),
@@ -96,6 +125,7 @@ export const esquemaTarea = esquemaTareaBase.refine(
 export const esquemaTareaParcial = esquemaTareaBase
   .extend({
     posicion: z.number().int().min(0, "Posición no válida").optional(),
+    portada: esquemaPortada.nullable().optional(),
   })
   .partial();
 
@@ -132,6 +162,19 @@ export const esquemaChecklistItemParcial = z.object({
   texto: z.string().trim().min(1, "Texto obligatorio").max(300, "Texto demasiado largo").optional(),
   hecho: z.boolean().optional(),
   posicion: z.number().int().min(0, "Posición no válida").optional(),
+});
+
+export const esquemaComentario = z.object({
+  texto: z.string().trim().min(1, "Texto obligatorio").max(5000, "Texto demasiado largo"),
+});
+
+export const esquemaComentarioParcial = z.object({
+  texto: z
+    .string()
+    .trim()
+    .min(1, "Texto obligatorio")
+    .max(5000, "Texto demasiado largo")
+    .optional(),
 });
 
 export const PERMISOS_TOKEN = ["lectura", "escritura", "calendario"] as const;

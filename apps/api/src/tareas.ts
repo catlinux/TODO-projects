@@ -2,11 +2,19 @@ import { type FastifyInstance } from "fastify";
 import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { esquemaTarea, esquemaTareaParcial, ZONA_POR_DEFECTO } from "@todo/shared";
+import { esquemaTarea, esquemaTareaParcial, type Portada, ZONA_POR_DEFECTO } from "@todo/shared";
 
-import { checklistItems, columnas, proyectos, tareas, tareasEtiquetas } from "./db/schema.js";
+import {
+  checklistItems,
+  columnas,
+  comentarios,
+  proyectos,
+  tareas,
+  tareasEtiquetas,
+} from "./db/schema.js";
 import type { Database } from "./db/index.js";
 import { instantaneaTarea, registrarActividad } from "./actividad.js";
+import { registrarHistorial } from "./historial.js";
 import { colocarTareaEnColumna, reindexarColumna } from "./tablero-posiciones.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
@@ -20,6 +28,7 @@ type TaskChanges = {
   recurrencia?: string | null;
   zona?: string;
   recordatorioMin?: number | null;
+  portada?: Portada | null;
   updatedAt: Date;
 };
 
@@ -82,6 +91,26 @@ async function checklistPorTarea(
   return porTarea;
 }
 
+/** Recuento de comentarios de varias tareas en una sola consulta agregada. */
+async function comentariosPorTarea(db: Database, tareaIds: string[]): Promise<Map<string, number>> {
+  const porTarea = new Map<string, number>();
+  if (tareaIds.length === 0) {
+    return porTarea;
+  }
+
+  const filas = await db
+    .select({ tareaId: comentarios.tareaId, total: count() })
+    .from(comentarios)
+    .where(inArray(comentarios.tareaId, tareaIds))
+    .groupBy(comentarios.tareaId);
+
+  for (const fila of filas) {
+    porTarea.set(fila.tareaId, fila.total);
+  }
+
+  return porTarea;
+}
+
 export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
   app.get("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
     const usuario = request.usuario;
@@ -124,10 +153,16 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       filas.map((fila) => fila.tareas.id),
     );
 
+    const recuentoComentarios = await comentariosPorTarea(
+      db,
+      filas.map((fila) => fila.tareas.id),
+    );
+
     return filas.map((fila) => ({
       ...fila.tareas,
       etiquetas: etiquetas.get(fila.tareas.id) ?? [],
       checklist: checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 },
+      comentarios: recuentoComentarios.get(fila.tareas.id) ?? 0,
     }));
   });
 
@@ -223,6 +258,15 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
         });
       }
 
+      if (creada) {
+        await registrarHistorial(tx, {
+          tareaId: creada.id,
+          usuarioId: usuario.id,
+          tipo: "creada",
+          datos: {},
+        });
+      }
+
       return creada;
     });
 
@@ -255,11 +299,13 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
 
     const etiquetas = await etiquetasPorTarea(db, [fila.tarea.id]);
     const checklist = await checklistPorTarea(db, [fila.tarea.id]);
+    const comentariosTarea = await comentariosPorTarea(db, [fila.tarea.id]);
 
     return {
       ...fila.tarea,
       etiquetas: etiquetas.get(fila.tarea.id) ?? [],
       checklist: checklist.get(fila.tarea.id) ?? { hechos: 0, total: 0 },
+      comentarios: comentariosTarea.get(fila.tarea.id) ?? 0,
     };
   });
 
@@ -288,6 +334,11 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       return;
     }
 
+    if (body.data.portada?.tipo === "imagen") {
+      reply.code(400).send({ mensaje: "Todavía no se admiten portadas con imagen" });
+      return;
+    }
+
     const tareaActual = fila.tarea;
     const proyectoId = tareaActual.proyectoId;
 
@@ -309,6 +360,26 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     }
 
     const moving = targetColumnIdRequested !== undefined || body.data.posicion !== undefined;
+
+    const cambiaDeColumna = moving && columnaDestinoId !== tareaActual.columnaId;
+    let nombresColumnas: { desde: string; hasta: string } | null = null;
+    if (cambiaDeColumna) {
+      const filasColumnas = await db
+        .select({ id: columnas.id, nombre: columnas.nombre })
+        .from(columnas)
+        .where(inArray(columnas.id, [tareaActual.columnaId, columnaDestinoId]));
+
+      const columnaOrigen = filasColumnas.find(
+        (filaColumna) => filaColumna.id === tareaActual.columnaId,
+      );
+      const columnaDestino = filasColumnas.find(
+        (filaColumna) => filaColumna.id === columnaDestinoId,
+      );
+
+      if (columnaOrigen && columnaDestino) {
+        nombresColumnas = { desde: columnaOrigen.nombre, hasta: columnaDestino.nombre };
+      }
+    }
 
     // `venceEn: null` borra también la recurrencia; si hay recurrencia debe
     // quedar una fecha en el valor resultante tras aplicar el parche.
@@ -336,6 +407,7 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
     if (body.data.zona !== undefined) cambios.zona = body.data.zona;
     if (body.data.recordatorioMin !== undefined)
       cambios.recordatorioMin = body.data.recordatorioMin;
+    if (body.data.portada !== undefined) cambios.portada = body.data.portada;
     if (moving) cambios.columnaId = columnaDestinoId;
 
     await db.transaction(async (tx) => {
@@ -367,6 +439,46 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       });
 
       await tx.update(tareas).set(cambios).where(eq(tareas.id, params.data.id));
+
+      if (nombresColumnas) {
+        await registrarHistorial(tx, {
+          tareaId: params.data.id,
+          usuarioId: usuario.id,
+          tipo: "movida",
+          datos: {
+            desdeColumnaId: tareaActual.columnaId,
+            hastaColumnaId: columnaDestinoId,
+            desde: nombresColumnas.desde,
+            hasta: nombresColumnas.hasta,
+          },
+        });
+      }
+
+      if (body.data.venceEn !== undefined) {
+        const antesFecha = tareaActual.venceEn ? tareaActual.venceEn.toISOString() : null;
+        const despuesFecha = venceEnResultante ? venceEnResultante.toISOString() : null;
+        if (antesFecha !== despuesFecha) {
+          await registrarHistorial(tx, {
+            tareaId: params.data.id,
+            usuarioId: usuario.id,
+            tipo: "fecha",
+            datos: { antes: antesFecha, despues: despuesFecha },
+          });
+        }
+      }
+
+      if (body.data.portada !== undefined) {
+        const antesPortada = tareaActual.portada ?? null;
+        const despuesPortada = body.data.portada ?? null;
+        if (JSON.stringify(antesPortada) !== JSON.stringify(despuesPortada)) {
+          await registrarHistorial(tx, {
+            tareaId: params.data.id,
+            usuarioId: usuario.id,
+            tipo: "portada",
+            datos: { antes: antesPortada, despues: despuesPortada },
+          });
+        }
+      }
 
       if (
         request.tokenId &&

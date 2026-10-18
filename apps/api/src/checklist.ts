@@ -7,6 +7,7 @@ import { esquemaChecklistItem, esquemaChecklistItemParcial } from "@todo/shared"
 import { checklistItems, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 import { instantaneaTarea, registrarActividad } from "./actividad.js";
+import { registrarHistorial } from "./historial.js";
 import { obtenerTareaPropia } from "./tareas.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
@@ -198,6 +199,15 @@ export function registrarRutasChecklist(app: FastifyInstance, db: Database): voi
         .set(cambios)
         .where(eq(checklistItems.id, params.data.id))
         .returning();
+
+      if (elemento && body.data.hecho === true && fila.elemento.hecho === false) {
+        await registrarHistorial(tx, {
+          tareaId: fila.elemento.tareaId,
+          usuarioId: usuario.id,
+          tipo: "checklist",
+          datos: { texto: elemento.texto },
+        });
+      }
 
       if (elemento && request.tokenId) {
         const instantanea = instantaneaTarea(fila.tarea);

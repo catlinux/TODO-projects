@@ -92,6 +92,13 @@
       "when": 1792302286469,
       "tag": "0012_checklist",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792305286611,
+      "tag": "0013_comentarios_historial_portada",
+      "breakpoints": true
     }
   ]
 }
