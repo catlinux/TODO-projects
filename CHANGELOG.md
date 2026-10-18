@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.20.1] - 2026-10-18
+
+### Cambiado
+- El nombre del proyecto se muestra como título grande en su cabecera (con la inicial sin recortar) y la descripción pasa a un texto más ligero. El título de las tarjetas del tablero es más grande.
+
 ## [0.20.0] - 2026-10-18
 
 ### Añadido

@@ -198,7 +198,7 @@ kbd {
 
 .cabecera-proyecto {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 12px;
   padding: 20px 24px 12px;
@@ -207,25 +207,31 @@ kbd {
 
 .cabecera-proyecto__titulo {
   display: flex;
-  flex: 1 1 160px;
+  flex: 1 1 220px;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
   min-width: 0;
 }
 
+/* Nombre como título: grande, ajustado y legible sobre cualquier portada. */
 .cabecera-proyecto h1 {
+  display: -webkit-box;
   max-width: 100%;
   margin: 0;
   overflow: hidden;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: clamp(1.5rem, 1.1rem + 1.5vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: #fff;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-/* Descripción bajo el nombre: pastilla translúcida legible sobre cualquier fondo. */
+/* Descripción bajo el nombre: velo muy suave con sombra, sin pastilla pesada. */
 .cabecera-proyecto__descripcion {
   max-width: min(100%, 560px);
 }
@@ -234,16 +240,26 @@ kbd {
   display: block;
   width: 100%;
   min-height: var(--objetivo-tactil);
-  padding: 6px 10px;
-  color: var(--menu-texto-fuerte);
+  padding: 4px 8px;
+  color: rgba(255, 255, 255, 0.94);
   text-align: left;
-  background: color-mix(in srgb, var(--marco) 65%, transparent);
+  background: color-mix(in srgb, var(--marco) 20%, transparent);
   border: 0;
   border-radius: var(--radio-control);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .cabecera-proyecto__descripcion-ver:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--marco) 80%, transparent);
+  background: color-mix(in srgb, var(--marco) 38%, transparent);
+}
+
+/* Vacía: un poco más de velo para que se vea que se puede pulsar y añadir. */
+.cabecera-proyecto__descripcion-ver--vacia {
+  background: color-mix(in srgb, var(--marco) 28%, transparent);
+}
+
+.cabecera-proyecto__descripcion-ver--vacia:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--marco) 44%, transparent);
 }
 
 .cabecera-proyecto__descripcion-texto {
@@ -258,7 +274,7 @@ kbd {
 }
 
 .cabecera-proyecto__descripcion-ver--vacia .cabecera-proyecto__descripcion-texto {
-  color: var(--menu-tenue);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .cabecera-proyecto__descripcion-form {
@@ -293,22 +309,27 @@ kbd {
   border-radius: var(--radio-control);
 }
 
+/* Inicial del proyecto: alineada con la primera línea del título y sin recortes. */
 .cabecera-proyecto__inicial {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  font-size: var(--texto-sm);
-  font-weight: 600;
+  width: 36px;
+  height: 36px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
   color: #fff;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: var(--radio-control);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
 }
 
 .cabecera-proyecto__acciones {
   display: flex;
   align-items: center;
+  align-self: center;
   flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
@@ -2393,7 +2414,7 @@ form.columna-agregar button {
 .tarjeta-kanban__portada {
   position: relative;
   display: block;
-  min-height: 104px;
+  min-height: 112px;
   background-color: var(--chip);
   background-size: cover;
   background-position: center;
@@ -2447,9 +2468,9 @@ form.columna-agregar button {
 .tarjeta-kanban__titulo {
   display: -webkit-box;
   overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
   color: var(--texto);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
