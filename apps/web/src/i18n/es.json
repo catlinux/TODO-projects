@@ -11,7 +11,13 @@
     "hoy": "Hoy",
     "newProject": "Nuevo proyecto",
     "sidebar": "Menú lateral",
-    "bottom": "Navegación inferior"
+    "bottom": "Navegación inferior",
+    "theme": "Tema",
+    "themeOptions": {
+      "claro": "Claro",
+      "oscuro": "Oscuro",
+      "sistema": "Sistema"
+    }
   },
   "auth": {
     "login": "Iniciar sesión",

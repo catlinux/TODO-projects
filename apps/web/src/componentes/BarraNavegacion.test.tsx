@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -6,12 +6,23 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
 import type { OcurrenciaAgenda, ProyectoApi } from "../api";
+import { CLAVE_TEMA } from "../tema";
 import { BarraNavegacion } from "./BarraNavegacion";
 
 const proyectos: ProyectoApi[] = [
-  { id: "p1", nombre: "Casa", propietarioId: "u1", createdAt: "", updatedAt: "" },
+  { id: "p1", nombre: "Casa", propietarioId: "u1", createdAt: "", updatedAt: "", color: null },
   { id: "p2", nombre: "Trabajo", propietarioId: "u1", createdAt: "", updatedAt: "" },
+  {
+    id: "p3",
+    nombre: "Viaje",
+    propietarioId: "u1",
+    createdAt: "",
+    updatedAt: "",
+    color: "#123456",
+  },
 ];
+
+const usuario = { id: "u1", email: "a@b.com", nombre: "Marta" };
 
 function ocurrencia(tareaId: string, dias: number, hecha = false): OcurrenciaAgenda {
   const fecha = new Date();
@@ -31,6 +42,15 @@ function ocurrencia(tareaId: string, dias: number, hecha = false): OcurrenciaAge
   };
 }
 
+/** Devuelve el color tal y como lo normaliza el DOM (hex → rgb). */
+function rgb(hex: string): string {
+  const valor = hex.replace("#", "");
+  const r = parseInt(valor.slice(0, 2), 16);
+  const g = parseInt(valor.slice(2, 4), 16);
+  const b = parseInt(valor.slice(4, 6), 16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
   let logoutLlamado = false;
   vi.stubGlobal(
@@ -38,6 +58,12 @@ function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
     vi.fn(async (url: string, init?: RequestInit) => {
       if (url === "/api/proyectos") {
         return new Response(JSON.stringify(proyectos), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (url === "/api/auth/yo") {
+        return new Response(JSON.stringify(usuario), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
@@ -61,6 +87,7 @@ function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
 
   const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   cliente.setQueryData(["proyectos"], proyectos);
+  cliente.setQueryData(["yo"], usuario);
 
   const user = userEvent.setup();
   render(
@@ -78,18 +105,44 @@ function renderMenu(ruta: string, ocurrencias: OcurrenciaAgenda[] = []) {
 }
 
 describe("BarraNavegacion", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    delete document.documentElement.dataset.tema;
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    localStorage.clear();
+    delete document.documentElement.dataset.tema;
+  });
+
+  it("enlaza Hoy, Agenda y Ajustes", () => {
+    renderMenu("/proyectos");
+
+    const menu = menuLateral();
+    expect(within(menu).getByRole("link", { name: /hoy/i }).getAttribute("href")).toBe("/hoy");
+    expect(
+      within(menu)
+        .getByRole("link", { name: /agenda/i })
+        .getAttribute("href"),
+    ).toBe("/agenda");
+    expect(
+      within(menu)
+        .getByRole("link", { name: /ajustes/i })
+        .getAttribute("href"),
+    ).toBe("/ajustes");
   });
 
   it("cierra la sesión, limpia la caché y navega a login", async () => {
     const { cliente, user, seCerroSesion } = renderMenu("/proyectos");
 
-    expect(within(menuLateral()).getByRole("link", { name: /agenda/i }).getAttribute("href")).toBe(
-      "/agenda",
-    );
+    expect(
+      within(menuLateral())
+        .getByRole("link", { name: /agenda/i })
+        .getAttribute("href"),
+    ).toBe("/agenda");
     await user.click(screen.getByRole("button", { name: /cerrar sesión/i }));
 
     await waitFor(() => expect(seCerroSesion()).toBe(true));
@@ -109,20 +162,65 @@ describe("BarraNavegacion", () => {
     expect(trabajo.getAttribute("href")).toBe("/proyectos/p2");
     expect(trabajo.getAttribute("aria-current")).toBeNull();
 
-    expect(within(menu).getByRole("link", { name: /nuevo proyecto/i }).getAttribute("href")).toBe(
-      "/proyectos",
-    );
+    expect(
+      within(menu)
+        .getByRole("link", { name: /nuevo proyecto/i })
+        .getAttribute("href"),
+    ).toBe("/proyectos");
+  });
+
+  it("pinta el cuadrado del proyecto con su inicial y color", () => {
+    renderMenu("/hoy");
+
+    const menu = menuLateral();
+    const cuadrado = (nombre: string) => {
+      const enlace = within(menu).getByRole("link", { name: new RegExp(nombre, "i") });
+      return enlace.querySelector(".menu-lateral__color") as HTMLElement;
+    };
+
+    // Sin color propio, usa la paleta por orden; con color, respeta el del proyecto.
+    expect(cuadrado("casa").textContent).toBe("C");
+    expect(cuadrado("casa").style.backgroundColor).toBe(rgb("#2f4bc4"));
+    expect(cuadrado("trabajo").textContent).toBe("T");
+    expect(cuadrado("trabajo").style.backgroundColor).toBe(rgb("#2f8f62"));
+    expect(cuadrado("viaje").textContent).toBe("V");
+    expect(cuadrado("viaje").style.backgroundColor).toBe(rgb("#123456"));
+  });
+
+  it("muestra el perfil del usuario", () => {
+    renderMenu("/hoy");
+
+    const menu = menuLateral();
+    expect(within(menu).getByText("Marta")).toBeTruthy();
+    expect(within(menu).getByText("M")).toBeTruthy();
+  });
+
+  it("cambia el tema con el selector", async () => {
+    const { user } = renderMenu("/hoy");
+
+    const selector = within(menuLateral()).getByLabelText("Tema") as HTMLSelectElement;
+    expect(selector.value).toBe("sistema");
+
+    await user.selectOptions(selector, "oscuro");
+
+    expect(selector.value).toBe("oscuro");
+    expect(document.documentElement.dataset.tema).toBe("oscuro");
+    expect(localStorage.getItem(CLAVE_TEMA)).toBe("oscuro");
   });
 
   it("marca el enlace de la barra inferior según la ruta", () => {
     renderMenu("/agenda");
 
     const inferior = screen.getByRole("navigation", { name: "Navegación inferior" });
-    expect(within(inferior).getByRole("link", { name: /agenda/i }).getAttribute("aria-current")).toBe(
-      "page",
-    );
     expect(
-      within(inferior).getByRole("link", { name: /proyectos/i }).getAttribute("aria-current"),
+      within(inferior)
+        .getByRole("link", { name: /agenda/i })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(
+      within(inferior)
+        .getByRole("link", { name: /proyectos/i })
+        .getAttribute("aria-current"),
     ).toBeNull();
   });
 

@@ -8,6 +8,7 @@ export interface ProyectoApi {
   id: string;
   nombre: string;
   descripcion?: string | null;
+  color?: string | null;
   propietarioId: string;
   createdAt: string;
   updatedAt: string;

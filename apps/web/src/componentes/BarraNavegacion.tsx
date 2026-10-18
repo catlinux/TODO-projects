@@ -3,11 +3,14 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 
-import { peticion, type OcurrenciaAgenda, type ProyectoApi } from "../api";
+import { peticion, type OcurrenciaAgenda, type ProyectoApi, type UsuarioApi } from "../api";
 import { useCerrarSesion } from "../cerrarSesion";
 import { colorProyecto } from "../colores";
 import { agruparHoy, pendientesHoy, rangoHoy } from "../hoy";
+import { useTema, type Tema } from "../tema";
 import { AvisosNavegador } from "./AvisosNavegador";
+
+const OPCIONES_TEMA: readonly Tema[] = ["claro", "oscuro", "sistema"];
 
 function Icono({ children }: { children: React.ReactNode }) {
   return (
@@ -28,14 +31,50 @@ function Icono({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Inicial del nombre, en mayúscula, para el avatar y el cuadrado del proyecto. */
+function inicial(nombre: string): string {
+  return nombre.trim().charAt(0).toLocaleUpperCase("es-ES");
+}
+
+/**
+ * Blanco o negro según la luminancia del color de fondo: dos colores de la
+ * paleta no llegan a 4.5:1 con el blanco y necesitan la inicial en negro.
+ */
+function textoSobreColor(fondo: string): string {
+  const hex = fondo.trim().replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
+    return "#ffffff";
+  }
+
+  function luminancia(par: number): number {
+    const canal = par / 255;
+    return canal <= 0.03928 ? canal / 12.92 : ((canal + 0.055) / 1.055) ** 2.4;
+  }
+
+  const r = luminancia(parseInt(hex.slice(0, 2), 16));
+  const g = luminancia(parseInt(hex.slice(2, 4), 16));
+  const b = luminancia(parseInt(hex.slice(4, 6), 16));
+  const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+  return l > 0.179 ? "#000000" : "#ffffff";
+}
+
 export function BarraNavegacion() {
   const { t } = useTranslation();
   const [ahora] = useState(() => new Date());
   const rango = useMemo(() => rangoHoy(ahora), [ahora]);
+  const { tema, cambiarTema } = useTema();
 
   const { data: proyectos } = useQuery({
     queryKey: ["proyectos"],
     queryFn: () => peticion<ProyectoApi[]>("/proyectos"),
+  });
+
+  // Misma consulta que la ruta protegida: el perfil se sirve de la caché.
+  const { data: usuario } = useQuery({
+    queryKey: ["yo"],
+    queryFn: () => peticion<UsuarioApi>("/auth/yo"),
+    retry: false,
   });
 
   // Misma consulta y clave que la página «Hoy», así no se pide dos veces.
@@ -72,6 +111,8 @@ export function BarraNavegacion() {
           <span className="menu-lateral__nombre">{t("app.title")}</span>
         </div>
 
+        {/* «Buscar ⌘K» se añade cuando exista la paleta (paso D2). */}
+
         <NavLink to="/hoy" className="menu-lateral__enlace">
           <Icono>
             <circle cx="12" cy="12" r="9" />
@@ -80,9 +121,7 @@ export function BarraNavegacion() {
           {t("nav.hoy")}
           {pendientes > 0 && (
             <>
-              <span className="visualmente-oculto">
-                {t("hoy.pendingCount", { n: pendientes })}
-              </span>
+              <span className="visualmente-oculto">{t("hoy.pendingCount", { n: pendientes })}</span>
               <span className="menu-lateral__contador" aria-hidden="true">
                 {pendientes}
               </span>
@@ -100,18 +139,23 @@ export function BarraNavegacion() {
 
         <h2 className="menu-lateral__titulo">{t("projects.title")}</h2>
         <ul className="menu-lateral__proyectos">
-          {(proyectos ?? []).map((proyecto, indice) => (
-            <li key={proyecto.id}>
-              <NavLink to={`/proyectos/${proyecto.id}`} className="menu-lateral__proyecto">
-                <span
-                  className="menu-lateral__color"
-                  style={{ background: colorProyecto(indice) }}
-                  aria-hidden="true"
-                />
-                <span className="menu-lateral__proyecto-nombre">{proyecto.nombre}</span>
-              </NavLink>
-            </li>
-          ))}
+          {(proyectos ?? []).map((proyecto, indice) => {
+            const color = proyecto.color ?? colorProyecto(indice);
+            return (
+              <li key={proyecto.id}>
+                <NavLink to={`/proyectos/${proyecto.id}`} className="menu-lateral__proyecto">
+                  <span
+                    className="menu-lateral__color"
+                    style={{ backgroundColor: color, color: textoSobreColor(color) }}
+                    aria-hidden="true"
+                  >
+                    {inicial(proyecto.nombre)}
+                  </span>
+                  <span className="menu-lateral__proyecto-nombre">{proyecto.nombre}</span>
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
         <NavLink to="/proyectos" end className="menu-lateral__nuevo">
           <Icono>
@@ -121,6 +165,13 @@ export function BarraNavegacion() {
         </NavLink>
 
         <div className="menu-lateral__pie">
+          <div className="menu-lateral__perfil">
+            <span className="menu-lateral__avatar" aria-hidden="true">
+              {inicial(usuario?.nombre ?? "")}
+            </span>
+            <span className="menu-lateral__perfil-nombre">{usuario?.nombre ?? ""}</span>
+          </div>
+
           <NavLink to="/ajustes" className="menu-lateral__enlace">
             <Icono>
               <path d="M4 7h8M18 7h2M4 17h2M10 17h10" />
@@ -129,7 +180,20 @@ export function BarraNavegacion() {
             </Icono>
             {t("nav.settings")}
           </NavLink>
+
+          <label className="menu-lateral__tema">
+            {t("nav.theme")}
+            <select value={tema} onChange={(evento) => cambiarTema(evento.target.value as Tema)}>
+              {OPCIONES_TEMA.map((opcion) => (
+                <option key={opcion} value={opcion}>
+                  {t(`nav.themeOptions.${opcion}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <AvisosNavegador />
+
           <button
             type="button"
             className="menu-lateral__salir"
@@ -153,18 +217,18 @@ export function BarraNavegacion() {
           </Icono>
           {t("nav.hoy")}
         </NavLink>
-        <NavLink to="/proyectos" className="barra-inferior__enlace">
-          <Icono>
-            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          </Icono>
-          {t("nav.projects")}
-        </NavLink>
         <NavLink to="/agenda" className="barra-inferior__enlace">
           <Icono>
             <rect x="3" y="4" width="18" height="17" rx="3" />
             <path d="M8 2v4M16 2v4M3 10h18" />
           </Icono>
           {t("nav.agenda")}
+        </NavLink>
+        <NavLink to="/proyectos" className="barra-inferior__enlace">
+          <Icono>
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          </Icono>
+          {t("nav.projects")}
         </NavLink>
         <NavLink to="/ajustes" className="barra-inferior__enlace">
           <Icono>

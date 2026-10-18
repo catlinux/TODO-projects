@@ -398,8 +398,8 @@ fieldset {
   gap: 0.15rem;
   padding: 1rem 0.75rem;
   overflow-y: auto;
-  background: var(--superficie);
-  border-right: 1px solid var(--borde);
+  background: var(--menu);
+  border-right: 1px solid var(--lineas);
 }
 
 .menu-lateral__logo {
@@ -431,14 +431,14 @@ fieldset {
   gap: 0.55rem;
   min-height: var(--objetivo-tactil);
   padding: 0 0.6rem;
-  color: var(--texto);
+  color: var(--menu-texto);
   text-decoration: none;
   border-radius: var(--radio-control);
 }
 
 .menu-lateral__enlace:hover,
 .menu-lateral__nuevo:hover {
-  background: var(--columna);
+  background: var(--activo);
   color: var(--texto);
 }
 
@@ -471,21 +471,26 @@ fieldset {
   min-height: var(--objetivo-tactil);
   padding: 0 0.6rem;
   font-size: 0.92rem;
-  color: var(--texto-secundario);
+  color: var(--menu-texto);
   text-decoration: none;
   border-radius: var(--radio-control);
 }
 
 .menu-lateral__proyecto:hover {
-  background: var(--columna);
+  background: var(--activo);
   color: var(--texto);
 }
 
 .menu-lateral__color {
   flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 6px;
 }
 
 .menu-lateral__proyecto-nombre {
@@ -497,8 +502,8 @@ fieldset {
 .menu-lateral__enlace[aria-current="page"],
 .menu-lateral__proyecto[aria-current="page"],
 .barra-inferior__enlace[aria-current="page"] {
-  background: var(--acento-suave);
-  color: var(--acento);
+  background: var(--activo);
+  color: var(--texto);
 }
 
 .menu-lateral__proyecto[aria-current="page"] {
@@ -525,20 +530,62 @@ fieldset {
   padding-top: 0.75rem;
 }
 
+.menu-lateral__perfil {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: var(--objetivo-tactil);
+  padding: 0 0.6rem;
+  overflow: hidden;
+}
+
+.menu-lateral__avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-sobre-acento);
+  background: var(--acento);
+  border-radius: 999px;
+}
+
+.menu-lateral__perfil-nombre {
+  font-weight: 600;
+  color: var(--texto);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-lateral__tema {
+  gap: 0.25rem;
+  padding: 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+.menu-lateral__tema select {
+  width: 100%;
+  font-size: 0.9rem;
+}
+
 .menu-lateral__salir {
   display: flex;
   align-items: center;
   gap: 0.55rem;
   width: 100%;
   padding: 0 0.6rem;
-  color: var(--texto);
+  color: var(--menu-texto);
   text-align: left;
   background: transparent;
   border-color: transparent;
 }
 
 .menu-lateral__salir:hover:not(:disabled) {
-  background: var(--columna);
+  background: var(--activo);
   border-color: transparent;
 }
 
@@ -570,8 +617,8 @@ fieldset {
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
   padding-bottom: calc(0.25rem + env(safe-area-inset-bottom, 0px));
-  background: var(--superficie);
-  border-top: 1px solid var(--borde);
+  background: var(--menu);
+  border-top: 1px solid var(--lineas);
 }
 
 .barra-inferior__enlace {
@@ -585,7 +632,7 @@ fieldset {
   padding: 0.25rem;
   font-size: 0.72rem;
   font-weight: 500;
-  color: var(--texto-secundario);
+  color: var(--menu-texto);
   text-decoration: none;
   border-radius: var(--radio-control);
 }
