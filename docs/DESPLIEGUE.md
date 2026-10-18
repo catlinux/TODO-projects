@@ -105,6 +105,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Las migraciones de la API se aplican solas al reiniciar el contenedor. No borres el volumen `postgres_data` salvo que quieras empezar de cero.
 
+Si escribes una migración a mano, actualiza también el último snapshot de `apps/api/drizzle/meta` para que `drizzle-kit generate` no proponga cambios.
+
 ## HTTPS y proxy con Apache (instalación del VPS)
 
 **HTTPS es obligatorio en producción.** Con `NODE_ENV=production` la cookie de sesión se marca `Secure`, y el navegador no la guarda si accedes por HTTP (salvo en `localhost`): nadie podría iniciar sesión.

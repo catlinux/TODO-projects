@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.9.1] - 2026-10-18
+
+### Corregido
+- El snapshot de drizzle-kit refleja el esquema real (incluidas las migraciones escritas a mano): `drizzle-kit generate` ya no propone cambios ni renombrados.
+
 ## [0.9.0] - 2026-10-18
 
 ### Añadido

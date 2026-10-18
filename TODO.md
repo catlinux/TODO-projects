@@ -11,7 +11,6 @@
 
 ## Prioridad media
 
-- El snapshot de drizzle-kit (`apps/api/drizzle/meta`) no refleja las migraciones escritas a mano (0002, 0009): `drizzle-kit generate` pide renombrados. Regenerarlo antes de volver a generar migraciones.
 - `pnpm test` en paralelo (web y API) hace fallar a veces el `beforeAll` de PGlite por tiempo de espera; por separado pasa siempre. Algo parecido pasa a veces con el test de cerrar sesión de `BarraNavegacion.test.tsx`.
 - Color de cada proyecto elegible por el usuario (hoy sale de una paleta fija según el orden).
 - El token de `/agenda.ics?token=` queda en los logs de Apache (solo tiene permiso de calendario); valorar no registrar la query de esa ruta.
