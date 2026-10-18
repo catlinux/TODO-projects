@@ -11,6 +11,12 @@ import { obtenerSesion } from "./auth.js";
 import { registrarRutasAgenda } from "./agenda.js";
 import { registrarRutasActividad } from "./actividad.js";
 import { registrarRutasArchivos } from "./archivos.js";
+import { leerClaveCifrado } from "./asistente/cifrado.js";
+import {
+  TIEMPO_MAXIMO_PRUEBA_MS,
+  registrarRutasAsistente,
+  type OpcionesAsistente,
+} from "./asistente/config.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasBandeja } from "./bandeja.js";
 import { registrarRutasBuscar } from "./buscar.js";
@@ -48,6 +54,11 @@ export interface OpcionesApp {
   bloqueoPin?: ReturnType<typeof crearBloqueoGlobal>;
   /** Directorio y tamaño máximo de archivos. Por defecto, ARCHIVOS_DIR y ARCHIVOS_MAX_MB. */
   archivos?: ConfigArchivos;
+  /** Asistente de IA: clave de cifrado (por defecto, ASISTENTE_CLAVE_CIFRADO) y timeout de prueba. */
+  asistente?: {
+    claveCifrado?: Buffer | null;
+    tiempoMaximoPruebaMs?: number;
+  };
 }
 
 const MAX_POR_IP = 10;
@@ -258,6 +269,15 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   registrarRutasBandeja(app, db);
   registrarRutasBuscar(app, db);
   registrarRutasPush(app, db, { vapidPublicKey });
+
+  const opcionesAsistente: OpcionesAsistente = {
+    claveCifrado:
+      opciones.asistente?.claveCifrado !== undefined
+        ? opciones.asistente.claveCifrado
+        : leerClaveCifrado(),
+    tiempoMaximoPruebaMs: opciones.asistente?.tiempoMaximoPruebaMs ?? TIEMPO_MAXIMO_PRUEBA_MS,
+  };
+  registrarRutasAsistente(app, db, opcionesAsistente);
 
   return app;
 }

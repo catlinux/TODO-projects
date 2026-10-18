@@ -20,7 +20,7 @@ Escrito por Sonnet el 2026-10-18. Ejecuta Sonnet delegando en AgentRelay, un pas
 
 ## Pasos
 
-### 1 · API: configuración del proveedor · AgentRelay medio · [ ]
+### 1 · API: configuración del proveedor · AgentRelay medio · [x]
 Archivos: `apps/api/src/db/schema.ts` + migración `asistente_config`, `apps/api/src/asistente/config.ts` (+ cifrado), rutas en `app.ts`, `packages/shared/src/schemas.ts`, tests.
 Hecho cuando: `GET/PUT/DELETE /asistente/config` y `POST /asistente/probar` (una llamada mínima al modelo para validar clave, base y modelo); presets; clave cifrada y nunca devuelta; tests de cifrado, aislamiento entre usuarios y clave de cifrado ausente. Versión: sin subir (se publica en el paso 5).
 

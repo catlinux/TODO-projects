@@ -238,3 +238,81 @@ export const esquemaColumnaParcial = z.object({
     .optional(),
   posicion: z.number().int().min(0, "Posición no válida").optional(),
 });
+
+export const PRESETS_ASISTENTE = ["deepseek", "openai", "personalizado"] as const;
+export type PresetAsistente = (typeof PRESETS_ASISTENTE)[number];
+
+export interface DefectosPresetAsistente {
+  baseUrl: string;
+  modelo: string;
+  razonamiento: string | null;
+}
+
+/** Valores de cada preset; `personalizado` deja base URL y modelo libres. */
+export const PRESETS_ASISTENTE_DEFECTOS: Record<PresetAsistente, DefectosPresetAsistente | null> = {
+  deepseek: { baseUrl: "https://api.deepseek.com", modelo: "deepseek-flash", razonamiento: null },
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+    modelo: "gpt-6-luna",
+    razonamiento: "none",
+  },
+  personalizado: null,
+};
+
+export const RAZONAMIENTOS_ASISTENTE = ["none", "low", "medium", "high"] as const;
+export type RazonamientoAsistente = (typeof RAZONAMIENTOS_ASISTENTE)[number];
+
+/** HTTPS siempre; HTTP solo para un proveedor local (pruebas). */
+export function esBaseUrlAsistentePermitida(valor: string): boolean {
+  const coincidencia = /^([a-z][a-z0-9+.-]*):\/\/([^/?#]*)/i.exec(valor);
+  if (!coincidencia) {
+    return false;
+  }
+  const protocolo = coincidencia[1]!.toLowerCase();
+  if (protocolo === "https") {
+    return true;
+  }
+  if (protocolo !== "http") {
+    return false;
+  }
+  const autoridad = coincidencia[2]!.split("@").pop() ?? "";
+  const host = autoridad.startsWith("[")
+    ? autoridad.slice(0, autoridad.indexOf("]") + 1)
+    : (autoridad.split(":")[0] ?? "");
+  return ["localhost", "127.0.0.1", "[::1]"].includes(host.toLowerCase());
+}
+
+const esquemaBaseUrlAsistente = z
+  .string()
+  .trim()
+  .url("La URL del proveedor no es válida")
+  .refine(esBaseUrlAsistentePermitida, "La URL del proveedor debe usar https://");
+
+const esquemaRazonamientoAsistente = z
+  .enum(RAZONAMIENTOS_ASISTENTE, { message: "Nivel de razonamiento no válido" })
+  .nullable();
+
+export const esquemaConfigAsistente = z.object({
+  preset: z.enum(PRESETS_ASISTENTE, { message: "Proveedor no válido" }),
+  baseUrl: esquemaBaseUrlAsistente.optional(),
+  modelo: z
+    .string()
+    .trim()
+    .min(1, "Modelo obligatorio")
+    .max(200, "Nombre de modelo demasiado largo")
+    .optional(),
+  razonamiento: esquemaRazonamientoAsistente.optional(),
+  clave: z
+    .string()
+    .trim()
+    .min(1, "Clave obligatoria")
+    .max(500, "La clave es demasiado larga")
+    .optional(),
+});
+
+export type DatosConfigAsistente = z.infer<typeof esquemaConfigAsistente>;
+
+/** Prueba del proveedor: cualquier campo es opcional y se completa con lo guardado. */
+export const esquemaPruebaAsistente = esquemaConfigAsistente.partial();
+
+export type DatosPruebaAsistente = z.infer<typeof esquemaPruebaAsistente>;

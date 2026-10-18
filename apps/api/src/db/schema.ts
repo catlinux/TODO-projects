@@ -359,3 +359,22 @@ export const passkeys = pgTable(
   },
   (tabla) => [index("passkeys_usuario_idx").on(tabla.usuarioId)],
 );
+
+export const asistenteConfig = pgTable("asistente_config", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  usuarioId: uuid("usuario_id")
+    .notNull()
+    .unique()
+    .references(() => usuarios.id, { onDelete: "cascade" }),
+  preset: text("preset").notNull(),
+  baseUrl: text("base_url").notNull(),
+  modelo: text("modelo").notNull(),
+  razonamiento: text("razonamiento"),
+  // Clave del proveedor cifrada (AES-256-GCM); nunca se devuelve ni se registra.
+  claveCifrada: text("clave_cifrada").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
