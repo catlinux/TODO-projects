@@ -4,12 +4,12 @@
 import { randomBytes } from "node:crypto";
 
 import { hash } from "@node-rs/argon2";
-import { eq, ne } from "drizzle-orm";
+import { eq, inArray, ne } from "drizzle-orm";
 
 import { esquemaPin } from "@todo/shared";
 
 import { createDatabase } from "./db/index.js";
-import { usuarios } from "./db/schema.js";
+import { sesiones, usuarios } from "./db/schema.js";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -63,6 +63,21 @@ try {
   }
 
   await db.update(usuarios).set({ pinHash: null }).where(ne(usuarios.id, propietarioId));
+
+  // Cambiar (o quitar) el PIN invalida las sesiones abiertas de los afectados.
+  const afectados = [
+    propietarioId,
+    ...todos.filter((u) => u.id !== propietarioId && u.pinHash !== null).map((u) => u.id),
+  ];
+  const cerradas = await db
+    .delete(sesiones)
+    .where(inArray(sesiones.usuarioId, afectados))
+    .returning({ id: sesiones.id });
+  console.log(
+    cerradas.length === 0
+      ? "No había sesiones abiertas que cerrar."
+      : `Sesiones cerradas: ${cerradas.length}.`,
+  );
 } finally {
   await pool.end();
 }

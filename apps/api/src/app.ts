@@ -120,10 +120,32 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
     },
   });
 
+  const registroAbierto = opciones.registroAbierto ?? process.env.REGISTRO_ABIERTO !== "0";
+  const accesoCorreo = opciones.accesoCorreo ?? process.env.ACCESO_CORREO !== "0";
+  const origenPublico =
+    opciones.origenPublico !== undefined
+      ? opciones.origenPublico
+      : process.env.ORIGEN_PUBLICO || null;
+
+  // CSRF: en producción (origenPublico configurado) una escritura solo se acepta si su
+  // Origin coincide con el público. Sin cabecera Origin se deja pasar: la envían los
+  // navegadores y no los clientes de API (token, curl).
+  const METODOS_SEGUROS = new Set(["GET", "HEAD", "OPTIONS"]);
+  const sinBarraFinal = (valor: string) => valor.replace(/\/+$/, "");
+  app.addHook("onRequest", async (request, reply) => {
+    if (!origenPublico || METODOS_SEGUROS.has(request.method)) return;
+    const origen = request.headers.origin;
+    if (origen && sinBarraFinal(origen) !== sinBarraFinal(origenPublico)) {
+      reply.code(403).send({ mensaje: "Origen no permitido" });
+      return reply;
+    }
+  });
+
   app.decorateRequest("usuario", null);
   app.decorateRequest("permisoToken", null);
   app.decorateRequest("tokenId", null);
   app.decorateRequest("tokenNombre", null);
+  app.decorateRequest("sesionCreadaEn", null);
   app.decorate("requireAuth", async (request, reply) => {
     const porCookie = await obtenerSesion(db, request.cookies.sesion);
     if (porCookie) {
@@ -131,6 +153,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
       request.permisoToken = null;
       request.tokenId = null;
       request.tokenNombre = null;
+      request.sesionCreadaEn = porCookie.sesion.createdAt;
       return;
     }
 
@@ -156,6 +179,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
         request.permisoToken = valido.permiso;
         request.tokenId = valido.id;
         request.tokenNombre = valido.nombre;
+        request.sesionCreadaEn = null;
         return;
       }
 
@@ -182,13 +206,6 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
       return { estado: "error", baseDatos: "error" };
     }
   });
-
-  const registroAbierto = opciones.registroAbierto ?? process.env.REGISTRO_ABIERTO !== "0";
-  const accesoCorreo = opciones.accesoCorreo ?? process.env.ACCESO_CORREO !== "0";
-  const origenPublico =
-    opciones.origenPublico !== undefined
-      ? opciones.origenPublico
-      : process.env.ORIGEN_PUBLICO || null;
 
   registrarRutasAuth(app, db, limiteAuth, registroAbierto, accesoCorreo);
   registrarRutasAcceso(app, db, {

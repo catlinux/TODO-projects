@@ -7,7 +7,7 @@ import { type FastifyInstance } from "fastify";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { crearBloqueoGlobal } from "./acceso.js";
+import { crearBloqueoGlobal, SESION_RECIENTE_MS } from "./acceso.js";
 import { buildApp } from "./app.js";
 import type { Database } from "./db/index.js";
 import * as schema from "./db/schema.js";
@@ -199,6 +199,65 @@ describe("acceso con PIN y huella", () => {
       headers: { authorization: `Bearer ${valor}` },
     });
     expect(conToken.statusCode).toBe(403);
+  });
+
+  it("rechaza las escrituras con un Origin ajeno y acepta el propio o ninguno (CSRF)", async () => {
+    const ajeno = await app.inject({
+      method: "POST",
+      url: "/auth/pin",
+      headers: { origin: "https://malicioso.example" },
+      payload: { pin: PIN },
+    });
+    expect(ajeno.statusCode).toBe(403);
+    expect(ajeno.json()).toEqual({ mensaje: "Origen no permitido" });
+
+    const propio = await app.inject({
+      method: "POST",
+      url: "/auth/pin",
+      headers: { origin: ORIGEN },
+      payload: { pin: PIN },
+    });
+    expect(propio.statusCode).toBe(200);
+
+    // Sin cabecera Origin (clientes de API, curl) se deja pasar.
+    expect((await entrarConPin(PIN)).statusCode).toBe(200);
+  });
+
+  it("exige una sesión reciente para registrar una huella", async () => {
+    const cookie = cookieSesion(await entrarConPin(PIN));
+    await db
+      .update(schema.sesiones)
+      .set({ createdAt: new Date(Date.now() - SESION_RECIENTE_MS - 60_000) })
+      .where(eq(schema.sesiones.usuarioId, usuarioId));
+
+    const opciones = await app.inject({
+      method: "POST",
+      url: "/auth/huella/registro-opciones",
+      headers: { cookie: `sesion=${cookie}` },
+    });
+    expect(opciones.statusCode).toBe(403);
+    expect(opciones.json()).toEqual({
+      mensaje: "Vuelve a entrar para añadir un dispositivo",
+      codigo: "reautenticar",
+    });
+
+    const registro = await app.inject({
+      method: "POST",
+      url: "/auth/huella/registro",
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { ...respuestaRegistro(crearAutenticador(), "reto-caducado"), nombre: "Móvil" },
+    });
+    expect(registro.statusCode).toBe(403);
+
+    // Con una sesión recién creada sí se puede registrar.
+    const reciente = cookieSesion(await entrarConPin(PIN));
+    const correcta = await app.inject({
+      method: "POST",
+      url: "/auth/huella/registro-opciones",
+      headers: { cookie: `sesion=${reciente}` },
+    });
+    expect(correcta.statusCode).toBe(200);
+    expect(correcta.json()).toMatchObject({ challenge: expect.any(String) });
   });
 
   it("lista y borra las huellas propias", async () => {

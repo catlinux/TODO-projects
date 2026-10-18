@@ -30,6 +30,9 @@ const FALLOS_POR_TRAMO = 5;
 const BLOQUEO_BASE_MS = 60 * 1000;
 const BLOQUEO_MAX_MS = 24 * 60 * 60 * 1000;
 const TIEMPO_CEREMONIA_MS = 2 * 60 * 1000;
+/** Margen desde que se entra hasta que se puede añadir una passkey nueva. */
+export const SESION_RECIENTE_MS = 10 * 60 * 1000;
+const MENSAJE_REAUTENTICAR = "Vuelve a entrar para añadir un dispositivo";
 const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -85,6 +88,18 @@ function demasiados(reply: FastifyReply, segundos: number): FastifyReply {
 
 function datosUsuario(usuario: typeof usuarios.$inferSelect) {
   return { id: usuario.id, email: usuario.email, nombre: usuario.nombre };
+}
+
+/**
+ * Registrar una passkey con una cookie robada daría al atacante un acceso duradero;
+ * por eso exigimos que la sesión sea reciente.
+ */
+function exigirSesionReciente(request: FastifyRequest, reply: FastifyReply): FastifyReply | null {
+  const creadaEn = request.sesionCreadaEn;
+  if (creadaEn && Date.now() - creadaEn.getTime() > SESION_RECIENTE_MS) {
+    return reply.code(403).send({ mensaje: MENSAJE_REAUTENTICAR, codigo: "reautenticar" });
+  }
+  return null;
 }
 
 export function registrarRutasAcceso(
@@ -177,6 +192,8 @@ export function registrarRutasAcceso(
   app.post("/auth/huella/registro-opciones", conSesion, async (request, reply) => {
     const usuario = request.usuario;
     if (!usuario) return reply.code(401).send({ mensaje: "No autenticado" });
+    const reautenticar = exigirSesionReciente(request, reply);
+    if (reautenticar) return reautenticar;
     if (!webauthn) return sinWebAuthn(reply);
 
     const existentes = await db
@@ -210,6 +227,8 @@ export function registrarRutasAcceso(
   app.post("/auth/huella/registro", conSesion, async (request, reply) => {
     const usuario = request.usuario;
     if (!usuario) return reply.code(401).send({ mensaje: "No autenticado" });
+    const reautenticar = exigirSesionReciente(request, reply);
+    if (reautenticar) return reautenticar;
     if (!webauthn) return sinWebAuthn(reply);
 
     const cuerpo = (request.body ?? {}) as RespuestaRegistro & { nombre?: unknown };

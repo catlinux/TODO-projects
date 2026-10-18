@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { hash, verify } from "@node-rs/argon2";
 import { type FastifyInstance, type FastifyReply } from "fastify";
-import { eq } from "drizzle-orm";
+import { and, eq, lt, ne } from "drizzle-orm";
 
 import { esquemaLogin, esquemaRegistro } from "@todo/shared";
 
@@ -89,6 +89,11 @@ export async function crearSesion(
   const token = generarToken();
   const tokenHash = hashToken(token);
   const expiraEn = new Date(Date.now() + UNA_SEMANA_MS);
+
+  // Limpieza: las sesiones caducadas del usuario ya no sirven para nada.
+  await db
+    .delete(sesiones)
+    .where(and(eq(sesiones.usuarioId, usuarioId), lt(sesiones.expiraEn, new Date())));
 
   await db.insert(sesiones).values({
     usuarioId,
@@ -271,6 +276,27 @@ export function registrarRutasAuth(
     reply.code(204).send();
   });
 
+  app.post("/auth/cerrar-sesiones", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+    // Con token de API no hay sesión de navegador que cerrar.
+    if (request.tokenId !== null) {
+      reply.code(403).send({ mensaje: "Solo disponible con sesión iniciada en el navegador" });
+      return;
+    }
+
+    const tokenHash = request.cookies.sesion ? hashToken(request.cookies.sesion) : "";
+    const borradas = await db
+      .delete(sesiones)
+      .where(and(eq(sesiones.usuarioId, usuario.id), ne(sesiones.tokenHash, tokenHash)))
+      .returning({ id: sesiones.id });
+
+    reply.code(200).send({ cerradas: borradas.length });
+  });
+
   app.get("/auth/yo", { preHandler: app.requireAuth }, async (request, reply) => {
     const usuario = request.usuario;
     if (!usuario) {
@@ -291,6 +317,8 @@ declare module "fastify" {
     permisoToken: "lectura" | "escritura" | "calendario" | null;
     tokenId: string | null;
     tokenNombre: string | null;
+    /** Fecha de creación de la sesión de cookie; null cuando se autentica con token de API. */
+    sesionCreadaEn: Date | null;
   }
 
   interface FastifyInstance {

@@ -32,6 +32,7 @@ describe("autenticación", () => {
     await migrate(db, { migrationsFolder });
     app = await buildApp(db as unknown as Database, {
       limiteAuth: { max: 100000, ventanaMs: 60 * 60 * 1000, maxPorCorreo: 100000 },
+      origenPublico: null,
     });
     await app.ready();
   });
@@ -257,5 +258,91 @@ describe("autenticación", () => {
 
     expect(sesion).toBeDefined();
     expect(sesion.tokenHash).not.toBe(token);
+  });
+
+  it("no comprueba el Origin si no hay origen público configurado", async () => {
+    const respuesta = await app.inject({
+      method: "POST",
+      url: "/auth/registro",
+      headers: { origin: "https://ajeno.example" },
+      payload: {
+        email: "sin-origen@example.com",
+        nombre: "Sin origen",
+        contrasena: "contrasena-muy-larga",
+      },
+    });
+
+    expect(respuesta.statusCode).toBe(201);
+  });
+
+  it("cerrar-sesiones cierra las demás sesiones y conserva la actual", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/auth/registro",
+      payload: {
+        email: "cierra@example.com",
+        nombre: "Cierra",
+        contrasena: "contrasena-muy-larga",
+      },
+    });
+    const otra = obtenerCookieSesion(
+      await app.inject({
+        method: "POST",
+        url: "/auth/login",
+        payload: { email: "cierra@example.com", contrasena: "contrasena-muy-larga" },
+      }),
+    );
+
+    const cierre = await app.inject({
+      method: "POST",
+      url: "/auth/cerrar-sesiones",
+      headers: { cookie: `sesion=${otra}` },
+    });
+    expect(cierre.statusCode).toBe(200);
+    expect(cierre.json()).toEqual({ cerradas: 1 });
+
+    const actual = await app.inject({
+      method: "GET",
+      url: "/auth/yo",
+      headers: { cookie: `sesion=${otra}` },
+    });
+    expect(actual.statusCode).toBe(200);
+
+    const [usuario] = (await db
+      .select()
+      .from(schema.usuarios)
+      .where(eq(schema.usuarios.email, "cierra@example.com"))) as [
+      typeof schema.usuarios.$inferSelect,
+    ];
+    const restantes = await db
+      .select({ id: schema.sesiones.id })
+      .from(schema.sesiones)
+      .where(eq(schema.sesiones.usuarioId, usuario.id));
+    expect(restantes).toHaveLength(1);
+  });
+
+  it("rechaza cerrar sesiones con un token de API", async () => {
+    const login = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: "cierra@example.com", contrasena: "contrasena-muy-larga" },
+    });
+    const cookie = obtenerCookieSesion(login);
+
+    const creado = await app.inject({
+      method: "POST",
+      url: "/tokens",
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { nombre: "Token", permiso: "escritura" },
+    });
+    expect(creado.statusCode).toBe(201);
+    const { token } = creado.json() as { token: string };
+
+    const respuesta = await app.inject({
+      method: "POST",
+      url: "/auth/cerrar-sesiones",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(respuesta.statusCode).toBe(403);
   });
 });
