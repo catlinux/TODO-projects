@@ -3,10 +3,25 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import { peticion, type OcurrenciaAgenda, type ProyectoApi } from "../api";
+import {
+  peticion,
+  type OcurrenciaAgenda,
+  type ProyectoApi,
+  type UsuarioApi,
+} from "../api";
+import { avisosProximos } from "../avisos-proximos";
 import { colorProyecto } from "../colores";
-import { chipFecha } from "../fechas";
-import { agruparHoy, fechaCabecera, rangoHoy } from "../hoy";
+import {
+  agruparHoy,
+  fechaCabecera,
+  progresoPorProyecto,
+  rangoHoy,
+  resumenHoy,
+} from "../hoy";
+
+function horaCorta(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+}
 
 function IconoCampana({ etiqueta }: { etiqueta: string }) {
   return (
@@ -37,7 +52,6 @@ interface FilaProps {
 
 function Fila({ ocurrencia, color, alMarcar }: FilaProps) {
   const { t } = useTranslation();
-  const chip = chipFecha(ocurrencia.fecha);
 
   return (
     <li className={`hoy-fila${ocurrencia.hecha ? " hoy-fila--hecha" : ""}`}>
@@ -52,19 +66,18 @@ function Fila({ ocurrencia, color, alMarcar }: FilaProps) {
         </span>
       </label>
 
+      <span className="hoy-fila__hora mono">{horaCorta(ocurrencia.fecha)}</span>
+
       <span className="hoy-fila__titulo">{ocurrencia.titulo}</span>
 
-      <Link className="hoy-fila__proyecto" to={`/proyectos/${ocurrencia.proyectoId}`}>
+      <Link className="hoy-fila__chip" to={`/proyectos/${ocurrencia.proyectoId}`}>
         <span className="hoy-fila__color" style={{ background: color }} aria-hidden="true" />
         {ocurrencia.proyectoNombre}
       </Link>
 
-      <span className="hoy-fila__meta">
-        {chip && <span className={`chip-fecha chip-fecha--${chip.estado} mono`}>{chip.texto}</span>}
-        {typeof ocurrencia.recordatorioMin === "number" && (
-          <IconoCampana etiqueta={t("tasks.hasReminder")} />
-        )}
-      </span>
+      {typeof ocurrencia.recordatorioMin === "number" && (
+        <IconoCampana etiqueta={t("tasks.hasReminder")} />
+      )}
     </li>
   );
 }
@@ -117,6 +130,13 @@ export default function Hoy() {
     return (proyectoId: string) => colorProyecto(indices.get(proyectoId) ?? 0);
   }, [proyectos]);
 
+  // Misma consulta que la ruta protegida: el saludo se sirve de la caché.
+  const { data: usuario } = useQuery({
+    queryKey: ["yo"],
+    queryFn: () => peticion<UsuarioApi>("/auth/yo"),
+    retry: false,
+  });
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["agenda", rango.desde, rango.hasta],
     queryFn: () =>
@@ -126,6 +146,10 @@ export default function Hoy() {
   });
 
   const secciones = useMemo(() => agruparHoy(data ?? [], ahora), [data, ahora]);
+  const resumen = useMemo(() => resumenHoy(secciones), [secciones]);
+  const progreso = useMemo(() => progresoPorProyecto(secciones), [secciones]);
+  const avisos = useMemo(() => avisosProximos(data ?? [], ahora), [data, ahora]);
+  const proximoAviso = avisos[0];
 
   const alMarcar = (ocurrencia: OcurrenciaAgenda, hecha: boolean) =>
     marcarHecha.mutate({ ocurrencia, hecha });
@@ -137,37 +161,142 @@ export default function Hoy() {
   ];
 
   const vacio = grupos.every((grupo) => grupo.ocurrencias.length === 0);
+  const nombre = usuario?.nombre?.trim();
 
   return (
     <main className="contenedor contenedor--hoy">
       <header className="hoy-cabecera">
+        <h1 className="hoy-cabecera__saludo">
+          {nombre ? t("hoy.greeting", { nombre }) : t("hoy.greetingNoName")}
+        </h1>
         <p className="hoy-cabecera__fecha mono">{fechaCabecera(ahora)}</p>
-        <h1>{t("hoy.title")}</h1>
       </header>
 
-      {isLoading && <p>{t("app.loading")}</p>}
-      {isError && <p className="error">{t("auth.error")}</p>}
-      {!isLoading && !isError && vacio && <p className="hoy-vacio">{t("hoy.empty")}</p>}
+      <div className="hoy-cifras">
+        <div className="hoy-cifra">
+          <span className="hoy-cifra__valor mono">{resumen.paraHoy}</span>
+          <span className="hoy-cifra__etiqueta">{t("hoy.forToday")}</span>
+        </div>
+        <div className="hoy-cifra">
+          <span className="hoy-cifra__valor mono">{resumen.atrasadas}</span>
+          <span className="hoy-cifra__etiqueta">{t("hoy.overdue")}</span>
+        </div>
+        <div className="hoy-cifra">
+          <span className="hoy-cifra__valor hoy-cifra__valor--aviso mono">
+            {proximoAviso ? proximoAviso.horaAvisoTexto : t("hoy.noAlert")}
+          </span>
+          <span className="hoy-cifra__etiqueta">{t("hoy.nextAlert")}</span>
+        </div>
+      </div>
 
-      {!isLoading &&
-        !isError &&
-        grupos.map((grupo) =>
-          grupo.ocurrencias.length === 0 ? null : (
-            <section className="hoy-seccion" key={grupo.clave} aria-labelledby={`hoy-${grupo.clave}`}>
-              <h2 id={`hoy-${grupo.clave}`}>{grupo.titulo}</h2>
-              <ul className="hoy-lista">
-                {grupo.ocurrencias.map((ocurrencia) => (
-                  <Fila
-                    key={`${ocurrencia.tareaId}-${ocurrencia.fecha}`}
-                    ocurrencia={ocurrencia}
-                    color={colorDeProyecto(ocurrencia.proyectoId)}
-                    alMarcar={alMarcar}
-                  />
+      <div className="hoy">
+        <div className="hoy__principal">
+          {isLoading && <p>{t("app.loading")}</p>}
+          {isError && <p className="error">{t("auth.error")}</p>}
+          {!isLoading && !isError && vacio && <p className="hoy-vacio">{t("hoy.empty")}</p>}
+
+          {!isLoading &&
+            !isError &&
+            grupos.map((grupo) =>
+              grupo.ocurrencias.length === 0 ? null : (
+                <section
+                  className="hoy-seccion"
+                  key={grupo.clave}
+                  aria-labelledby={`hoy-${grupo.clave}`}
+                >
+                  <h2 id={`hoy-${grupo.clave}`}>{grupo.titulo}</h2>
+                  <ul className="hoy-lista">
+                    {grupo.ocurrencias.map((ocurrencia) => (
+                      <Fila
+                        key={`${ocurrencia.tareaId}-${ocurrencia.fecha}`}
+                        ocurrencia={ocurrencia}
+                        color={colorDeProyecto(ocurrencia.proyectoId)}
+                        alMarcar={alMarcar}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ),
+            )}
+        </div>
+
+        <aside className="hoy__lateral" aria-label={t("hoy.sidePanel")}>
+          <section className="hoy-progreso" aria-labelledby="hoy-progreso-titulo">
+            <h2 id="hoy-progreso-titulo">{t("hoy.progress")}</h2>
+            {progreso.length === 0 ? (
+              <p className="hoy-lateral__vacio">{t("hoy.noProgress")}</p>
+            ) : (
+              <ul className="hoy-progreso__lista">
+                {progreso.map((item) => {
+                  const porcentaje =
+                    item.total === 0 ? 0 : Math.round((item.hechas / item.total) * 100);
+                  const etiqueta = t("hoy.progressProject", {
+                    nombre: item.proyectoNombre,
+                    hechas: item.hechas,
+                    total: item.total,
+                  });
+                  return (
+                    <li key={item.proyectoId} className="hoy-progreso__item">
+                      <div className="hoy-progreso__cabecera">
+                        <Link className="hoy-fila__chip" to={`/proyectos/${item.proyectoId}`}>
+                          <span
+                            className="hoy-fila__color"
+                            style={{ background: colorDeProyecto(item.proyectoId) }}
+                            aria-hidden="true"
+                          />
+                          {item.proyectoNombre}
+                        </Link>
+                        <span className="hoy-progreso__valor mono">
+                          {item.hechas}/{item.total}
+                        </span>
+                      </div>
+                      <div
+                        className="hoy-progreso__barra"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={item.total}
+                        aria-valuenow={item.hechas}
+                        aria-label={etiqueta}
+                      >
+                        <span
+                          className="hoy-progreso__relleno"
+                          style={{ width: `${porcentaje}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section className="hoy-avisos" aria-labelledby="hoy-avisos-titulo">
+            <h2 id="hoy-avisos-titulo">{t("agenda.upcoming")}</h2>
+            {avisos.length === 0 ? (
+              <p className="hoy-lateral__vacio">{t("agenda.noUpcoming")}</p>
+            ) : (
+              <ul className="hoy-avisos__lista">
+                {avisos.map((aviso) => (
+                  <li key={`${aviso.tareaId}-${aviso.horaAviso}`} className="aviso">
+                    <span className="aviso__hora mono">{aviso.horaAvisoTexto}</span>
+                    <Link className="aviso__titulo" to={`/proyectos/${aviso.proyectoId}`}>
+                      {aviso.titulo}
+                    </Link>
+                    <span className="aviso__proyecto">
+                      <span
+                        className="aviso__color"
+                        style={{ background: colorDeProyecto(aviso.proyectoId) }}
+                        aria-hidden="true"
+                      />
+                      {aviso.proyectoNombre}
+                    </span>
+                  </li>
                 ))}
               </ul>
-            </section>
-          ),
-        )}
+            )}
+          </section>
+        </aside>
+      </div>
     </main>
   );
 }

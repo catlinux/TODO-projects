@@ -5,7 +5,12 @@ import { Link, useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import esLocale from "@fullcalendar/core/locales/es";
-import type { DatesSetArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type {
+  DatesSetArg,
+  EventClickArg,
+  EventContentArg,
+  EventInput,
+} from "@fullcalendar/core";
 
 import { peticion, type OcurrenciaAgenda, type ProyectoApi } from "../api";
 import { avisosProximos } from "../avisos-proximos";
@@ -41,6 +46,20 @@ function etiquetaDia(iso: string): string {
     day: "numeric",
     month: "long",
   });
+}
+
+/** Etiqueta larga del día a partir de su clave local `YYYY-MM-DD`. */
+function etiquetaDiaClave(clave: string): string {
+  const [anio, mes, dia] = clave.split("-").map(Number);
+  return new Date(anio ?? 0, (mes ?? 1) - 1, dia ?? 1).toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function horaCorta(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 }
 
 function rangoProximosDias(dias: number): Rango {
@@ -121,6 +140,16 @@ export default function Agenda() {
     enabled: vista === "calendario" && rangoCalendario !== null,
   });
 
+  // Día resaltado en el calendario y mostrado en el panel de abajo.
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() =>
+    claveDia(new Date().toISOString()),
+  );
+
+  const ocurrenciasDia = useMemo(
+    () => (calendario.data ?? []).filter((ocurrencia) => claveDia(ocurrencia.fecha) === diaSeleccionado),
+    [calendario.data, diaSeleccionado],
+  );
+
   const [rangoAvisos] = useState(() => rangoProximosDias(DIAS_AVISOS));
   const ahora = useMemo(() => new Date(rangoAvisos.desde), [rangoAvisos]);
 
@@ -169,6 +198,19 @@ export default function Agenda() {
         };
       }),
     [calendario.data, colorDeProyecto],
+  );
+
+  // Evento del mes: punto de color, hora y título (máximo 2 por día y «+N más»).
+  const contenidoEvento = (arg: EventContentArg) => (
+    <span className="agenda-evento">
+      <span
+        className="agenda-evento__punto"
+        style={{ background: arg.event.borderColor || arg.event.backgroundColor }}
+        aria-hidden="true"
+      />
+      {arg.timeText && <span className="agenda-evento__hora">{arg.timeText}</span>}
+      <span className="agenda-evento__titulo">{arg.event.title}</span>
+    </span>
   );
 
   return (
@@ -259,7 +301,12 @@ export default function Agenda() {
               displayEventTime
               eventDisplay="block"
               eventTimeFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
+              dayMaxEvents={2}
+              moreLinkText={t("agenda.more")}
+              eventContent={contenidoEvento}
               events={eventos}
+              navLinks
+              navLinkDayClick={(fecha) => setDiaSeleccionado(claveDia(fecha.toISOString()))}
               datesSet={(info: DatesSetArg) =>
                 setRangoCalendario({ desde: info.startStr, hasta: info.endStr })
               }
@@ -271,6 +318,60 @@ export default function Agenda() {
                 }
               }}
             />
+
+            <section className="agenda-dia" aria-labelledby="agenda-dia-titulo">
+              <h2 id="agenda-dia-titulo">{etiquetaDiaClave(diaSeleccionado)}</h2>
+              {calendario.isLoading && <p>{t("app.loading")}</p>}
+              {!calendario.isLoading && ocurrenciasDia.length === 0 && (
+                <p className="agenda-dia__vacio">{t("agenda.dayEmpty")}</p>
+              )}
+              {ocurrenciasDia.length > 0 && (
+                <ul className="agenda-dia__lista">
+                  {ocurrenciasDia.map((ocurrencia) => (
+                    <li
+                      key={`${ocurrencia.tareaId}-${ocurrencia.fecha}`}
+                      className={`agenda-dia__fila${
+                        ocurrencia.hecha ? " agenda-dia__fila--hecha" : ""
+                      }`}
+                    >
+                      <label className="agenda-dia__casilla">
+                        <input
+                          type="checkbox"
+                          checked={ocurrencia.hecha}
+                          onChange={(evento) =>
+                            marcarHecha.mutate({
+                              tareaId: ocurrencia.tareaId,
+                              fecha: ocurrencia.fecha,
+                              hecha: evento.target.checked,
+                            })
+                          }
+                        />
+                        <span className="visualmente-oculto">
+                          {ocurrencia.hecha ? t("hoy.markPending") : t("hoy.markDone")}
+                        </span>
+                      </label>
+                      <span className="agenda-dia__hora mono">{horaCorta(ocurrencia.fecha)}</span>
+                      <Link className="agenda-dia__titulo" to={`/proyectos/${ocurrencia.proyectoId}`}>
+                        {ocurrencia.titulo}
+                      </Link>
+                      <span className="hoy-fila__chip">
+                        <span
+                          className="hoy-fila__color"
+                          style={{ background: colorDeProyecto(ocurrencia.proyectoId) }}
+                          aria-hidden="true"
+                        />
+                        {ocurrencia.proyectoNombre}
+                      </span>
+                      {typeof ocurrencia.recordatorioMin === "number" && (
+                        <span className="agenda-dia__aviso">
+                          {t("agenda.alert", { valor: etiquetaAntelacion(ocurrencia.recordatorioMin) })}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
           </section>
         )}
 

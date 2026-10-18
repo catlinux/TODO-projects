@@ -152,7 +152,16 @@
     "empty": "No hay nada pendiente. ¡Buen trabajo!",
     "markDone": "Marcar como hecha",
     "markPending": "Marcar como pendiente",
-    "pendingCount": "{{n}} pendientes"
+    "pendingCount": "{{n}} pendientes",
+    "greeting": "Hola, {{nombre}}",
+    "greetingNoName": "Hola",
+    "forToday": "Para hoy",
+    "nextAlert": "Próximo aviso",
+    "noAlert": "—",
+    "progress": "Progreso",
+    "progressProject": "{{nombre}}: {{hechas}} de {{total}}",
+    "noProgress": "No hay tareas para hoy ni atrasadas",
+    "sidePanel": "Resumen del día"
   },
   "agenda": {
     "title": "Agenda",
@@ -165,7 +174,10 @@
     "today": "Hoy",
     "next": "Siguiente",
     "upcoming": "Próximos avisos",
-    "noUpcoming": "No hay avisos en los próximos 7 días"
+    "noUpcoming": "No hay avisos en los próximos 7 días",
+    "more": "más",
+    "dayEmpty": "No hay tareas este día",
+    "alert": "Aviso: {{valor}}"
   },
   "push": {
     "activar": "Activar avisos del navegador",

@@ -1484,6 +1484,116 @@ fieldset {
   font-weight: 600;
 }
 
+/* Evento del mes: punto de color, hora y título. */
+.agenda__principal .fc .agenda-evento {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  overflow: hidden;
+}
+
+.agenda-evento__punto {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.agenda-evento__hora {
+  flex: 0 0 auto;
+  font-family: var(--fuente-mono);
+  font-weight: 500;
+}
+
+.agenda-evento__titulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Panel del día seleccionado, bajo el calendario. */
+.agenda-dia {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borde);
+}
+
+.agenda-dia h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.agenda-dia__vacio {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--texto-secundario);
+}
+
+.agenda-dia__lista {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agenda-dia__fila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  min-height: 44px;
+}
+
+.agenda-dia__fila--hecha {
+  opacity: 0.6;
+}
+
+.agenda-dia__fila--hecha .agenda-dia__titulo {
+  text-decoration: line-through;
+}
+
+.agenda-dia__casilla {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: var(--objetivo-tactil);
+  height: var(--objetivo-tactil);
+  cursor: pointer;
+}
+
+.agenda-dia__casilla input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  accent-color: var(--hecho);
+}
+
+.agenda-dia__hora {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+}
+
+.agenda-dia__titulo {
+  flex: 1 1 8rem;
+  font-weight: 500;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.agenda-dia__titulo:hover {
+  color: var(--acento);
+}
+
+.agenda-dia__aviso {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+}
+
 .token-creado {
   border: 1px solid var(--borde);
   border-radius: var(--radio-tarjeta);
@@ -1500,11 +1610,11 @@ fieldset {
 
 /* Vista «Hoy»: atrasadas, hoy y próximos 7 días. */
 .contenedor--hoy {
-  max-width: 760px;
+  max-width: 1000px;
 }
 
 .hoy-cabecera {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .hoy-cabecera__fecha {
@@ -1514,9 +1624,124 @@ fieldset {
   color: var(--texto-secundario);
 }
 
-.hoy-cabecera h1 {
+.hoy-cabecera__saludo {
   margin: 0.15rem 0 0;
-  font-size: 1.6rem;
+  font-size: 1.7rem;
+}
+
+/* Tres cifras destacadas: caben en una fila y se apilan sin desbordar. */
+.hoy-cifras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.hoy-cifra {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
+}
+
+.hoy-cifra__valor {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.hoy-cifra__valor--aviso {
+  font-size: 1.05rem;
+}
+
+.hoy-cifra__etiqueta {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.hoy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.hoy__principal {
+  min-width: 0;
+}
+
+.hoy__lateral {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.hoy-progreso,
+.hoy-avisos {
+  padding: 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-tarjeta);
+}
+
+.hoy-progreso h2,
+.hoy-avisos h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.hoy-lateral__vacio {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--texto-secundario);
+}
+
+.hoy-progreso__lista,
+.hoy-avisos__lista {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hoy-progreso__item {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hoy-progreso__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.hoy-progreso__valor {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+}
+
+.hoy-progreso__barra {
+  height: 6px;
+  overflow: hidden;
+  background: var(--chip);
+  border-radius: 999px;
+}
+
+.hoy-progreso__relleno {
+  display: block;
+  height: 100%;
+  background: var(--hecho);
+  border-radius: 999px;
 }
 
 .hoy-vacio {
@@ -1577,26 +1802,66 @@ fieldset {
   cursor: pointer;
 }
 
+/* Casilla redonda: se dibuja a mano para poder redondearla. */
 .hoy-fila__casilla input {
-  width: 20px;
-  height: 20px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
   min-height: 0;
   padding: 0;
-  accent-color: var(--hecho);
+  appearance: none;
+  background: var(--tarjeta);
+  border: 1.5px solid var(--secundario);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.hoy-fila__casilla input:checked {
+  background: var(--hecho);
+  border-color: var(--hecho);
+}
+
+.hoy-fila__casilla input:checked::after {
+  content: "";
+  width: 10px;
+  height: 5px;
+  border-bottom: 2px solid var(--texto-sobre-acento);
+  border-left: 2px solid var(--texto-sobre-acento);
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.hoy-fila__casilla input:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.hoy-fila__hora {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
 }
 
 .hoy-fila__titulo {
-  flex: 1 1 12rem;
+  flex: 1 1 10rem;
   font-weight: 500;
 }
 
-.hoy-fila__proyecto {
+.hoy-fila__chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.78rem;
   color: var(--texto-secundario);
   text-decoration: none;
+  background: var(--chip);
+  border-radius: 999px;
+}
+
+.hoy-fila__chip:hover {
+  color: var(--texto);
 }
 
 .hoy-fila__color {
@@ -1604,13 +1869,6 @@ fieldset {
   width: 10px;
   height: 10px;
   border-radius: 3px;
-}
-
-.hoy-fila__meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
 }
 
 .hoy-fila__campana {
@@ -1804,7 +2062,14 @@ fieldset {
 }
 
 @media (max-width: 1000px) {
-  .agenda {
+  .agenda,
+  .hoy {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .hoy-cifras {
     grid-template-columns: minmax(0, 1fr);
   }
 }

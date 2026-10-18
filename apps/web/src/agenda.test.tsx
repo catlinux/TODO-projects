@@ -9,7 +9,10 @@ vi.mock("@fullcalendar/react", async () => {
   return {
     default: (props: {
       datesSet?: (info: { startStr: string; endStr: string }) => void;
+      navLinkDayClick?: (fecha: Date) => void;
       events?: Array<{ classNames?: string[] }>;
+      dayMaxEvents?: number;
+      moreLinkText?: string;
     }) => {
       React.useEffect(() => {
         props.datesSet?.({
@@ -20,9 +23,25 @@ vi.mock("@fullcalendar/react", async () => {
       const eventos = props.events ?? [];
       const hechas = eventos.filter((evento) => evento.classNames?.includes("hecha")).length;
       return React.createElement(
-        "div",
-        { "data-testid": "calendario" },
-        `${eventos.length} eventos (${hechas} hechas)`,
+        React.Fragment,
+        null,
+        React.createElement(
+          "div",
+          {
+            "data-testid": "calendario",
+            "data-day-max": String(props.dayMaxEvents),
+            "data-more": String(props.moreLinkText ?? ""),
+          },
+          `${eventos.length} eventos (${hechas} hechas)`,
+        ),
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => props.navLinkDayClick?.(new Date(2026, 4, 10, 12)),
+          },
+          "Elegir 10 de mayo",
+        ),
       );
     },
   };
@@ -165,6 +184,45 @@ describe("Agenda", () => {
       expect.stringContaining("/api/agenda?desde=2026-05-01"),
       expect.anything(),
     );
+  });
+
+  it("limita a dos eventos por día y muestra el panel del día seleccionado", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos") {
+          return respuestaJson([
+            {
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
+            },
+          ]);
+        }
+        if (url.startsWith("/api/agenda?")) {
+          return respuestaJson(ocurrencias);
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const { user } = renderAgenda();
+    await user.click(screen.getByRole("button", { name: /calendario/i }));
+
+    const calendario = await screen.findByTestId("calendario");
+    expect(calendario.getAttribute("data-day-max")).toBe("2");
+    expect(calendario.getAttribute("data-more")).toBe("más");
+
+    await user.click(screen.getByRole("button", { name: "Elegir 10 de mayo" }));
+
+    const panel = await screen.findByRole("region", { name: /10 de mayo/i });
+    expect(within(panel).getByText("Reunión")).toBeTruthy();
+    expect(within(panel).getByText("Demostración")).toBeTruthy();
   });
 
   it("lista los próximos avisos con hora, proyecto y antelación", async () => {

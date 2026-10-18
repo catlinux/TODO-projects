@@ -68,6 +68,9 @@ function renderHoy(datos: OcurrenciaAgenda[] = agenda) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/auth/yo") {
+        return respuestaJson({ id: "u1", email: "a@b.com", nombre: "Ana" });
+      }
       if (url === "/api/proyectos") {
         return respuestaJson(proyectos);
       }
@@ -106,8 +109,16 @@ function renderHoy(datos: OcurrenciaAgenda[] = agenda) {
   return { user, mutaciones: () => mutaciones, llamadasAgenda: () => llamadasAgenda };
 }
 
+function principal(): HTMLElement {
+  const elemento = document.querySelector(".hoy__principal");
+  if (!elemento) {
+    throw new Error("No hay lista principal");
+  }
+  return elemento as HTMLElement;
+}
+
 function fila(titulo: string): HTMLElement {
-  const elemento = screen.getByText(titulo).closest("li");
+  const elemento = within(principal()).getByText(titulo).closest("li");
   if (!elemento) {
     throw new Error(`No hay fila para «${titulo}»`);
   }
@@ -126,7 +137,7 @@ describe("Hoy", () => {
 
     expect(await screen.findByRole("heading", { name: "Atrasadas" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Próximos días" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Hoy", level: 1 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Hola, Ana", level: 1 })).toBeTruthy();
     expect(screen.getByText(fechaCabecera(new Date()))).toBeTruthy();
 
     const atrasadas = screen.getByRole("heading", { name: "Atrasadas" }).closest("section")!;
@@ -143,7 +154,7 @@ describe("Hoy", () => {
 
     const enlace = within(fila("Mañana con aviso")).getByRole("link", { name: /casa/i });
     expect(enlace.getAttribute("href")).toBe("/proyectos/p1");
-    expect(within(fila("Mañana con aviso")).getByText(/mañana 09:00/i)).toBeTruthy();
+    expect(within(fila("Mañana con aviso")).getByText("09:00")).toBeTruthy();
     expect(within(fila("Mañana con aviso")).getByRole("img", { name: /con aviso/i })).toBeTruthy();
   });
 
@@ -159,6 +170,29 @@ describe("Hoy", () => {
     const pendiente = fila("Hoy pendiente");
     expect(pendiente.className).not.toContain("hoy-fila--hecha");
     expect((within(pendiente).getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("muestra el saludo, las tres cifras y el progreso por proyecto", async () => {
+    renderHoy();
+
+    expect(await screen.findByRole("heading", { name: "Hola, Ana", level: 1 })).toBeTruthy();
+
+    await screen.findByText("1/3");
+
+    const cifras = document.querySelectorAll(".hoy-cifra");
+    expect(cifras).toHaveLength(3);
+    expect(within(cifras[0] as HTMLElement).getByText("1")).toBeTruthy();
+    expect(within(cifras[0] as HTMLElement).getByText("Para hoy")).toBeTruthy();
+    expect(within(cifras[1] as HTMLElement).getByText("1")).toBeTruthy();
+    expect(within(cifras[1] as HTMLElement).getByText("Atrasadas")).toBeTruthy();
+    expect(within(cifras[2] as HTMLElement).getByText(/08:45/)).toBeTruthy();
+
+    const lateral = document.querySelector(".hoy__lateral") as HTMLElement;
+    const barra = within(lateral).getByRole("progressbar");
+    expect(barra.getAttribute("aria-valuenow")).toBe("1");
+    expect(barra.getAttribute("aria-valuemax")).toBe("3");
+    expect(within(lateral).getByText("1/3")).toBeTruthy();
+    expect(within(lateral).getByRole("link", { name: /casa/i })).toBeTruthy();
   });
 
   it("mueve a la última columna al marcar una tarea no recurrente", async () => {
@@ -247,7 +281,7 @@ describe("Hoy", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByRole("heading", { name: "Hoy", level: 1 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Hola, Ana", level: 1 })).toBeTruthy();
     expect(await screen.findByRole("heading", { name: "Atrasadas" })).toBeTruthy();
   });
 });

@@ -88,6 +88,54 @@ export function pendientesHoy(secciones: SeccionesHoy): number {
   return secciones.atrasadas.length + secciones.hoy.filter((ocurrencia) => !ocurrencia.hecha).length;
 }
 
+export interface ResumenHoy {
+  /** Ocurrencias de hoy sin hacer. */
+  paraHoy: number;
+  /** Ocurrencias atrasadas de los últimos 30 días. */
+  atrasadas: number;
+}
+
+/** Las dos primeras cifras destacadas de «Hoy». */
+export function resumenHoy(secciones: SeccionesHoy): ResumenHoy {
+  return {
+    paraHoy: secciones.hoy.filter((ocurrencia) => !ocurrencia.hecha).length,
+    atrasadas: secciones.atrasadas.length,
+  };
+}
+
+export interface ProgresoProyecto {
+  proyectoId: string;
+  proyectoNombre: string;
+  hechas: number;
+  total: number;
+}
+
+/**
+ * Progreso por proyecto de las ocurrencias de hoy y las atrasadas (hechas sobre
+ * el total). Se ordena de más a menos tareas y, a igualdad, por nombre.
+ */
+export function progresoPorProyecto(secciones: SeccionesHoy): ProgresoProyecto[] {
+  const porProyecto = new Map<string, ProgresoProyecto>();
+
+  for (const ocurrencia of [...secciones.atrasadas, ...secciones.hoy]) {
+    const progreso = porProyecto.get(ocurrencia.proyectoId) ?? {
+      proyectoId: ocurrencia.proyectoId,
+      proyectoNombre: ocurrencia.proyectoNombre,
+      hechas: 0,
+      total: 0,
+    };
+    progreso.total += 1;
+    if (ocurrencia.hecha) {
+      progreso.hechas += 1;
+    }
+    porProyecto.set(ocurrencia.proyectoId, progreso);
+  }
+
+  return [...porProyecto.values()].sort(
+    (a, b) => b.total - a.total || a.proyectoNombre.localeCompare(b.proyectoNombre),
+  );
+}
+
 /** Fecha de la cabecera en mayúsculas, p. ej. «DOMINGO 18 OCT». */
 export function fechaCabecera(ahora: Date = new Date()): string {
   return ahora

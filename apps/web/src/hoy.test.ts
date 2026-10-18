@@ -6,7 +6,9 @@ import {
   DIAS_ATRASADAS,
   fechaCabecera,
   pendientesHoy,
+  progresoPorProyecto,
   rangoHoy,
+  resumenHoy,
 } from "./hoy";
 
 const AHORA = new Date(2026, 4, 10, 12, 0, 0);
@@ -106,6 +108,59 @@ describe("agruparHoy", () => {
     );
 
     expect(pendientesHoy(secciones)).toBe(2);
+  });
+});
+
+describe("resumenHoy", () => {
+  it("cuenta las de hoy sin hacer y las atrasadas", () => {
+    const secciones = agruparHoy(
+      [
+        ocurrencia(aLasHoras(9, 8), { tareaId: "atrasada" }),
+        ocurrencia(aLasHoras(10, 9), { tareaId: "hoy-pendiente" }),
+        ocurrencia(aLasHoras(10, 10), { tareaId: "hoy-hecha", hecha: true }),
+        ocurrencia(aLasHoras(11, 9), { tareaId: "manana" }),
+      ],
+      AHORA,
+    );
+
+    expect(resumenHoy(secciones)).toEqual({ paraHoy: 1, atrasadas: 1 });
+  });
+});
+
+describe("progresoPorProyecto", () => {
+  it("agrupa hoy y atrasadas por proyecto y cuenta las hechas", () => {
+    const secciones = agruparHoy(
+      [
+        ocurrencia(aLasHoras(9, 8), { tareaId: "a1", proyectoId: "p1", proyectoNombre: "Casa" }),
+        ocurrencia(aLasHoras(10, 9), { tareaId: "a2", proyectoId: "p1", proyectoNombre: "Casa" }),
+        ocurrencia(aLasHoras(10, 10), {
+          tareaId: "a3",
+          proyectoId: "p1",
+          proyectoNombre: "Casa",
+          hecha: true,
+        }),
+        ocurrencia(aLasHoras(10, 11), {
+          tareaId: "b1",
+          proyectoId: "p2",
+          proyectoNombre: "Trabajo",
+        }),
+      ],
+      AHORA,
+    );
+
+    expect(progresoPorProyecto(secciones)).toEqual([
+      { proyectoId: "p1", proyectoNombre: "Casa", hechas: 1, total: 3 },
+      { proyectoId: "p2", proyectoNombre: "Trabajo", hechas: 0, total: 1 },
+    ]);
+  });
+
+  it("no incluye los proyectos sin ocurrencias de hoy ni atrasadas", () => {
+    const secciones = agruparHoy(
+      [ocurrencia(aLasHoras(11, 9), { tareaId: "manana", proyectoId: "p9" })],
+      AHORA,
+    );
+
+    expect(progresoPorProyecto(secciones)).toEqual([]);
   });
 });
 
