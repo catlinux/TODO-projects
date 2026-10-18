@@ -12,6 +12,7 @@ import {
 } from "../api";
 import { useCerrarSesion } from "../cerrarSesion";
 import { AvisosNavegador } from "../componentes/AvisosNavegador";
+import { VersionApp } from "../componentes/VersionApp";
 import { ESTILOS, useEstilo, type Estilo } from "../estilo";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
 import { registrarHuella, soportaHuella } from "../huella";
@@ -495,6 +496,8 @@ export default function Ajustes() {
         </div>
         <AvisosNavegador />
       </section>
+
+      <VersionApp />
 
       <section className="panel-tarjeta" aria-labelledby="ajustes-sesion">
         <div className="panel-tarjeta__cabecera">

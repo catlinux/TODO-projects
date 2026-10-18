@@ -20,6 +20,7 @@ import { registrarRutasComentarios } from "./comentarios.js";
 import { leerConfigArchivos, type ConfigArchivos } from "./config.js";
 import { registrarRutasEtiquetas } from "./etiquetas.js";
 import { registrarRutasExcepciones } from "./excepciones.js";
+import { VERSION } from "./version.js";
 import { registrarRutasHistorial } from "./historial.js";
 import { registrarRutasOcurrencias } from "./ocurrencias.js";
 import { registrarRutasProyectos } from "./proyectos.js";
@@ -226,7 +227,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   app.get("/salud", async (_request, reply) => {
     try {
       await db.execute(sql`select 1`);
-      return { estado: "ok", baseDatos: "ok" };
+      return { estado: "ok", baseDatos: "ok", version: VERSION };
     } catch {
       reply.code(503);
       return { estado: "error", baseDatos: "error" };

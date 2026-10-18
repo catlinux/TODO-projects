@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.19.0] - 2026-10-18
+
+### Añadido
+- Tarjeta «Versión» en Ajustes: muestra la versión de la web cargada y la del servidor, avisa si el navegador está desactualizado y ofrece recargar. `GET /salud` devuelve ahora también `version`, leída del archivo `VERSION`.
+
 ## [0.18.0] - 2026-10-18
 
 ### Añadido

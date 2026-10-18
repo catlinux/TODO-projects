@@ -14,8 +14,6 @@
 - El bloqueo global del PIN puede mantenerse a 24 h si alguien insiste a propósito (la huella sigue funcionando); se acepta por diseño.
 - Prueba E2E de la huella con el autenticador virtual de Chromium (no hay Playwright en el proyecto).
 
-- Excepciones de una serie recurrente (mover o editar una sola ocurrencia).
-
 ## Prioridad baja
 
 - Telegram, SMS y WhatsApp (0.9).

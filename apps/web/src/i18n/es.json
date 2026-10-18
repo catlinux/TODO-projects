@@ -398,6 +398,14 @@
     "error": "No se pudieron cambiar los avisos del navegador"
   },
   "settings": {
+    "version": "Versión",
+    "versionDescription": "Comprueba si este navegador usa la última versión instalada en el servidor.",
+    "versionWeb": "Web (este navegador)",
+    "versionServer": "Servidor",
+    "versionUpToDate": "Estás al día.",
+    "versionOutdated": "Hay una versión más nueva en el servidor. Recarga para usarla.",
+    "versionReload": "Recargar",
+    "versionUnknown": "No disponible",
     "browserNotifications": "Avisos en este navegador",
     "title": "Ajustes",
     "appearance": "Apariencia",

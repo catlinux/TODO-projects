@@ -17,6 +17,7 @@ RUN pnpm install --frozen-lockfile --prod --filter @todo/api...
 
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+COPY VERSION VERSION
 
 # /data/archivos debe existir y ser de appuser para que el volumen nombrado herede el propietario.
 RUN useradd --create-home --uid 10001 appuser \
@@ -36,6 +37,7 @@ RUN pnpm install --frozen-lockfile --filter @todo/web...
 
 COPY packages/shared packages/shared
 COPY apps/web apps/web
+COPY VERSION VERSION
 RUN pnpm --filter @todo/web build
 
 # --- Web: Caddy sirviendo la web estática y el proxy /api ---
