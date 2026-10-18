@@ -2,9 +2,7 @@
 
 ## Prioridad alta
 
-- Aplicar en el VPS la v3 (necesita tu aprobación): `git pull`, `up -d --build` (crea el volumen `archivos_data` y aplica las migraciones 0010 a 0015) y probar una subida y una copia de seguridad con archivos.
-
-- Auditoría con Opus de la v3 (seguridad de subidas, permisos de cada endpoint nuevo, accesibilidad, coherencia visual).
+- Probar en producción una subida de archivo y `deploy/backup-postgres.sh` con archivos (copia y restauración del `tar`).
 
 - Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
 
@@ -25,6 +23,9 @@
 
 ## Prioridad baja
 
+- Deshacer con el conector el borrado de una tarea no recupera sus adjuntos (los ficheros se borran del disco al borrarla). Auditoría v3.
+- Los registros de actividad de etiquetas y archivos guardan `antes = despues`, así que deshacerlos no cambia nada. Auditoría v3.
+- El límite de 20 adjuntos por tarea y 10 fondos por proyecto se comprueba antes de subir, sin bloqueo: dos subidas simultáneas pueden superarlo en uno. Auditoría v3.
 - Telegram, SMS y WhatsApp (0.9).
 - Android (después de la 1.0).
 

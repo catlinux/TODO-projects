@@ -4,6 +4,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.15.0] - 2026-10-18
+
+### Cambiado
+- Aspecto v4, más sobrio y legible: tipografía Inter (cifras de ancho fijo en lugar de fuente mono), menú lateral oscuro en ambos temas y contenido en un panel encajado, estados de fecha y etiquetas en tintas suaves, controles y diálogos con un estilo común.
+- La página del proyecto ocupa todo el panel con su fondo; columnas y tarjetas refinadas, con desplazamiento dentro de cada columna.
+- Tarjeta abierta, Hoy, Agenda, Bandeja, Proyectos, Ajustes y pantallas de entrada adaptadas al nuevo estilo.
+- El tema se elige con un control de tres iconos en el menú; «Nuevo proyecto» es un botón «+» junto a la sección de proyectos; los avisos del navegador pasan a Ajustes.
+
+### Corregido
+- El menú lateral ya no se desborda en horizontal con nombres de proyecto largos.
+
 ## [0.14.1] - 2026-10-18
 
 ### Corregido
