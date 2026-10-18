@@ -10,6 +10,8 @@ import { obtenerSesion } from "./auth.js";
 import { registrarRutasAgenda } from "./agenda.js";
 import { registrarRutasActividad } from "./actividad.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
+import { registrarRutasBandeja } from "./bandeja.js";
+import { registrarRutasBuscar } from "./buscar.js";
 import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasChecklist } from "./checklist.js";
 import { registrarRutasComentarios } from "./comentarios.js";
@@ -230,6 +232,8 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   registrarRutasOcurrencias(app, db);
   registrarRutasAgenda(app, db);
   registrarRutasActividad(app, db);
+  registrarRutasBandeja(app, db);
+  registrarRutasBuscar(app, db);
   registrarRutasPush(app, db, { vapidPublicKey });
 
   return app;

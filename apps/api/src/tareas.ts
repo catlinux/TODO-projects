@@ -2,7 +2,13 @@ import { type FastifyInstance } from "fastify";
 import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { esquemaTarea, esquemaTareaParcial, type Portada, ZONA_POR_DEFECTO } from "@todo/shared";
+import {
+  esquemaMoverTarea,
+  esquemaTarea,
+  esquemaTareaParcial,
+  type Portada,
+  ZONA_POR_DEFECTO,
+} from "@todo/shared";
 
 import {
   checklistItems,
@@ -111,6 +117,32 @@ async function comentariosPorTarea(db: Database, tareaIds: string[]): Promise<Ma
   return porTarea;
 }
 
+/**
+ * Tareas de un proyecto con etiquetas, checklist y recuento de comentarios.
+ * Lo comparten `GET /proyectos/:id/tareas` y `GET /bandeja`.
+ */
+export async function listarTareasDeProyecto(db: Database, proyectoId: string) {
+  const filas = await db
+    .select()
+    .from(tareas)
+    .leftJoin(columnas, eq(tareas.columnaId, columnas.id))
+    .where(eq(tareas.proyectoId, proyectoId))
+    .orderBy(asc(columnas.posicion), asc(tareas.posicion));
+
+  const ids = filas.map((fila) => fila.tareas.id);
+
+  const etiquetas = await etiquetasPorTarea(db, ids);
+  const checklist = await checklistPorTarea(db, ids);
+  const recuentoComentarios = await comentariosPorTarea(db, ids);
+
+  return filas.map((fila) => ({
+    ...fila.tareas,
+    etiquetas: etiquetas.get(fila.tareas.id) ?? [],
+    checklist: checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 },
+    comentarios: recuentoComentarios.get(fila.tareas.id) ?? 0,
+  }));
+}
+
 export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
   app.get("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
     const usuario = request.usuario;
@@ -136,34 +168,7 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
       return;
     }
 
-    const filas = await db
-      .select()
-      .from(tareas)
-      .leftJoin(columnas, eq(tareas.columnaId, columnas.id))
-      .where(eq(tareas.proyectoId, params.data.id))
-      .orderBy(asc(columnas.posicion), asc(tareas.posicion));
-
-    const etiquetas = await etiquetasPorTarea(
-      db,
-      filas.map((fila) => fila.tareas.id),
-    );
-
-    const checklist = await checklistPorTarea(
-      db,
-      filas.map((fila) => fila.tareas.id),
-    );
-
-    const recuentoComentarios = await comentariosPorTarea(
-      db,
-      filas.map((fila) => fila.tareas.id),
-    );
-
-    return filas.map((fila) => ({
-      ...fila.tareas,
-      etiquetas: etiquetas.get(fila.tareas.id) ?? [],
-      checklist: checklist.get(fila.tareas.id) ?? { hechos: 0, total: 0 },
-      comentarios: recuentoComentarios.get(fila.tareas.id) ?? 0,
-    }));
+    return listarTareasDeProyecto(db, params.data.id);
   });
 
   app.post("/proyectos/:id/tareas", { preHandler: app.requireAuth }, async (request, reply) => {
@@ -492,6 +497,136 @@ export function registrarRutasTareas(app: FastifyInstance, db: Database): void {
           entidadId: params.data.id,
           antes: instantaneaTarea(tareaActual),
           despues,
+        });
+      }
+    });
+
+    const [tarea] = await db.select().from(tareas).where(eq(tareas.id, params.data.id)).limit(1);
+
+    if (!tarea) {
+      reply.code(404).send({ mensaje: "Tarea no encontrada" });
+      return;
+    }
+
+    reply.send(tarea);
+  });
+
+  app.post("/tareas/:id/mover", { preHandler: app.requireAuth }, async (request, reply) => {
+    const usuario = request.usuario;
+    if (!usuario) {
+      reply.code(401).send({ mensaje: "No autenticado" });
+      return;
+    }
+
+    const params = esquemaId.safeParse(request.params);
+    if (!params.success) {
+      reply.code(400).send({ mensaje: "Identificador no válido" });
+      return;
+    }
+
+    const body = esquemaMoverTarea.safeParse(request.body);
+    if (!body.success) {
+      reply.code(400).send({ mensaje: "Datos de movimiento no válidos" });
+      return;
+    }
+
+    const fila = await obtenerTareaPropia(db, params.data.id, usuario.id);
+    if (!fila) {
+      reply.code(404).send({ mensaje: "Tarea no encontrada" });
+      return;
+    }
+
+    // La columna debe pertenecer al proyecto destino y este al usuario.
+    const [destino] = await db
+      .select({ proyecto: proyectos, columna: columnas })
+      .from(columnas)
+      .innerJoin(proyectos, eq(columnas.proyectoId, proyectos.id))
+      .where(
+        and(
+          eq(columnas.id, body.data.columnaId),
+          eq(columnas.proyectoId, body.data.proyectoId),
+          eq(proyectos.propietarioId, usuario.id),
+        ),
+      )
+      .limit(1);
+
+    if (!destino) {
+      reply.code(404).send({ mensaje: "Proyecto o columna no encontrados" });
+      return;
+    }
+
+    const tareaActual = fila.tarea;
+    const cambiaDeProyecto = tareaActual.proyectoId !== destino.proyecto.id;
+
+    const [columnaOrigen] = await db
+      .select({ nombre: columnas.nombre })
+      .from(columnas)
+      .where(eq(columnas.id, tareaActual.columnaId))
+      .limit(1);
+
+    await db.transaction(async (tx) => {
+      // Sin posición explícita, la tarea queda al final de la columna destino.
+      const posicion = await colocarTareaEnColumna(tx, {
+        tareaId: params.data.id,
+        columnaOrigenId: tareaActual.columnaId,
+        columnaDestinoId: destino.columna.id,
+      });
+
+      const updatedAt = new Date();
+      await tx
+        .update(tareas)
+        .set({
+          proyectoId: destino.proyecto.id,
+          columnaId: destino.columna.id,
+          posicion,
+          updatedAt,
+        })
+        .where(eq(tareas.id, params.data.id));
+
+      if (cambiaDeProyecto) {
+        // Las etiquetas son del proyecto: al cambiar de proyecto se pierden.
+        await tx.delete(tareasEtiquetas).where(eq(tareasEtiquetas.tareaId, params.data.id));
+
+        await registrarHistorial(tx, {
+          tareaId: params.data.id,
+          usuarioId: usuario.id,
+          tipo: "proyecto",
+          datos: {
+            desdeProyectoId: tareaActual.proyectoId,
+            hastaProyectoId: destino.proyecto.id,
+            desde: fila.proyecto.nombre,
+            hasta: destino.proyecto.nombre,
+          },
+        });
+      } else if (tareaActual.columnaId !== destino.columna.id) {
+        await registrarHistorial(tx, {
+          tareaId: params.data.id,
+          usuarioId: usuario.id,
+          tipo: "movida",
+          datos: {
+            desdeColumnaId: tareaActual.columnaId,
+            hastaColumnaId: destino.columna.id,
+            desde: columnaOrigen?.nombre ?? "",
+            hasta: destino.columna.nombre,
+          },
+        });
+      }
+
+      if (request.tokenId) {
+        await registrarActividad(tx, {
+          usuarioId: usuario.id,
+          tokenId: request.tokenId,
+          tokenNombre: request.tokenNombre,
+          accion: "editar",
+          entidadId: params.data.id,
+          antes: instantaneaTarea(tareaActual),
+          despues: instantaneaTarea({
+            ...tareaActual,
+            proyectoId: destino.proyecto.id,
+            columnaId: destino.columna.id,
+            posicion,
+            updatedAt,
+          }),
         });
       }
     });

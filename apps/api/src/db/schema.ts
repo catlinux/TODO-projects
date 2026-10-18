@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
@@ -26,23 +27,34 @@ export const usuarios = pgTable("usuarios", {
     .$onUpdate(() => new Date()),
 });
 
-export const proyectos = pgTable("proyectos", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  nombre: text("nombre").notNull(),
-  descripcion: text("descripcion"),
-  // Color propio del proyecto (#rrggbb); nulo = color de la paleta por orden.
-  color: text("color"),
-  // Aspecto de fondo del proyecto (ambiente, color liso o imágenes).
-  fondo: jsonb("fondo").notNull().default({ tipo: "ambiente", ambiente: "bosque" }),
-  propietarioId: uuid("propietario_id")
-    .notNull()
-    .references(() => usuarios.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const proyectos = pgTable(
+  "proyectos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nombre: text("nombre").notNull(),
+    descripcion: text("descripcion"),
+    // Color propio del proyecto (#rrggbb); nulo = color de la paleta por orden.
+    color: text("color"),
+    // Aspecto de fondo del proyecto (ambiente, color liso o imágenes).
+    fondo: jsonb("fondo").notNull().default({ tipo: "ambiente", ambiente: "bosque" }),
+    // Bandeja de entrada del usuario: proyecto oculto especial, uno como mucho.
+    esBandeja: boolean("es_bandeja").notNull().default(false),
+    propietarioId: uuid("propietario_id")
+      .notNull()
+      .references(() => usuarios.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  // Índice único parcial: garantiza como mucho una bandeja por usuario.
+  (tabla) => [
+    uniqueIndex("proyectos_propietario_bandeja_idx")
+      .on(tabla.propietarioId)
+      .where(sql`${tabla.esBandeja}`),
+  ],
+);
 
 export const columnas = pgTable("columnas", {
   id: uuid("id").primaryKey().defaultRandom(),

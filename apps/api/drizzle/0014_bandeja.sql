@@ -1,0 +1,2 @@
+ALTER TABLE "proyectos" ADD COLUMN "es_bandeja" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "proyectos_propietario_bandeja_idx" ON "proyectos" USING btree ("propietario_id") WHERE "proyectos"."es_bandeja";

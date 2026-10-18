@@ -55,13 +55,19 @@ export function registrarRutasColumnas(app: FastifyInstance, db: Database): void
     }
 
     const [proyecto] = await db
-      .select({ id: proyectos.id })
+      .select({ id: proyectos.id, esBandeja: proyectos.esBandeja })
       .from(proyectos)
       .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
       .limit(1);
 
     if (!proyecto) {
       reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    // La bandeja de entrada se queda con su única columna «Entrada».
+    if (proyecto.esBandeja) {
+      reply.code(400).send({ mensaje: "La bandeja de entrada no admite más columnas" });
       return;
     }
 

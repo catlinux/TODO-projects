@@ -26,7 +26,7 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
     return db
       .select()
       .from(proyectos)
-      .where(eq(proyectos.propietarioId, usuario.id))
+      .where(and(eq(proyectos.propietarioId, usuario.id), eq(proyectos.esBandeja, false)))
       .orderBy(asc(proyectos.createdAt));
   });
 
@@ -119,13 +119,19 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
     }
 
     const existente = await db
-      .select({ id: proyectos.id })
+      .select({ id: proyectos.id, esBandeja: proyectos.esBandeja })
       .from(proyectos)
       .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
       .limit(1);
 
     if (existente.length === 0) {
       reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    // La bandeja de entrada no se puede renombrar (sí cambiar su color o fondo).
+    if (existente[0]?.esBandeja && body.data.nombre !== undefined) {
+      reply.code(400).send({ mensaje: "La bandeja de entrada no se puede renombrar" });
       return;
     }
 
@@ -183,13 +189,18 @@ export function registrarRutasProyectos(app: FastifyInstance, db: Database): voi
     }
 
     const existente = await db
-      .select({ id: proyectos.id })
+      .select({ id: proyectos.id, esBandeja: proyectos.esBandeja })
       .from(proyectos)
       .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
       .limit(1);
 
     if (existente.length === 0) {
       reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    if (existente[0]?.esBandeja) {
+      reply.code(409).send({ mensaje: "La bandeja de entrada no se puede borrar" });
       return;
     }
 

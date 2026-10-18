@@ -129,6 +129,11 @@ export const esquemaTareaParcial = esquemaTareaBase
   })
   .partial();
 
+export const esquemaMoverTarea = z.object({
+  proyectoId: z.string().uuid("Proyecto no válido"),
+  columnaId: z.string().uuid("Columna no válida"),
+});
+
 /** Paleta fija de etiquetas (texto blanco, contraste ≥ 4.5:1). */
 export const COLORES_ETIQUETA = [
   "#6E4FE6",

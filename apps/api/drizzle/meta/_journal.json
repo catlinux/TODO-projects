@@ -99,6 +99,13 @@
       "when": 1792305286611,
       "tag": "0013_comentarios_historial_portada",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792307601608,
+      "tag": "0014_bandeja",
+      "breakpoints": true
     }
   ]
 }
