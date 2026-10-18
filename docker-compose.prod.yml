@@ -50,6 +50,10 @@ services:
       REGISTRO_ABIERTO: ${REGISTRO_ABIERTO:-1}
       ACCESO_CORREO: ${ACCESO_CORREO:-1}
       ORIGEN_PUBLICO: ${ORIGEN_PUBLICO:-}
+      ARCHIVOS_DIR: /data/archivos
+      ARCHIVOS_MAX_MB: ${ARCHIVOS_MAX_MB:-10}
+    volumes:
+      - archivos_data:/data/archivos
     expose:
       - "3000"
 
@@ -70,3 +74,4 @@ services:
 
 volumes:
   postgres_data:
+  archivos_data:

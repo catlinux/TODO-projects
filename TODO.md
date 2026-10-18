@@ -2,7 +2,7 @@
 
 ## Prioridad alta
 
-- Despliegue de los archivos (paso E2 de `.agents/plans/v3/v3.PLAN.md`, necesita tu aprobación): volumen `archivos_data` en `/data/archivos` en `docker-compose.prod.yml`, `request_body { max_size 12MB }` en `/api/*` del Caddyfile, copia de los archivos en el script de backup y `docs/DESPLIEGUE.md`. Hasta entonces los adjuntos y fondos con imagen no se pueden usar en producción.
+- Aplicar en el VPS la v3 (necesita tu aprobación): `git pull`, `up -d --build` (crea el volumen `archivos_data` y aplica las migraciones 0010 a 0015) y probar una subida y una copia de seguridad con archivos.
 
 - Auditoría con Opus de la v3 (seguridad de subidas, permisos de cada endpoint nuevo, accesibilidad, coherencia visual).
 

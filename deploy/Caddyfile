@@ -19,6 +19,11 @@
 	}
 
 	handle_path /api/* {
+		# Subidas de archivos: 10 MB de fichero más la cabecera multipart.
+		request_body {
+			max_size 12MB
+		}
+
 		# La API confía en un solo salto (TRUST_PROXY=1) y toma la primera IP:
 		# se le entrega solo la IP real del cliente.
 		reverse_proxy api:3000 {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copia de la base de datos con rotación. Uso: deploy/backup-postgres.sh [días_a_conservar]
+# Copia de la base de datos y de los archivos con rotación. Uso: deploy/backup-postgres.sh [días_a_conservar]
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
@@ -20,3 +20,10 @@ gzip -t "$FICHERO"
 
 find "$DESTINO" -name 'todo-*.sql.gz' -mtime +"$DIAS" -delete
 echo "Copia creada: $FICHERO"
+
+# Archivos adjuntos y fondos: tar del directorio del volumen, validado igual que la base.
+FICHERO_ARCHIVOS="$DESTINO/archivos-$(date +%F-%H%M).tar.gz"
+"${COMPOSE[@]}" exec -T api tar -czf - -C /data archivos > "$FICHERO_ARCHIVOS"
+gzip -t "$FICHERO_ARCHIVOS"
+find "$DESTINO" -name 'archivos-*.tar.gz' -mtime +"$DIAS" -delete
+echo "Copia de archivos creada: $FICHERO_ARCHIVOS"

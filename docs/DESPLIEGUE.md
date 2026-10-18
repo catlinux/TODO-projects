@@ -87,6 +87,8 @@ WantedBy=timers.target
 
 Con `sudo systemctl enable --now todo-backup.timer`. La alternativa con cron es la línea `30 4 * * * /opt/contabo-apps/todo-project/deploy/backup-postgres.sh`.
 
+El mismo script guarda también los adjuntos y fondos (`backups/archivos-AAAA-MM-DD-HHMM.tar.gz`, comprimido y validado con `gzip -t`) con la misma rotación. Para restaurarlos: `docker compose -f docker-compose.prod.yml exec -T api tar -xzf - -C /data < backups/archivos-AAAA-MM-DD-HHMM.tar.gz` (**sin probar**).
+
 La carpeta `backups/` está en el mismo disco que los datos: si necesitas protegerte de un fallo del disco, copia esos archivos a otro sitio.
 
 Restauración (sobre una base vacía; **sin probar**):
@@ -95,6 +97,12 @@ Restauración (sobre una base vacía; **sin probar**):
 gunzip -c backups/todo-AAAA-MM-DD-HHMM.sql.gz | docker compose -f docker-compose.prod.yml exec -T postgres \
   sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
+
+## Archivos adjuntos y fondos
+
+Los ficheros subidos se guardan en el volumen `archivos_data` (montado en `/data/archivos`, con el id como nombre y sin extensión); los metadatos están en PostgreSQL. Variables: `ARCHIVOS_DIR` (por defecto `/data/archivos`) y `ARCHIVOS_MAX_MB` (10). El Caddyfile limita el cuerpo de las peticiones a `/api/*` a 12 MB; si subes `ARCHIVOS_MAX_MB`, sube también `max_size`. Si usas Apache delante, comprueba que no limite el cuerpo por debajo de eso (`LimitRequestBody`). No borres el volumen `archivos_data` salvo que quieras perder los adjuntos.
+
+Al actualizar desde una versión sin archivos hay que reconstruir la imagen (`up -d --build`), porque el Dockerfile crea `/data/archivos` con el propietario correcto.
 
 ## Actualización
 

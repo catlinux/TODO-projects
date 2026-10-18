@@ -18,8 +18,10 @@ RUN pnpm install --frozen-lockfile --prod --filter @todo/api...
 COPY packages/shared packages/shared
 COPY apps/api apps/api
 
+# /data/archivos debe existir y ser de appuser para que el volumen nombrado herede el propietario.
 RUN useradd --create-home --uid 10001 appuser \
-    && chown -R appuser:appuser /app
+    && mkdir -p /data/archivos \
+    && chown -R appuser:appuser /app /data/archivos
 USER appuser
 EXPOSE 3000
 CMD ["pnpm", "--filter", "@todo/api", "start"]
