@@ -4,7 +4,9 @@
 
 - Probar en producción una subida de archivo y `deploy/backup-postgres.sh` con archivos (copia y restauración del `tar`).
 
-- Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
+- Activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`; necesita `sudo`). La restauración de la base ya está probada (2026-10-18, en un Postgres temporal; hay que usar el mismo `POSTGRES_USER` del `.env`).
+
+- Limpiar los datos de prueba de producción antes de empezar con datos reales (borrar proyectos y tareas conservando usuario, sesiones, huellas y tokens) y hacer una copia justo antes.
 
 - Probar los avisos con un SMTP y claves VAPID reales (correo y Web Push) y configurar `.env` en producción.
 
