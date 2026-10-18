@@ -4,6 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.13.0] - 2026-10-18
+
+### Añadido
+- Paleta de búsqueda y comandos (Ctrl/⌘+K) con búsqueda de tareas y proyectos (`GET /buscar`, con comodines de `ILIKE` escapados) y acciones rápidas.
+- Atajos de teclado fuera de los campos de texto: `N` nueva tarea, `G H` Hoy, `G A` Agenda, `G B` Bandeja y `?` para ver la lista.
+- Bandeja de entrada: captura rápida de tareas y «Mover a…» cualquier proyecto y columna; `GET /bandeja` y `POST /tareas/:id/mover` (al cambiar de proyecto se quitan las etiquetas y queda constancia en el historial). Contador en el menú. Migración `0014`.
+
 ## [0.12.0] - 2026-10-18
 
 ### Añadido

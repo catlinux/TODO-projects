@@ -2,7 +2,7 @@
 
 ## Prioridad alta
 
-- Aspecto v3 y funciones de tarjeta (etiquetas, checklist, comentarios, búsqueda, bandeja, adjuntos y fondos con imágenes): hoja de ruta en `.agents/plans/v3/v3.PLAN.md` (fases A, B y C hechas hasta la 0.12.0; quedan 0.13.0 y 0.14.0).
+- Aspecto v3 y funciones de tarjeta (etiquetas, checklist, comentarios, búsqueda, bandeja, adjuntos y fondos con imágenes): hoja de ruta en `.agents/plans/v3/v3.PLAN.md` (fases A, B, C y D hechas hasta la 0.13.0; queda la 0.14.0).
 
 - Probar la restauración de una copia de PostgreSQL y activar la copia diaria (timer propuesto en `docs/DESPLIEGUE.md`).
 
