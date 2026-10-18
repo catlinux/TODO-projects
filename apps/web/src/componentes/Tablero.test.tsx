@@ -335,7 +335,7 @@ describe("Tablero", () => {
     );
 
     const tarjeta = screen.getByText("Tarea inicial").closest("li");
-    expect(tarjeta?.querySelectorAll(".tarjeta-kanban__etiquetas .pastilla-etiqueta")).toHaveLength(2);
+    expect(tarjeta?.querySelectorAll(".tarjeta-kanban__etiquetas .etiqueta")).toHaveLength(2);
     expect(tarjeta?.querySelector(".tarjeta-kanban__insignia")?.textContent).toBe("1/3");
     expect(tarjeta?.querySelector(".tarjeta-kanban__insignia--hecha")).toBeNull();
   });

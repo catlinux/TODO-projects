@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
 import { peticion, type EtiquetaApi } from "../api";
@@ -42,11 +42,14 @@ export function nombreColor(color: string): string {
   return NOMBRE_POR_COLOR[color.toUpperCase()] ?? "gris";
 }
 
-/** Pastilla de color con el nombre: el color nunca es la única información. */
+/** Pastilla tintada con el color de la etiqueta: el color nunca es la única información. */
 export function PastillaEtiqueta({ etiqueta }: { etiqueta: Pick<EtiquetaApi, "nombre" | "color"> }) {
   const variable = VARIABLE_POR_COLOR[etiqueta.color.toUpperCase()] ?? "--etiqueta-gris";
   return (
-    <span className="pastilla-etiqueta" style={{ background: `var(${variable})` }}>
+    <span
+      className="etiqueta"
+      style={{ "--color-etiqueta": `var(${variable})` } as CSSProperties}
+    >
       {etiqueta.nombre}
     </span>
   );

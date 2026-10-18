@@ -56,8 +56,8 @@ function IconoCampana({ etiqueta }: { etiqueta: string }) {
       className="tarjeta-kanban__icono"
       role="img"
       aria-label={etiqueta}
-      width="16"
-      height="16"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -77,8 +77,8 @@ function IconoRepeticion({ etiqueta }: { etiqueta: string }) {
       className="tarjeta-kanban__icono"
       role="img"
       aria-label={etiqueta}
-      width="16"
-      height="16"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -100,8 +100,8 @@ function IconoComentario({ etiqueta }: { etiqueta: string }) {
       className="tarjeta-kanban__icono"
       role="img"
       aria-label={etiqueta}
-      width="16"
-      height="16"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -120,8 +120,8 @@ function IconoAdjunto({ etiqueta }: { etiqueta: string }) {
       className="tarjeta-kanban__icono"
       role="img"
       aria-label={etiqueta}
-      width="16"
-      height="16"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -203,7 +203,7 @@ function TarjetaArrastrable({
       <div className="tarjeta-kanban__barra">
         <button
           type="button"
-          className="tarjeta-kanban__asa"
+          className="boton-icono tarjeta-kanban__asa"
           aria-label={t("tasks.drag")}
           {...attributes}
           {...listeners}
@@ -212,7 +212,7 @@ function TarjetaArrastrable({
         </button>
         <button
           type="button"
-          className="tarjeta-kanban__opciones"
+          className="boton-icono tarjeta-kanban__opciones"
           ref={refOpciones}
           aria-label={`${t("tasks.options")} ${tarea.titulo}`}
           aria-haspopup="menu"
@@ -253,13 +253,13 @@ function TarjetaArrastrable({
         {(chip || tieneAviso || tieneRecurrencia || tieneChecklist || tieneComentarios || tieneAdjuntos) && (
           <span className="tarjeta-kanban__indicadores">
             {chip && (
-              <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
+              <span className={`chip-fecha chip-fecha--${estadoChip} cifra`}>{chip.texto}</span>
             )}
             {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
             {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
             {tieneChecklist && checklist && (
               <span
-                className={`tarjeta-kanban__insignia mono${
+                className={`tarjeta-kanban__insignia cifra${
                   checklistCompleto ? " tarjeta-kanban__insignia--hecha" : ""
                 }`}
                 aria-label={t("tasks.checklistBadge", {
@@ -273,7 +273,7 @@ function TarjetaArrastrable({
             {tieneComentarios && (
               <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--comentarios">
                 <IconoComentario etiqueta={t("tasks.commentBadge", { n: comentarios })} />
-                <span className="mono" aria-hidden="true">
+                <span className="cifra" aria-hidden="true">
                   {comentarios}
                 </span>
               </span>
@@ -281,7 +281,7 @@ function TarjetaArrastrable({
             {tieneAdjuntos && (
               <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--adjuntos">
                 <IconoAdjunto etiqueta={t("tasks.attachmentBadge", { n: adjuntos })} />
-                <span className="mono" aria-hidden="true">
+                <span className="cifra" aria-hidden="true">
                   {adjuntos}
                 </span>
               </span>
@@ -563,12 +563,12 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                 ) : (
                   <div className="columna-kanban__titulo">
                     <h3>{columna.nombre}</h3>
-                    <span className="columna-kanban__contador mono">{tareasColumna.length}</span>
+                    <span className="columna-kanban__contador cifra">{tareasColumna.length}</span>
                   </div>
                 )}
                 <button
                   type="button"
-                  className="columna-kanban__opciones"
+                  className="boton-icono"
                   ref={(elemento) => {
                     refsOpciones.current[columna.id] = elemento;
                   }}
@@ -670,7 +670,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                     <button type="submit" className="boton-principal">
                       {t("tasks.create")}
                     </button>
-                    <button type="button" onClick={cerrarAnadirTarjeta}>
+                    <button type="button" className="boton-fantasma" onClick={cerrarAnadirTarjeta}>
                       {t("tasks.cancel")}
                     </button>
                   </div>
@@ -678,7 +678,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
               ) : (
                 <button
                   type="button"
-                  className="columna-kanban__anadir"
+                  className="columna-kanban__anadir boton-fantasma"
                   onClick={() => empezarAnadirTarjeta(columna.id)}
                 >
                   <span className="columna-kanban__anadir-signo" aria-hidden="true">
@@ -713,7 +713,10 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
             className="columna-agregar"
             onClick={() => setCreandoColumna(true)}
           >
-            {t("columns.add")}
+            <span className="columna-agregar__signo" aria-hidden="true">
+              +
+            </span>
+            {t("columns.create")}
           </button>
         )}
       </div>
@@ -728,5 +731,9 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
 
 function ColumnaSolt({ id, children }: { id: string; children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef}>{children}</div>;
+  return (
+    <div ref={setNodeRef} className="columna-kanban__lista">
+      {children}
+    </div>
+  );
 }

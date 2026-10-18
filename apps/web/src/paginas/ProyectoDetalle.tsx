@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link, Outlet, useParams, useSearchParams } from "react-router-dom";
+import { Outlet, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
 import { peticion, type ColumnaApi, type EtiquetaApi, type ProyectoApi, type TareaApi } from "../api";
@@ -25,6 +25,44 @@ function valoresIniciales(): ValoresFormularioTarea {
     recurrencia: recurrenciaPorDefecto(),
     recordatorioMin: null,
   };
+}
+
+function IconoFiltro() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M4 5h16l-6 7v6l-4 2v-8z" />
+    </svg>
+  );
+}
+
+function IconoFondo() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.5" />
+      <path d="M21 15l-5-5-7 7" />
+    </svg>
+  );
 }
 
 function IconoCerrar() {
@@ -215,10 +253,18 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   });
 
   if (proyecto.isLoading || columnas.isLoading || tareas.isLoading) {
-    return <p>{t("app.loading")}</p>;
+    return (
+      <main className="proyecto proyecto--estado">
+        <p>{t("app.loading")}</p>
+      </main>
+    );
   }
   if (proyecto.isError || columnas.isError || tareas.isError) {
-    return <p className="error">{t("auth.error")}</p>;
+    return (
+      <main className="proyecto proyecto--estado">
+        <p className="error">{t("auth.error")}</p>
+      </main>
+    );
   }
 
   const listaColumnas = (columnas.data ?? []).slice().sort((a, b) => a.posicion - b.posicion);
@@ -238,114 +284,104 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   }
 
   return (
-    <main className="contenedor contenedor--tablero">
-      <nav className="migas" aria-label={t("projects.breadcrumb")}>
-        <Link to="/proyectos">{t("nav.projects")}</Link>
-        <span aria-hidden="true">/</span>
-        <span className="migas__actual">{proyecto.data?.nombre ?? t("projects.title")}</span>
-      </nav>
-
-      {errorColumna && <p className="error">{errorColumna}</p>}
-
-      <div className="proyecto">
-        <FondoProyecto fondo={proyecto.data?.fondo ?? null} />
-        <div className="proyecto__contenido">
-          <header className="cabecera-proyecto">
-            <span className="cabecera-proyecto__inicial" aria-hidden="true">
-              {inicial(proyecto.data?.nombre ?? "")}
-            </span>
-            <h1>{proyecto.data?.nombre ?? t("projects.title")}</h1>
-            {/* Lista y Calendario aún no existen (A5/B4): solo la vista activa. */}
-            <div className="cabecera-proyecto__vista" role="group" aria-label={t("projects.view")}>
-              <span className="cabecera-proyecto__vista-activa" aria-current="true">
-                {t("projects.board")}
-              </span>
-            </div>
-            <div className="cabecera-proyecto__acciones">
-              <button
-                type="button"
-                className="boton-cabecera"
-                aria-expanded={filtroAbierto}
-                onClick={() => setFiltroAbierto((abierto) => !abierto)}
-              >
-                {t("projects.filter")}
-                {filtroEtiquetas.length > 0 && (
-                  <span className="cabecera-proyecto__filtro-contador">
-                    {filtroEtiquetas.length}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                className="boton-cabecera"
-                aria-haspopup="dialog"
-                onClick={onAbrirFondo ?? (() => setPersonalizarAbierto(true))}
-              >
-                {t("projects.background")}
-              </button>
-              <button
-                type="button"
-                className="boton-cabecera boton-cabecera--blanco"
-                aria-haspopup="dialog"
-                onClick={() => setDialogoTareaAbierto(true)}
-              >
-                {t("tasks.new")}
-              </button>
-            </div>
-          </header>
-
-          {filtroAbierto && (
-            <section
-              className="filtro-etiquetas"
-              aria-label={t("projects.filterPanel")}
-              onKeyDown={(evento) => {
-                if (evento.key === "Escape") {
-                  evento.preventDefault();
-                  setFiltroAbierto(false);
-                }
-              }}
+    <main className="proyecto">
+      <FondoProyecto fondo={proyecto.data?.fondo ?? null} />
+      <div className="proyecto__contenido">
+        <header className="cabecera-proyecto">
+          <span className="cabecera-proyecto__inicial" aria-hidden="true">
+            {inicial(proyecto.data?.nombre ?? "")}
+          </span>
+          <h1 title={proyecto.data?.nombre ?? t("projects.title")}>
+            {proyecto.data?.nombre ?? t("projects.title")}
+          </h1>
+          <div className="cabecera-proyecto__acciones">
+            <button
+              type="button"
+              className="boton-cabecera"
+              aria-expanded={filtroAbierto}
+              onClick={() => setFiltroAbierto((abierto) => !abierto)}
             >
-              {listaEtiquetas.length === 0 ? (
-                <p className="filtro-etiquetas__vacia">{t("projects.filterEmpty")}</p>
-              ) : (
-                <ul className="filtro-etiquetas__lista">
-                  {listaEtiquetas.map((etiqueta) => (
-                    <li key={etiqueta.id}>
-                      <label className="filtro-etiquetas__opcion">
-                        <input
-                          type="checkbox"
-                          checked={filtroEtiquetas.includes(etiqueta.id)}
-                          onChange={(evento) => alternarFiltro(etiqueta.id, evento.target.checked)}
-                        />
-                        <PastillaEtiqueta etiqueta={etiqueta} />
-                      </label>
-                    </li>
-                  ))}
-                </ul>
+              <IconoFiltro />
+              {t("projects.filter")}
+              {filtroEtiquetas.length > 0 && (
+                <span className="cabecera-proyecto__filtro-contador cifra">
+                  {filtroEtiquetas.length}
+                </span>
               )}
-              <button
-                type="button"
-                className="boton-texto"
-                onClick={() => setFiltroEtiquetas([])}
-                disabled={filtroEtiquetas.length === 0}
-              >
-                {t("projects.filterClear")}
-              </button>
-            </section>
-          )}
+            </button>
+            <button
+              type="button"
+              className="boton-cabecera"
+              aria-haspopup="dialog"
+              onClick={onAbrirFondo ?? (() => setPersonalizarAbierto(true))}
+            >
+              <IconoFondo />
+              {t("projects.background")}
+            </button>
+            <button
+              type="button"
+              className="boton-cabecera boton-cabecera--blanco"
+              aria-haspopup="dialog"
+              onClick={() => setDialogoTareaAbierto(true)}
+            >
+              {t("tasks.new")}
+            </button>
+          </div>
+        </header>
 
-          <Tablero
-            proyectoId={proyectoId}
-            columnas={listaColumnas}
-            tareas={tareasFiltradas}
-            etiquetas={listaEtiquetas}
-            onCrearTarea={(columnaId, titulo) => crearTareaRapida.mutate({ columnaId, titulo })}
-            onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
-            onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
-            onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
-            onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
-          />
-        </div>
+        {filtroAbierto && (
+          <section
+            className="filtro-etiquetas"
+            aria-label={t("projects.filterPanel")}
+            onKeyDown={(evento) => {
+              if (evento.key === "Escape") {
+                evento.preventDefault();
+                setFiltroAbierto(false);
+              }
+            }}
+          >
+            {listaEtiquetas.length === 0 ? (
+              <p className="filtro-etiquetas__vacia">{t("projects.filterEmpty")}</p>
+            ) : (
+              <ul className="filtro-etiquetas__lista">
+                {listaEtiquetas.map((etiqueta) => (
+                  <li key={etiqueta.id}>
+                    <label className="filtro-etiquetas__opcion">
+                      <input
+                        type="checkbox"
+                        checked={filtroEtiquetas.includes(etiqueta.id)}
+                        onChange={(evento) => alternarFiltro(etiqueta.id, evento.target.checked)}
+                      />
+                      <PastillaEtiqueta etiqueta={etiqueta} />
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              type="button"
+              className="boton-texto"
+              onClick={() => setFiltroEtiquetas([])}
+              disabled={filtroEtiquetas.length === 0}
+            >
+              {t("projects.filterClear")}
+            </button>
+          </section>
+        )}
+
+        {errorColumna && <p className="error proyecto__error">{errorColumna}</p>}
+
+        <Tablero
+          proyectoId={proyectoId}
+          columnas={listaColumnas}
+          tareas={tareasFiltradas}
+          etiquetas={listaEtiquetas}
+          onCrearTarea={(columnaId, titulo) => crearTareaRapida.mutate({ columnaId, titulo })}
+          onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
+          onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
+          onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
+          onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
+        />
       </div>
 
       <dialog

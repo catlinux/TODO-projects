@@ -170,7 +170,7 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
-    await user.click(await screen.findByRole("button", { name: /\+ columna/i }));
+    await user.click(await screen.findByRole("button", { name: /añadir columna/i }));
     await user.type(await screen.findByLabelText(/nombre de la columna/i), "Nueva");
     await user.click(screen.getByRole("button", { name: /añadir columna/i }));
 

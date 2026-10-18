@@ -241,41 +241,42 @@ kbd {
   max-width: 1120px;
 }
 
-.migas {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
-}
-
-.migas a {
-  color: var(--texto-secundario);
-  text-decoration: none;
-}
-
-.migas a:hover {
-  color: var(--acento);
-}
-
-.migas__actual {
-  color: var(--texto);
-  font-weight: 500;
-}
-
-/* Zona del proyecto: el fondo topográfico cubre cabecera y tablero. */
+/* Página del proyecto: llena el panel con su fondo topográfico. */
 .proyecto {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
-  min-height: 60vh;
-  padding: 1.25rem;
-  border-radius: var(--radio-dialogo);
 }
 
 .proyecto__contenido {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Error de la página, sobre la superficie para leerse también sobre el fondo. */
+.proyecto__error {
+  margin: 0 24px 8px;
+  padding: 6px 10px;
+  font-size: var(--texto-sm);
+  background: var(--superficie);
+  border-radius: var(--radio-control);
+}
+
+/* Carga y error: sin fondo que cubrir, pero con el panel relleno. */
+.proyecto--estado {
+  padding: 24px;
+  color: var(--secundario);
+}
+
+.proyecto--estado p {
+  margin: 0;
 }
 
 .fondo-proyecto {
@@ -348,65 +349,53 @@ kbd {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: 12px;
+  padding: 20px 24px 12px;
   color: #fff;
 }
 
 .cabecera-proyecto h1 {
+  flex: 1 1 160px;
+  min-width: 0;
   margin: 0;
-  margin-right: auto;
-  font-size: 21px;
-  font-weight: 650;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .cabecera-proyecto__inicial {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  font-size: 0.95rem;
+  width: 32px;
+  height: 32px;
+  font-size: var(--texto-sm);
   font-weight: 600;
   color: #fff;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.16);
   border-radius: var(--radio-control);
-}
-
-.cabecera-proyecto__vista {
-  display: flex;
-  padding: 0.15rem;
-  background: rgba(0, 0, 0, 0.22);
-  border-radius: 10px;
-}
-
-.cabecera-proyecto__vista-activa {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 0.8rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #15171c;
-  background: #fff;
-  border-radius: 8px;
 }
 
 .cabecera-proyecto__acciones {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .cabecera-proyecto__filtro-contador {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  margin-left: 0.4rem;
-  padding: 0 6px;
-  font-size: 0.75rem;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
   background: rgba(255, 255, 255, 0.28);
   border-radius: 999px;
 }
@@ -416,13 +405,13 @@ kbd {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding: 0.6rem 0.85rem;
+  gap: 12px;
+  margin: 0 24px 12px;
+  padding: 10px 12px;
   background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-columna);
-  box-shadow: var(--sombra-1);
+  border: 1px solid var(--lineas);
+  border-radius: 10px;
+  box-shadow: var(--sombra-2);
 }
 
 .filtro-etiquetas__lista {
@@ -454,44 +443,48 @@ kbd {
 
 .filtro-etiquetas__vacia {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--texto-secundario);
+  font-size: var(--texto-sm);
+  color: var(--secundario);
 }
 
+/* Acciones translúcidas sobre el fondo del proyecto. */
 .boton-cabecera {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
   min-height: 34px;
-  padding: 0 0.9rem;
+  padding: 0 12px;
+  font-size: var(--texto-sm);
   font-weight: 500;
   color: #fff;
-  background: rgba(255, 255, 255, 0.16);
-  border-color: transparent;
+  background: rgba(255, 255, 255, 0.14);
+  border: 0;
   border-radius: var(--radio-control);
+  box-shadow: none;
 }
 
 .boton-cabecera:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.26);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.24);
   border-color: transparent;
 }
 
 .boton-cabecera--blanco {
-  color: #15171c;
+  color: #16181d;
   background: #fff;
 }
 
 .boton-cabecera--blanco:hover:not(:disabled) {
-  color: #15171c;
+  color: #16181d;
   background: #fff;
   border-color: transparent;
 }
 
-/* El foco ha de verse sobre el fondo oscuro del proyecto. */
+/* El foco ha de verse sobre el fondo del proyecto. */
 .cabecera-proyecto :focus-visible,
 .columna-agregar:focus-visible {
   outline-color: #fff;
-}
-
-.contenedor--tablero {
-  max-width: none;
 }
 
 .dialogo-tarea {
@@ -739,21 +732,7 @@ kbd {
 }
 
 /* Pastillas de etiqueta: color + nombre, nunca solo color. */
-.pastilla-etiqueta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 0 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--etiqueta-texto);
-  border-radius: 999px;
-  white-space: nowrap;
-  overflow-wrap: anywhere;
-}
-
-.tarjeta-detalle .pastilla-etiqueta {
+.tarjeta-detalle .etiqueta {
   min-height: 24px;
   font-size: 0.8rem;
 }
@@ -2001,48 +1980,58 @@ button.menu-lateral__salir {
 
 .tablero {
   display: flex;
-  gap: 1rem;
+  align-items: flex-start;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+  padding: 4px 24px 24px;
   overflow-x: auto;
-  padding-bottom: 1rem;
 }
 
 .columna-kanban {
-  flex: 0 0 276px;
-  width: 276px;
-  min-height: 120px;
-  padding: 8px;
-  background: var(--columna);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-radius: var(--radio-columna);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+  flex: 0 0 280px;
+  width: 280px;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  padding-bottom: 6px;
+  background: var(--columna);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--radio-columna);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .columna-agregar {
-  flex: 0 0 276px;
-  width: 276px;
-  min-height: 6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0;
-  padding: 0.75rem;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: var(--texto-sm);
+  font-weight: 500;
   color: #fff;
   text-align: left;
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: var(--radio-columna);
+  background: rgba(255, 255, 255, 0.14);
+  border: 0;
+  border-radius: var(--radio-control);
+  box-shadow: none;
 }
 
 .columna-agregar:hover:not(:disabled) {
   color: #fff;
-  background: rgba(255, 255, 255, 0.26);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.24);
+  border-color: transparent;
+}
+
+.columna-agregar__signo {
+  flex: 0 0 auto;
+  font-size: 15px;
+  line-height: 1;
 }
 
 .columna-agregar input {
@@ -2050,65 +2039,67 @@ button.menu-lateral__salir {
   color: var(--texto);
 }
 
+/* Alta de columna: misma pieza translúcida, con el campo y su botón. */
+form.columna-agregar {
+  flex: 0 0 280px;
+  width: 280px;
+  height: auto;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--radio-columna);
+}
+
+form.columna-agregar button {
+  min-height: 32px;
+  font-size: var(--texto-sm);
+}
+
 .columna-kanban__cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0 0.15rem;
+  gap: 6px;
+  height: 36px;
+  padding: 0 6px 0 10px;
+  box-sizing: border-box;
 }
 
 .columna-kanban__titulo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 6px;
   min-width: 0;
-}
-
-.columna-kanban__opciones {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0;
-  font-size: 1.1rem;
-  line-height: 1;
-  color: var(--texto-secundario);
-  background: transparent;
-  border-color: transparent;
-}
-
-.columna-kanban__opciones:hover:not(:disabled) {
-  color: var(--texto);
-  background: var(--superficie);
-  border-color: transparent;
 }
 
 .columna-kanban__renombrar {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 6px;
   margin-bottom: 0;
 }
 
 .columna-kanban__renombrar input {
   flex: 1;
   min-width: 0;
+  min-height: 30px;
+  padding: 0 8px;
 }
 
 .columna-kanban__renombrar button {
-  padding: 0.35rem 0.6rem;
-  font-size: 0.85rem;
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: var(--texto-sm);
 }
 
 .menu-columna {
   display: grid;
   gap: 0.15rem;
-  padding: 0.25rem;
+  margin: 0 8px 6px;
+  padding: 4px;
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-control);
@@ -2118,8 +2109,8 @@ button.menu-lateral__salir {
 .menu-columna button {
   width: 100%;
   justify-content: flex-start;
-  padding: 0 0.6rem;
-  font-size: 0.9rem;
+  padding: 0 8px;
+  font-size: var(--texto-sm);
   text-align: left;
   color: var(--texto);
   background: transparent;
@@ -2127,53 +2118,67 @@ button.menu-lateral__salir {
 }
 
 .menu-columna button:hover:not(:disabled) {
-  background: var(--columna);
+  background: var(--chip);
   border-color: transparent;
 }
 
 .columna-kanban__cabecera h3 {
+  min-width: 0;
   margin: 0;
-  font-size: 13.5px;
+  overflow: hidden;
+  font-size: 13px;
   font-weight: 600;
+  color: var(--texto);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .columna-kanban__contador {
-  padding: 0.05rem 0.5rem;
-  font-size: 11.5px;
-  color: var(--texto-secundario);
-  background: var(--superficie);
-  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--secundario);
+}
+
+.columna-kanban__lista {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 2px 8px 4px;
+  overflow-y: auto;
 }
 
 .columna-kanban__tareas {
   display: grid;
-  gap: 0.5rem;
-  min-height: 6rem;
+  gap: 8px;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-/* Columna vacía: zona discreta, sin texto grande centrado. */
+/* Columna vacía: texto discreto, alineado a la izquierda. */
 .columna-kanban__vacia {
-  padding: 8px;
-  font-size: 0.85rem;
+  padding: 8px 10px;
+  font-size: 13px;
   text-align: left;
-  color: var(--texto-secundario);
-  border: 1px dashed var(--borde);
-  border-radius: var(--radio-control);
+  color: var(--secundario);
 }
 
 .tarjeta-kanban {
   position: relative;
-  overflow: hidden;
   display: grid;
+  overflow: hidden;
   list-style: none;
-  background: var(--tarjeta);
+  background: var(--superficie);
+  border: 1px solid var(--lineas);
   border-radius: var(--radio-tarjeta);
-  box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--sombra-1);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.tarjeta-kanban:hover {
+  border-color: var(--lineas-fuertes);
+  box-shadow: var(--sombra-2);
 }
 
 .tarjeta-kanban--arrastrando {
@@ -2182,6 +2187,8 @@ button.menu-lateral__salir {
 
 .tarjeta-kanban--superpuesta {
   padding: 10px 12px;
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
   box-shadow: var(--sombra-3);
   transform: rotate(-1.5deg);
 }
@@ -2210,43 +2217,23 @@ button.menu-lateral__salir {
 /* En táctil no hay hover: los mandos quedan siempre a la vista. */
 @media (hover: none) {
   .tarjeta-kanban__barra {
-    position: static;
-    padding: 4px 4px 0;
     opacity: 1;
     pointer-events: auto;
   }
 }
 
-.tarjeta-kanban__asa,
-.tarjeta-kanban__opciones {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  padding: 0;
-  font-size: 1.05rem;
-  line-height: 1;
-  color: var(--menu-texto);
-  background: var(--chip);
-  border: none;
-  border-radius: 8px;
-}
-
 .tarjeta-kanban__asa {
+  font-size: 16px;
   cursor: grab;
 }
 
-.tarjeta-kanban__asa:hover:not(:disabled),
-.tarjeta-kanban__opciones:hover:not(:disabled) {
-  color: var(--texto);
-  background: var(--activo);
-  border-color: transparent;
+.tarjeta-kanban__opciones {
+  font-size: 15px;
 }
 
 .tarjeta-kanban__portada {
   display: block;
+  width: 100%;
   height: 80px;
   background: var(--chip);
 }
@@ -2274,14 +2261,11 @@ button.menu-lateral__salir {
   outline-offset: -2px;
 }
 
-.tarjeta-kanban__cuerpo:hover {
-  background: var(--chip);
-}
-
 .tarjeta-kanban__titulo {
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.38;
+  line-height: 1.4;
+  color: var(--texto);
   overflow-wrap: anywhere;
 }
 
@@ -2295,16 +2279,19 @@ button.menu-lateral__salir {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   font-size: 12px;
+  color: var(--secundario);
 }
 
 .chip-fecha {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.78rem;
-  border-radius: 6px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 5px;
 }
 
 .chip-fecha--atrasada {
@@ -2323,14 +2310,8 @@ button.menu-lateral__salir {
 }
 
 .chip-fecha--hecha {
-  background: var(--hecho);
-  color: #fff;
-}
-
-.tarjeta-kanban__indicadores .chip-fecha {
-  padding: 1px 6px;
-  font-size: 12px;
-  border-radius: 5px;
+  background: var(--hecho-fondo);
+  color: var(--hecho-texto);
 }
 
 /* Etiquetas de la tarjeta: pastillas de 20 px que envuelven si hay muchas. */
@@ -2343,21 +2324,21 @@ button.menu-lateral__salir {
 .tarjeta-kanban__insignia {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
+  gap: 3px;
   font-size: 12px;
-  color: var(--texto-secundario);
-  background: var(--chip);
-  border-radius: 5px;
+  color: var(--secundario);
 }
 
 .tarjeta-kanban__insignia--hecha {
-  color: #fff;
-  background: var(--hecho);
+  padding: 1px 6px;
+  color: var(--hecho-texto);
+  background: var(--hecho-fondo);
+  border-radius: 5px;
 }
 
 .tarjeta-kanban__icono {
   flex: 0 0 auto;
-  color: var(--texto-secundario);
+  color: var(--secundario);
 }
 
 /* Menú de la tarjeta. Va en el flujo para que el recorte de la portada no lo corte. */
@@ -2405,17 +2386,20 @@ button.menu-lateral__salir {
 .columna-kanban__anadir {
   display: flex;
   align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-height: var(--objetivo-tactil);
   justify-content: flex-start;
+  gap: 6px;
+  width: calc(100% - 16px);
+  min-height: 32px;
+  margin: 0 8px;
   padding: 0 10px;
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 500;
   text-align: left;
-  color: var(--texto);
+  color: var(--secundario);
   background: transparent;
   border: none;
+  border-radius: var(--radio-control);
+  box-shadow: none;
 }
 
 .columna-kanban__anadir:hover:not(:disabled) {
@@ -2427,30 +2411,32 @@ button.menu-lateral__salir {
 /* El «+» acompaña al texto sin robarle espacio al nombre. */
 .columna-kanban__anadir-signo {
   flex: 0 0 auto;
-  font-size: 1rem;
+  font-size: 15px;
   line-height: 1;
 }
 
 .columna-kanban__anadir-form {
   display: grid;
   gap: 6px;
-  margin-bottom: 0;
+  margin: 0 8px;
 }
 
 .columna-kanban__anadir-form input {
   width: 100%;
   min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
   box-sizing: border-box;
 }
 
 .columna-kanban__anadir-form .acciones {
-  gap: 0.4rem;
+  gap: 6px;
 }
 
 .columna-kanban__anadir-form .acciones button {
   min-height: 32px;
-  padding: 0 0.7rem;
-  font-size: 0.8rem;
+  padding: 0 10px;
+  font-size: var(--texto-sm);
   font-weight: 500;
 }
 
@@ -3308,14 +3294,36 @@ button.menu-lateral__salir {
   }
 
   .tablero {
+    flex: none;
     flex-direction: column;
+    padding: 0 16px 24px;
+    overflow: visible;
   }
 
   .columna-kanban,
   .columna-agregar {
     flex: 0 0 auto;
     width: auto;
-    max-width: none;
+    max-height: none;
+  }
+
+  form.columna-agregar {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .columna-kanban__lista {
+    overflow: visible;
+  }
+
+  .cabecera-proyecto {
+    padding: 16px 16px 12px;
+  }
+
+  .filtro-etiquetas,
+  .proyecto__error {
+    margin-right: 16px;
+    margin-left: 16px;
   }
 }
 
