@@ -1,54 +1,108 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
+import type { ProyectoApi } from "../api";
 import { BarraNavegacion } from "./BarraNavegacion";
+
+const proyectos: ProyectoApi[] = [
+  { id: "p1", nombre: "Casa", propietarioId: "u1", createdAt: "", updatedAt: "" },
+  { id: "p2", nombre: "Trabajo", propietarioId: "u1", createdAt: "", updatedAt: "" },
+];
+
+function renderMenu(ruta: string) {
+  let logoutLlamado = false;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/proyectos") {
+        return new Response(JSON.stringify(proyectos), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (url === "/api/auth/logout" && String(init?.method) === "POST") {
+        logoutLlamado = true;
+        return new Response(null, { status: 204 });
+      }
+      return new Response(JSON.stringify({}), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  );
+
+  const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  cliente.setQueryData(["proyectos"], proyectos);
+
+  const user = userEvent.setup();
+  render(
+    <QueryClientProvider client={cliente}>
+      <MemoryRouter initialEntries={[ruta]}>
+        <Routes>
+          <Route path="*" element={<BarraNavegacion />} />
+          <Route path="/login" element={<p>Acceso</p>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+  return { cliente, user, seCerroSesion: () => logoutLlamado };
+}
 
 describe("BarraNavegacion", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("cierra la sesión, limpia la caché y navega a login", async () => {
-    let logoutLlamado = false;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string, init?: RequestInit) => {
-        if (url === "/api/auth/logout" && String(init?.method) === "POST") {
-          logoutLlamado = true;
-          return new Response(null, { status: 204 });
-        }
-        return new Response(JSON.stringify({}), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        });
-      }),
+    const { cliente, user, seCerroSesion } = renderMenu("/proyectos");
+
+    expect(within(menuLateral()).getByRole("link", { name: /agenda/i }).getAttribute("href")).toBe(
+      "/agenda",
     );
-
-    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    cliente.setQueryData(["proyectos"], [{ id: "p1" }]);
-
-    const user = userEvent.setup();
-    render(
-      <QueryClientProvider client={cliente}>
-        <MemoryRouter initialEntries={["/proyectos"]}>
-          <Routes>
-            <Route path="/proyectos" element={<BarraNavegacion />} />
-            <Route path="/login" element={<p>Acceso</p>} />
-          </Routes>
-        </MemoryRouter>
-      </QueryClientProvider>,
-    );
-
-    expect(screen.getByRole("link", { name: /agenda/i }).getAttribute("href")).toBe("/agenda");
     await user.click(screen.getByRole("button", { name: /cerrar sesión/i }));
 
-    await waitFor(() => expect(logoutLlamado).toBe(true));
+    await waitFor(() => expect(seCerroSesion()).toBe(true));
     expect(await screen.findByText("Acceso")).toBeTruthy();
     expect(cliente.getQueryData(["proyectos"])).toBeUndefined();
   });
+
+  it("lista los proyectos y resalta el enlace activo", () => {
+    renderMenu("/proyectos/p1");
+
+    const menu = menuLateral();
+    const casa = within(menu).getByRole("link", { name: /casa/i });
+    expect(casa.getAttribute("href")).toBe("/proyectos/p1");
+    expect(casa.getAttribute("aria-current")).toBe("page");
+
+    const trabajo = within(menu).getByRole("link", { name: /trabajo/i });
+    expect(trabajo.getAttribute("href")).toBe("/proyectos/p2");
+    expect(trabajo.getAttribute("aria-current")).toBeNull();
+
+    expect(within(menu).getByRole("link", { name: /nuevo proyecto/i }).getAttribute("href")).toBe(
+      "/proyectos",
+    );
+  });
+
+  it("marca el enlace de la barra inferior según la ruta", () => {
+    renderMenu("/agenda");
+
+    const inferior = screen.getByRole("navigation", { name: "Navegación inferior" });
+    expect(within(inferior).getByRole("link", { name: /agenda/i }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(
+      within(inferior).getByRole("link", { name: /proyectos/i }).getAttribute("aria-current"),
+    ).toBeNull();
+  });
 });
+
+function menuLateral(): HTMLElement {
+  return screen.getByRole("navigation", { name: "Menú lateral" });
+}

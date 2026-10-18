@@ -13,7 +13,7 @@ Maqueta aprobada por el usuario: https://claude.ai/artifact/UneU1zYrzgqnNWkwrgJs
 
 ## Pasos
 
-### Paso 1 — Base visual y estructura · AgentRelay, esfuerzo medio · [ ]
+### Paso 1 — Base visual y estructura · AgentRelay, esfuerzo medio · [x]
 - Archivos: `apps/web/src/estilos.css`, `apps/web/src/App.tsx`, `apps/web/src/componentes/BarraNavegacion.tsx` (+ su test), `apps/web/src/main.tsx`, `apps/web/package.json`, `apps/web/src/i18n/es.json`.
 - Variables y tipografía; disposición con menú lateral en escritorio (logo, Agenda, lista de proyectos con su color, Ajustes, avisos del navegador y salir abajo) y barra inferior en ≤ 740 px (Proyectos, Agenda, Ajustes).
 - Terminado: tests, typecheck y lint de la web pasan; sin cambios de API.

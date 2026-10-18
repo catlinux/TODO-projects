@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { peticion, type UsuarioApi } from "./api";
-import { BarraNavegacion } from "./componentes/BarraNavegacion";
+import { Disposicion } from "./componentes/Disposicion";
 import Login from "./paginas/Login";
 import Registro from "./paginas/Registro";
 import Proyectos from "./paginas/Proyectos";
@@ -24,12 +24,7 @@ function RutaProtegida({ children }: { children: React.ReactNode }) {
   const { isLoading, isError } = useSesion();
   if (isLoading) return <p>{t("app.loading")}</p>;
   if (isError) return <Navigate to="/login" replace />;
-  return (
-    <>
-      <BarraNavegacion />
-      {children}
-    </>
-  );
+  return <Disposicion>{children}</Disposicion>;
 }
 
 export default function App() {
