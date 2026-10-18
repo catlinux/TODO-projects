@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.16.2] - 2026-10-18
+
+### Corregido
+- Los límites de 20 adjuntos por tarea y 10 fondos por proyecto ya no se pueden superar con subidas simultáneas (se comprueban dentro de una transacción con bloqueo de fila) y el fichero solo se escribe en disco si cabe.
+- Subir o borrar archivos y cambiar etiquetas con un token de API ya no crea entradas inútiles en el registro de actividad (no eran deshacibles); el historial de la tarjeta se mantiene.
+
 ## [0.16.1] - 2026-10-18
 
 ### Corregido

@@ -9,7 +9,6 @@ import { z } from "zod";
 import { archivos, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 import type { ConfigArchivos } from "./config.js";
-import { instantaneaTarea, registrarActividad } from "./actividad.js";
 import { registrarHistorial } from "./historial.js";
 import { obtenerTareaPropia } from "./tareas.js";
 import {
@@ -113,16 +112,6 @@ export function registrarRutasArchivos(
       return;
     }
 
-    const [recuento] = await db
-      .select({ total: count() })
-      .from(archivos)
-      .where(eq(archivos.tareaId, params.data.id));
-
-    if ((recuento?.total ?? 0) >= MAX_ADJUNTOS_TAREA) {
-      reply.code(400).send({ mensaje: "La tarea admite como máximo 20 adjuntos" });
-      return;
-    }
-
     const subida = await leerArchivoSubido(request);
     if (!subida.ok) {
       reply.code(subida.estado).send({ mensaje: subida.mensaje });
@@ -133,11 +122,29 @@ export function registrarRutasArchivos(
     const mime = detectarImagenPermitida(subida.contenido) ?? MIME_OCTET_STREAM;
     const tamano = subida.contenido.length;
 
-    await guardarFichero(config.dir, id, subida.contenido);
-
-    let creado;
+    let resultado;
     try {
-      creado = await db.transaction(async (tx) => {
+      resultado = await db.transaction(async (tx) => {
+        // Bloquea la fila de la tarea para que dos subidas simultáneas no superen el límite.
+        const [tarea] = await tx
+          .select({ id: tareas.id })
+          .from(tareas)
+          .where(eq(tareas.id, params.data.id))
+          .for("update")
+          .limit(1);
+        if (!tarea) return { tipo: "sinTarea" as const };
+
+        const [recuento] = await tx
+          .select({ total: count() })
+          .from(archivos)
+          .where(eq(archivos.tareaId, params.data.id));
+        if ((recuento?.total ?? 0) >= MAX_ADJUNTOS_TAREA) {
+          return { tipo: "limite" as const };
+        }
+
+        // Solo se escribe en disco si el límite permite insertar la fila.
+        await guardarFichero(config.dir, id, subida.contenido);
+
         const [archivo] = await tx
           .insert(archivos)
           .values({
@@ -150,7 +157,7 @@ export function registrarRutasArchivos(
           })
           .returning();
 
-        if (!archivo) return null;
+        if (!archivo) return { tipo: "error" as const };
 
         await registrarHistorial(tx, {
           tareaId: params.data.id,
@@ -159,33 +166,30 @@ export function registrarRutasArchivos(
           datos: { accion: "añadido", nombre: subida.nombre, archivoId: id },
         });
 
-        if (request.tokenId) {
-          const instantanea = instantaneaTarea(fila.tarea);
-          await registrarActividad(tx, {
-            usuarioId: usuario.id,
-            tokenId: request.tokenId,
-            tokenNombre: request.tokenNombre,
-            accion: "editar",
-            entidadId: params.data.id,
-            antes: instantanea,
-            despues: instantanea,
-          });
-        }
-
-        return archivo;
+        return { tipo: "ok" as const, archivo };
       });
     } catch (error) {
       await eliminarFicheros(config.dir, [id]);
       throw error;
     }
 
-    if (!creado) {
+    if (resultado.tipo === "sinTarea") {
+      reply.code(404).send({ mensaje: "Tarea no encontrada" });
+      return;
+    }
+
+    if (resultado.tipo === "limite") {
+      reply.code(400).send({ mensaje: "La tarea admite como máximo 20 adjuntos" });
+      return;
+    }
+
+    if (resultado.tipo !== "ok") {
       await eliminarFicheros(config.dir, [id]);
       reply.code(500).send({ mensaje: "No se pudo guardar el archivo" });
       return;
     }
 
-    reply.code(201).send(creado);
+    reply.code(201).send(resultado.archivo);
   });
 
   app.post("/proyectos/:id/fondos", { preHandler: app.requireAuth }, async (request, reply) => {
@@ -212,16 +216,6 @@ export function registrarRutasArchivos(
       return;
     }
 
-    const [recuento] = await db
-      .select({ total: count() })
-      .from(archivos)
-      .where(eq(archivos.proyectoId, params.data.id));
-
-    if ((recuento?.total ?? 0) >= MAX_FONDOS_PROYECTO) {
-      reply.code(400).send({ mensaje: "El proyecto admite como máximo 10 fondos" });
-      return;
-    }
-
     const subida = await leerArchivoSubido(request);
     if (!subida.ok) {
       reply.code(subida.estado).send({ mensaje: subida.mensaje });
@@ -236,33 +230,67 @@ export function registrarRutasArchivos(
 
     const id = randomUUID();
 
-    await guardarFichero(config.dir, id, subida.contenido);
-
-    let creado;
+    let resultado;
     try {
-      [creado] = await db
-        .insert(archivos)
-        .values({
-          id,
-          usuarioId: usuario.id,
-          proyectoId: params.data.id,
-          nombre: subida.nombre,
-          mime,
-          tamano: subida.contenido.length,
-        })
-        .returning();
+      resultado = await db.transaction(async (tx) => {
+        // Bloquea la fila del proyecto para que dos subidas simultáneas no superen el límite.
+        const [proyectoBloqueado] = await tx
+          .select({ id: proyectos.id })
+          .from(proyectos)
+          .where(and(eq(proyectos.id, params.data.id), eq(proyectos.propietarioId, usuario.id)))
+          .for("update")
+          .limit(1);
+        if (!proyectoBloqueado) return { tipo: "sinProyecto" as const };
+
+        const [recuento] = await tx
+          .select({ total: count() })
+          .from(archivos)
+          .where(eq(archivos.proyectoId, params.data.id));
+        if ((recuento?.total ?? 0) >= MAX_FONDOS_PROYECTO) {
+          return { tipo: "limite" as const };
+        }
+
+        // Solo se escribe en disco si el límite permite insertar la fila.
+        await guardarFichero(config.dir, id, subida.contenido);
+
+        const [archivo] = await tx
+          .insert(archivos)
+          .values({
+            id,
+            usuarioId: usuario.id,
+            proyectoId: params.data.id,
+            nombre: subida.nombre,
+            mime,
+            tamano: subida.contenido.length,
+          })
+          .returning();
+
+        if (!archivo) return { tipo: "error" as const };
+
+        return { tipo: "ok" as const, archivo };
+      });
     } catch (error) {
       await eliminarFicheros(config.dir, [id]);
       throw error;
     }
 
-    if (!creado) {
+    if (resultado.tipo === "sinProyecto") {
+      reply.code(404).send({ mensaje: "Proyecto no encontrado" });
+      return;
+    }
+
+    if (resultado.tipo === "limite") {
+      reply.code(400).send({ mensaje: "El proyecto admite como máximo 10 fondos" });
+      return;
+    }
+
+    if (resultado.tipo !== "ok") {
       await eliminarFicheros(config.dir, [id]);
       reply.code(500).send({ mensaje: "No se pudo guardar el fondo" });
       return;
     }
 
-    reply.code(201).send(creado);
+    reply.code(201).send(resultado.archivo);
   });
 
   app.get("/tareas/:id/archivos", { preHandler: app.requireAuth }, async (request, reply) => {
@@ -434,26 +462,6 @@ export function registrarRutasArchivos(
           tipo: "adjunto",
           datos: { accion: "quitado", nombre: fila.nombre, archivoId: fila.id },
         });
-
-        if (request.tokenId) {
-          const [tarea] = await tx
-            .select()
-            .from(tareas)
-            .where(eq(tareas.id, fila.tareaId))
-            .limit(1);
-          if (tarea) {
-            const instantanea = instantaneaTarea(tarea);
-            await registrarActividad(tx, {
-              usuarioId: usuario.id,
-              tokenId: request.tokenId,
-              tokenNombre: request.tokenNombre,
-              accion: "editar",
-              entidadId: fila.tareaId,
-              antes: instantanea,
-              despues: instantanea,
-            });
-          }
-        }
       }
     });
 

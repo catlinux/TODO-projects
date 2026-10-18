@@ -19,12 +19,10 @@
 
 ## Prioridad baja
 
-- Deshacer con el conector el borrado de una tarea no recupera sus adjuntos (los ficheros se borran del disco al borrarla). Auditoría v3.
-- Los registros de actividad de etiquetas y archivos guardan `antes = despues`, así que deshacerlos no cambia nada. Auditoría v3.
-- El límite de 20 adjuntos por tarea y 10 fondos por proyecto se comprueba antes de subir, sin bloqueo: dos subidas simultáneas pueden superarlo en uno. Auditoría v3.
 - Telegram, SMS y WhatsApp (0.9).
 - Android (después de la 1.0).
 
 ## Descartado
 
+- Recuperar los adjuntos al deshacer el borrado de una tarea: los ficheros se borran del disco al borrarla y conservarlos exigiría una papelera con caducidad (documentado en `docs/ARQUITECTURA.md`).
 - Partir de un proyecto existente (Vikunja, Planka, Kanboard, Wekan): se construye desde cero para poder elegir la licencia. Se pueden consultar para sacar ideas.

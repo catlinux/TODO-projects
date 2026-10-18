@@ -6,7 +6,6 @@ import { esquemaEtiqueta, esquemaEtiquetaParcial, esquemaEtiquetasTarea } from "
 
 import { etiquetas, proyectos, tareasEtiquetas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
-import { instantaneaTarea, registrarActividad } from "./actividad.js";
 import { registrarHistorial } from "./historial.js";
 import { obtenerTareaPropia } from "./tareas.js";
 
@@ -292,19 +291,6 @@ export function registrarRutasEtiquetas(app: FastifyInstance, db: Database): voi
             etiquetaId,
             nombre: nombres.get(etiquetaId) ?? "",
           },
-        });
-      }
-
-      if (request.tokenId && JSON.stringify(antes) !== JSON.stringify(despues)) {
-        const instantanea = instantaneaTarea(fila.tarea);
-        await registrarActividad(tx, {
-          usuarioId: usuario.id,
-          tokenId: request.tokenId,
-          tokenNombre: request.tokenNombre,
-          accion: "editar",
-          entidadId: params.data.id,
-          antes: instantanea,
-          despues: instantanea,
         });
       }
     });

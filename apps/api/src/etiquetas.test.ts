@@ -90,6 +90,17 @@ describe("etiquetas por proyecto", () => {
     return (respuesta.json() as { id: string }).id;
   }
 
+  async function crearToken(cookie: string): Promise<string> {
+    const respuesta = await app.inject({
+      method: "POST",
+      url: "/tokens",
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { nombre: "Conector", permiso: "escritura" },
+    });
+    expect(respuesta.statusCode).toBe(201);
+    return (respuesta.json() as { token: string }).token;
+  }
+
   it("exige sesión en las rutas de etiquetas", async () => {
     const id = "00000000-0000-0000-0000-000000000000";
     const rutas = [
@@ -439,5 +450,39 @@ describe("etiquetas por proyecto", () => {
       payload: { ids: [etiquetaId] },
     });
     expect(putAjeno.statusCode).toBe(404);
+  });
+
+  it("con token, cambiar etiquetas no ensucia la actividad y deja el historial", async () => {
+    const { cookie } = await registrar(app, "token");
+    const proyectoId = await crearProyecto(cookie, "Proyecto con token");
+    const tareaId = await crearTarea(cookie, proyectoId, "Tarea con token");
+    const etiquetaId = await crearEtiqueta(cookie, proyectoId, "Con token", "#2563D9");
+    const token = await crearToken(cookie);
+
+    const cambio = await app.inject({
+      method: "PUT",
+      url: `/tareas/${tareaId}/etiquetas`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { ids: [etiquetaId] },
+    });
+    expect(cambio.statusCode).toBe(200);
+
+    const actividad = await app.inject({
+      method: "GET",
+      url: "/actividad",
+      headers: { cookie: `sesion=${cookie}` },
+    });
+    expect(actividad.json()).toEqual([]);
+
+    const historial = await app.inject({
+      method: "GET",
+      url: `/tareas/${tareaId}/actividad`,
+      headers: { cookie: `sesion=${cookie}` },
+    });
+    const entradas = (historial.json() as { elementos: Array<Record<string, unknown>> }).elementos;
+    expect(entradas.find((entrada) => entrada.historialTipo === "etiqueta")).toMatchObject({
+      accion: "añadida",
+      etiquetaId,
+    });
   });
 });

@@ -31,6 +31,8 @@ Roles por proyecto: propietario, administrador, miembro y lector. Invitaciones p
 
 Servidor MCP apoyado en la API REST. Tokens por usuario, revocables y con permisos limitados. Herramientas previstas: `listar_tareas`, `crear_tarea`, `mover_tarjeta`, `resumir_proyecto`, `revisar_vencidas`. Todo lo que haga la IA queda en un **registro de actividad** y se puede deshacer.
 
+Límite conocido de «deshacer»: al borrar una tarea se borran también del disco sus adjuntos, así que deshacer el borrado recupera la tarea pero no sus archivos. Conservarlos exigiría una papelera con caducidad; se descarta por ahora. Los cambios de etiquetas y archivos quedan en el historial de la tarjeta, no en el registro deshacible.
+
 ## Interoperabilidad
 
 Exportación del calendario en `.ics`; exportación e importación en JSON y CSV.

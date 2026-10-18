@@ -129,6 +129,17 @@ describe("API de archivos", () => {
     return (respuesta.json() as { id: string }).id;
   }
 
+  async function crearToken(cookie: string): Promise<string> {
+    const respuesta = await app.inject({
+      method: "POST",
+      url: "/tokens",
+      headers: auth(cookie),
+      payload: { nombre: "Conector", permiso: "escritura" },
+    });
+    expect(respuesta.statusCode).toBe(201);
+    return (respuesta.json() as { token: string }).token;
+  }
+
   async function crearTarea(cookie: string, proyectoId: string, titulo: string): Promise<string> {
     const respuesta = await app.inject({
       method: "POST",
@@ -156,6 +167,27 @@ describe("API de archivos", () => {
       method: "POST",
       url,
       headers: { "content-type": contentType, ...auth(cookie) },
+      payload,
+    });
+  }
+
+  async function subirConToken(
+    token: string,
+    url: string,
+    opciones: { nombre: string; contenido: Buffer },
+  ) {
+    const { payload, contentType } = cuerpoMultipart([
+      {
+        nombre: "archivo",
+        fichero: opciones.nombre,
+        tipo: "image/png",
+        contenido: opciones.contenido,
+      },
+    ]);
+    return app.inject({
+      method: "POST",
+      url,
+      headers: { "content-type": contentType, authorization: `Bearer ${token}` },
       payload,
     });
   }
@@ -753,5 +785,138 @@ describe("API de archivos", () => {
       contenido: bytesPng(4),
     });
     expect(fondoDeMas.statusCode).toBe(400);
+  });
+
+  it("no supera el límite de adjuntos con dos subidas simultáneas", async () => {
+    const { cookie } = await registrar("carrera-adjuntos");
+    const proyectoId = await crearProyecto(cookie, "Proyecto carrera");
+    const tareaId = await crearTarea(cookie, proyectoId, "Tarea con 19 adjuntos");
+
+    for (let i = 0; i < 19; i += 1) {
+      const subida = await subir(cookie, `/tareas/${tareaId}/archivos`, {
+        nombre: `previo-${i}.png`,
+        tipo: "image/png",
+        contenido: bytesPng(4),
+      });
+      expect(subida.statusCode).toBe(201);
+    }
+
+    const antes = await ficherosEnDisco();
+    const respuestas = await Promise.all([
+      subir(cookie, `/tareas/${tareaId}/archivos`, {
+        nombre: "carrera-a.png",
+        tipo: "image/png",
+        contenido: bytesPng(4),
+      }),
+      subir(cookie, `/tareas/${tareaId}/archivos`, {
+        nombre: "carrera-b.png",
+        tipo: "image/png",
+        contenido: bytesPng(4),
+      }),
+    ]);
+
+    expect(respuestas.map((respuesta) => respuesta.statusCode).sort()).toEqual([201, 400]);
+    const rechazada = respuestas.find((respuesta) => respuesta.statusCode === 400);
+    expect((rechazada!.json() as { mensaje: string }).mensaje).toBe(
+      "La tarea admite como máximo 20 adjuntos",
+    );
+
+    const listado = await app.inject({
+      method: "GET",
+      url: `/tareas/${tareaId}/archivos`,
+      headers: auth(cookie),
+    });
+    expect((listado.json() as unknown[]).length).toBe(20);
+    // Solo queda el fichero aceptado: la subida rechazada no deja huérfano.
+    expect(await ficherosEnDisco()).toHaveLength(antes.length + 1);
+  });
+
+  it("no supera el límite de fondos con dos subidas simultáneas", async () => {
+    const { cookie } = await registrar("carrera-fondos");
+    const proyectoId = await crearProyecto(cookie, "Proyecto carrera de fondos");
+
+    for (let i = 0; i < 9; i += 1) {
+      const subida = await subir(cookie, `/proyectos/${proyectoId}/fondos`, {
+        nombre: `previo-${i}.png`,
+        tipo: "image/png",
+        contenido: bytesPng(4),
+      });
+      expect(subida.statusCode).toBe(201);
+    }
+
+    const antes = await ficherosEnDisco();
+    const respuestas = await Promise.all([
+      subir(cookie, `/proyectos/${proyectoId}/fondos`, {
+        nombre: "carrera-a.png",
+        tipo: "image/png",
+        contenido: bytesPng(4),
+      }),
+      subir(cookie, `/proyectos/${proyectoId}/fondos`, {
+        nombre: "carrera-b.png",
+        tipo: "image/png",
+        contenido: bytesPng(4),
+      }),
+    ]);
+
+    expect(respuestas.map((respuesta) => respuesta.statusCode).sort()).toEqual([201, 400]);
+    const rechazada = respuestas.find((respuesta) => respuesta.statusCode === 400);
+    expect((rechazada!.json() as { mensaje: string }).mensaje).toBe(
+      "El proyecto admite como máximo 10 fondos",
+    );
+
+    const listado = await app.inject({
+      method: "GET",
+      url: `/proyectos/${proyectoId}/fondos`,
+      headers: auth(cookie),
+    });
+    expect((listado.json() as unknown[]).length).toBe(10);
+    expect(await ficherosEnDisco()).toHaveLength(antes.length + 1);
+  });
+
+  it("con token, subir y borrar un adjunto no ensucia la actividad y deja el historial", async () => {
+    const { cookie } = await registrar("token-actividad");
+    const proyectoId = await crearProyecto(cookie, "Proyecto con token");
+    const tareaId = await crearTarea(cookie, proyectoId, "Tarea con token");
+    const token = await crearToken(cookie);
+
+    const subida = await subirConToken(token, `/tareas/${tareaId}/archivos`, {
+      nombre: "con-token.png",
+      contenido: bytesPng(8),
+    });
+    expect(subida.statusCode).toBe(201);
+    const archivoId = (subida.json() as { id: string }).id;
+
+    const sinActividad = await app.inject({
+      method: "GET",
+      url: "/actividad",
+      headers: auth(cookie),
+    });
+    expect(sinActividad.json()).toEqual([]);
+
+    const borrado = await app.inject({
+      method: "DELETE",
+      url: `/archivos/${archivoId}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(borrado.statusCode).toBe(204);
+
+    const trasBorrar = await app.inject({
+      method: "GET",
+      url: "/actividad",
+      headers: auth(cookie),
+    });
+    expect(trasBorrar.json()).toEqual([]);
+
+    const historial = await app.inject({
+      method: "GET",
+      url: `/tareas/${tareaId}/actividad`,
+      headers: auth(cookie),
+    });
+    const elementos = (historial.json() as { elementos: Array<Record<string, unknown>> }).elementos;
+    const acciones = elementos
+      .filter((elemento) => elemento.historialTipo === "adjunto")
+      .map((elemento) => elemento.accion)
+      .sort();
+    expect(acciones).toEqual(["añadido", "quitado"]);
   });
 });
