@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -291,13 +291,28 @@ describe("Tablero", () => {
     expect(pendiente?.className).not.toContain("tarjeta-kanban--hecha");
   });
 
-  it("pinta la portada de color e ignora la de imagen con id no válido", () => {
+  it("pinta una portada suave en todas las tarjetas, aunque falte o sea inválida", () => {
     usarTablero();
 
     const conColor = screen.getByText("Tarea inicial").closest("li");
-    expect(conColor?.querySelector(".tarjeta-kanban__portada")).not.toBeNull();
-    const conImagen = screen.getByText("Otra").closest("li");
-    expect(conImagen?.querySelector(".tarjeta-kanban__portada")).toBeNull();
+    const portadaColor = conColor?.querySelector<HTMLElement>(".tarjeta-kanban__portada");
+    expect(portadaColor?.getAttribute("style")).toContain("color-mix");
+
+    const sinImagen = screen.getByText("Otra").closest("li");
+    const portadaSinImagen = sinImagen?.querySelector<HTMLElement>(".tarjeta-kanban__portada");
+    expect(portadaSinImagen).not.toBeNull();
+    expect(portadaSinImagen?.className).not.toContain("tarjeta-kanban__portada--imagen");
+    expect(portadaSinImagen?.getAttribute("style")).toContain("color-mix");
+  });
+
+  it("pone el título dentro de la portada y enlaza desde ella", () => {
+    renderConEtiquetas([{ ...tareasIniciales[0]!, portada: null }], []);
+
+    const enlace = screen.getByRole("link", { name: /tarea inicial/i });
+    const portada = enlace.closest(".tarjeta-kanban__portada");
+    expect(portada).not.toBeNull();
+    expect(enlace.getAttribute("id")).toBe("tarjeta-t1");
+    expect(portada?.querySelector(".tarjeta-kanban__titulo")?.textContent).toBe("Tarea inicial");
   });
 
   function renderConEtiquetas(tareas: TareaApi[], etiquetas: EtiquetaApi[]) {
@@ -392,18 +407,43 @@ describe("Tablero", () => {
       .closest("li")
       ?.querySelector<HTMLElement>(".tarjeta-kanban__portada--imagen");
     expect(portada).not.toBeNull();
-    expect(portada?.style.backgroundImage).toContain(`/api/archivos/${uuid}`);
+    const imagen = portada?.querySelector("img");
+    expect(imagen?.getAttribute("src")).toContain(`/api/archivos/${uuid}`);
   });
 
-  it("ignora la portada de imagen si el id no es un uuid", () => {
+  it("cae a la portada automática si la imagen falla al cargar", () => {
+    const uuid = "11111111-1111-1111-1111-111111111111";
+    renderConEtiquetas(
+      [{ ...tareasIniciales[0]!, portada: { tipo: "imagen", archivoId: uuid } }],
+      [],
+    );
+
+    const imagen = document.querySelector<HTMLImageElement>(".tarjeta-kanban__imagen");
+    expect(imagen).not.toBeNull();
+    fireEvent.error(imagen!);
+
+    const portada = screen
+      .getByText("Tarea inicial")
+      .closest("li")
+      ?.querySelector<HTMLElement>(".tarjeta-kanban__portada");
+    expect(portada?.querySelector(".tarjeta-kanban__imagen")).toBeNull();
+    expect(portada?.className).not.toContain("tarjeta-kanban__portada--imagen");
+    expect(portada?.getAttribute("style")).toContain("color-mix");
+  });
+
+  it("usa la portada automática si la imagen no tiene un id válido", () => {
     renderConEtiquetas(
       [{ ...tareasIniciales[0]!, portada: { tipo: "imagen", archivoId: "a1" } }],
       [],
     );
 
-    expect(
-      screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__portada"),
-    ).toBeNull();
+    const portada = screen
+      .getByText("Tarea inicial")
+      .closest("li")
+      ?.querySelector<HTMLElement>(".tarjeta-kanban__portada");
+    expect(portada).not.toBeNull();
+    expect(portada?.className).not.toContain("tarjeta-kanban__portada--imagen");
+    expect(portada?.getAttribute("style")).toContain("color-mix");
   });
 
   it("muestra la insignia de adjuntos si la tarea tiene", () => {

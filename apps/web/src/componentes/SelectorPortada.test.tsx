@@ -83,13 +83,15 @@ describe("SelectorPortada", () => {
     );
   });
 
-  it("quitar la portada envía null", async () => {
+  it("la opción Automática quita la portada guardada", async () => {
     const { peticiones } = montarFetch();
     const user = userEvent.setup();
     renderSelector({ tipo: "color", valor: "#2563D9" });
 
     await user.click(screen.getByRole("button", { name: "Portada" }));
-    await user.click(screen.getByRole("button", { name: "Quitar portada" }));
+    const automatica = screen.getByRole("radio", { name: "Automática" });
+    expect(automatica.getAttribute("aria-checked")).toBe("false");
+    await user.click(automatica);
 
     await waitFor(() =>
       expect(peticiones).toContainEqual({
@@ -97,6 +99,17 @@ describe("SelectorPortada", () => {
         method: "PATCH",
         body: { portada: null },
       }),
+    );
+  });
+
+  it("marca Automática por defecto cuando la tarea no tiene portada", async () => {
+    montarFetch();
+    const user = userEvent.setup();
+    renderSelector();
+
+    await user.click(screen.getByRole("button", { name: "Portada" }));
+    expect(screen.getByRole("radio", { name: "Automática" }).getAttribute("aria-checked")).toBe(
+      "true",
     );
   });
 
@@ -120,12 +133,16 @@ describe("SelectorPortada", () => {
     );
   });
 
-  it("estiloPortada devuelve el color, el patrón y la imagen con uuid válido", () => {
-    expect(estiloPortada({ tipo: "color", valor: "#2563D9" })).toEqual({ backgroundColor: "#2563D9" });
+  it("estiloPortada devuelve el fondo suave, la textura y la imagen con uuid válido", () => {
+    const color = estiloPortada({ tipo: "color", valor: "#2563D9" });
+    expect(color?.["--portada-tono"]).toBe("#2563D9");
+    expect(String(color?.backgroundImage)).toContain("color-mix");
+    expect(String(color?.backgroundImage)).toContain("var(--superficie");
 
     const patron = estiloPortada({ tipo: "color", valor: "puntos-rosa" });
     expect(typeof patron?.backgroundImage).toBe("string");
-    expect(patron?.backgroundImage).toContain("gradient");
+    expect(patron?.backgroundImage).toContain("radial-gradient");
+    expect(patron?.backgroundSize).toBe("14px 14px, auto, auto, auto, auto");
 
     const uuid = "11111111-1111-1111-1111-111111111111";
     const imagen = estiloPortada({ tipo: "imagen", archivoId: uuid });

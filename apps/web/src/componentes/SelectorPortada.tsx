@@ -3,7 +3,13 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { esImagenPermitida, peticion, type ArchivoApi, type PortadaTareaApi } from "../api";
-import { COLORES_PORTADA, PATRONES_PORTADA, estiloPortada, urlArchivo } from "../portada";
+import {
+  COLORES_PORTADA,
+  PATRONES_PORTADA,
+  estiloPortada,
+  estiloPortadaAutomatica,
+  urlArchivo,
+} from "../portada";
 import { nombreColor } from "./SelectorEtiquetas";
 
 export interface PropiedadesSelectorPortada {
@@ -35,6 +41,7 @@ export function SelectorPortada({
   );
 
   // La de imagen no compite con las muestras de color/patrón: es otra fila.
+  const esAutomatica = !portada;
   const valorActual = portada?.tipo === "color" ? portada.valor : null;
   const imagenActual = portada?.tipo === "imagen" ? portada.archivoId : null;
 
@@ -49,9 +56,11 @@ export function SelectorPortada({
     })),
   ];
 
-  const nombreActual = imagenActual
-    ? (imagenes.find((archivo) => archivo.id === imagenActual)?.nombre ?? t("cover.image"))
-    : opciones.find((opcion) => opcion.valor === valorActual)?.nombre;
+  const nombreActual = esAutomatica
+    ? t("cover.automatic")
+    : imagenActual
+      ? (imagenes.find((archivo) => archivo.id === imagenActual)?.nombre ?? t("cover.image"))
+      : opciones.find((opcion) => opcion.valor === valorActual)?.nombre;
 
   function invalidar() {
     void cliente.invalidateQueries({ queryKey: ["tarea", tareaId] });
@@ -110,10 +119,22 @@ export function SelectorPortada({
           }}
         >
           <p className="selector-portada__actual">
-            {nombreActual ? `${t("cover.section")}: ${nombreActual}` : t("cover.none")}
+            {`${t("cover.section")}: ${nombreActual ?? t("cover.automatic")}`}
           </p>
 
           <div className="selector-portada__muestras" role="radiogroup" aria-label={t("cover.choose")}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={esAutomatica}
+              aria-label={t("cover.automatic")}
+              className="selector-portada__muestra selector-portada__muestra--auto"
+              style={estiloPortadaAutomatica("portada-automatica")}
+              disabled={guardar.isPending}
+              onClick={() => guardar.mutate(null)}
+            >
+              {esAutomatica ? <span aria-hidden="true">✓</span> : <span aria-hidden="true">✦</span>}
+            </button>
             {opciones.map((opcion) => {
               const seleccionada = opcion.valor === valorActual;
               return (
@@ -164,17 +185,6 @@ export function SelectorPortada({
               </div>
             </>
           )}
-
-          <div className="selector-portada__acciones">
-            <button
-              type="button"
-              className="boton-texto"
-              disabled={!portada || guardar.isPending}
-              onClick={() => guardar.mutate(null)}
-            >
-              {t("cover.remove")}
-            </button>
-          </div>
 
           {error && (
             <p className="error" role="alert">

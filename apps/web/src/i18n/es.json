@@ -216,7 +216,7 @@
     "section": "Portada",
     "button": "Portada",
     "choose": "Elegir portada",
-    "none": "Sin portada",
+    "automatic": "Automática",
     "remove": "Quitar portada",
     "image": "Imagen",
     "images": "Imágenes adjuntas",

@@ -2286,6 +2286,25 @@ form.columna-agregar button {
   color: var(--secundario);
 }
 
+/* Portadas: intensidad de las capas suaves, distinta en claro y en oscuro. */
+:root {
+  --portada-brillo: rgba(255, 255, 255, 0.5);
+  --portada-suave: 16%;
+  --portada-foco: 24%;
+  --portada-borde: 14%;
+  --portada-fondo: 9%;
+  --portada-textura: 8%;
+}
+
+:root[data-tema="oscuro"] {
+  --portada-brillo: rgba(255, 255, 255, 0.1);
+  --portada-suave: 14%;
+  --portada-foco: 20%;
+  --portada-borde: 12%;
+  --portada-fondo: 8%;
+  --portada-textura: 5%;
+}
+
 .tarjeta-kanban {
   position: relative;
   display: grid;
@@ -2320,10 +2339,10 @@ form.columna-agregar button {
 /* Asa y «⋯»: discretos, aparecen al pasar el ratón o al enfocar la tarjeta. */
 .tarjeta-kanban__barra {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  left: 4px;
-  z-index: 2;
+  top: 5px;
+  right: 5px;
+  left: 5px;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2346,6 +2365,21 @@ form.columna-agregar button {
   }
 }
 
+/* Fondo translúcido para que los mandos se lean sobre cualquier portada. */
+.tarjeta-kanban__barra .boton-icono {
+  color: var(--texto);
+  background: color-mix(in srgb, var(--superficie) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lineas) 65%, transparent);
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+}
+
+.tarjeta-kanban__barra .boton-icono:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--superficie);
+  border-color: var(--lineas-fuertes);
+}
+
 .tarjeta-kanban__asa {
   font-size: 16px;
   cursor: grab;
@@ -2355,48 +2389,112 @@ form.columna-agregar button {
   font-size: 15px;
 }
 
+/* Portada: el fondo suave (o la imagen) con el título superpuesto abajo. */
 .tarjeta-kanban__portada {
+  position: relative;
   display: block;
-  width: 100%;
-  height: 80px;
-  background: var(--chip);
+  min-height: 104px;
+  background-color: var(--chip);
+  background-size: cover;
+  background-position: center;
 }
 
 .tarjeta-kanban__portada--imagen {
-  height: 140px;
+  min-height: 150px;
 }
 
-.tarjeta-kanban__cuerpo {
-  display: grid;
-  gap: 8px;
+.tarjeta-kanban__imagen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   width: 100%;
-  min-height: var(--objetivo-tactil);
-  padding: 10px 12px;
-  text-align: left;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Velo inferior: el título blanco conserva contraste sobre cualquier imagen. */
+.tarjeta-kanban__portada--imagen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.62) 45%,
+    rgba(0, 0, 0, 0.15) 64%,
+    transparent 88%
+  );
+}
+
+.tarjeta-kanban__enlace {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  padding: 34px 12px 11px;
   color: var(--texto);
   text-decoration: none;
-  background: transparent;
-  border: none;
-  border-radius: var(--radio-tarjeta);
 }
 
 /* El recorte de la portada recortaría el anillo de foco: se dibuja dentro. */
-.tarjeta-kanban__cuerpo:focus-visible {
-  outline-offset: -2px;
+.tarjeta-kanban__enlace:focus-visible {
+  outline-offset: -3px;
 }
 
 .tarjeta-kanban__titulo {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: 600;
+  line-height: 1.35;
   color: var(--texto);
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
-/* La última columna es «hecha»: título tachado y atenuado. */
+.tarjeta-kanban__portada--imagen .tarjeta-kanban__titulo {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.62);
+}
+
+/* La última columna es «hecha»: portada atenuada y título tachado.
+   El velo va sobre el fondo pero bajo el título, que conserva su contraste. */
+.tarjeta-kanban--hecha .tarjeta-kanban__portada:not(.tarjeta-kanban__portada--imagen)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--superficie) 58%, transparent);
+}
+
+.tarjeta-kanban--hecha .tarjeta-kanban__portada--imagen .tarjeta-kanban__imagen {
+  opacity: 0.6;
+  filter: saturate(0.35);
+}
+
 .tarjeta-kanban--hecha .tarjeta-kanban__titulo {
   color: var(--secundario);
   text-decoration: line-through;
+}
+
+.tarjeta-kanban--hecha .tarjeta-kanban__portada--imagen .tarjeta-kanban__titulo {
+  color: #fff;
+}
+
+/* Fila compacta bajo la portada: etiquetas e indicadores. */
+.tarjeta-kanban__pie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  background: var(--superficie);
+  border-top: 1px solid color-mix(in srgb, var(--lineas) 70%, transparent);
 }
 
 .tarjeta-kanban__indicadores {
@@ -4030,13 +4128,19 @@ form.columna-agregar button {
 .selector-portada__muestra {
   display: grid;
   place-items: center;
+  width: 100%;
   min-height: 36px;
   padding: 0;
   font-size: 15px;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  color: var(--texto);
   border: 2px solid transparent;
   border-radius: var(--radio-control);
+}
+
+/* La automática se distingue con un borde discontinuo cuando no está elegida. */
+.selector-portada__muestra--auto {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--lineas-fuertes) 80%, transparent);
 }
 
 .selector-portada__muestra:hover:not(:disabled),
@@ -4046,11 +4150,7 @@ form.columna-agregar button {
 
 .selector-portada__muestra[aria-checked="true"] {
   border-color: var(--texto);
-}
-
-.selector-portada__acciones {
-  display: flex;
-  justify-content: flex-start;
+  border-style: solid;
 }
 
 /* Imágenes adjuntas elegibles como portada. */
@@ -4069,6 +4169,7 @@ form.columna-agregar button {
 .selector-portada__imagen {
   display: grid;
   place-items: center;
+  width: 100%;
   min-height: 56px;
   padding: 0;
   font-size: 15px;

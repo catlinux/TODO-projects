@@ -19,7 +19,7 @@ import { Link } from "react-router-dom";
 
 import { peticion, type ColumnaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
-import { esPortadaImagen, estiloPortada } from "../portada";
+import { datosPortadaTarjeta } from "../portada";
 import { moverTareaEnLista } from "../tablero-utils";
 import { IconoAdjunto, IconoCampana, IconoComentario, IconoRepeticion } from "./IconosTarea";
 import { PastillaEtiqueta } from "./SelectorEtiquetas";
@@ -67,6 +67,7 @@ function TarjetaArrastrable({
   });
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [submenuMover, setSubmenuMover] = useState(false);
+  const [imagenFallida, setImagenFallida] = useState(false);
   const refOpciones = useRef<HTMLButtonElement>(null);
 
   const estilo = {
@@ -89,8 +90,7 @@ function TarjetaArrastrable({
   const estadoChip = hecha ? "hecha" : chip?.estado;
   const tieneAviso = tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined;
   const tieneRecurrencia = Boolean(tarea.recurrencia);
-  const estiloPortadaTarea = estiloPortada(tarea.portada);
-  const portadaEsImagen = esPortadaImagen(tarea.portada);
+  const portada = datosPortadaTarjeta(tarea.id, imagenFallida ? null : tarea.portada);
   const comentarios = tarea.comentarios ?? 0;
   const tieneComentarios = comentarios > 0;
   const adjuntos = tarea.adjuntos ?? 0;
@@ -143,31 +143,46 @@ function TarjetaArrastrable({
         </button>
       </div>
 
-      {estiloPortadaTarea && (
-        <span
-          className={`tarjeta-kanban__portada${
-            portadaEsImagen ? " tarjeta-kanban__portada--imagen" : ""
-          }`}
-          style={estiloPortadaTarea}
-          aria-hidden="true"
-        />
-      )}
-
-      <Link
-        id={`tarjeta-${tarea.id}`}
-        className="tarjeta-kanban__cuerpo"
-        to={rutaTarjeta}
-        onClick={() => cerrarMenu(false)}
+      <div
+        className={`tarjeta-kanban__portada${
+          portada.imagen ? " tarjeta-kanban__portada--imagen" : ""
+        }`}
+        style={portada.imagen ? undefined : portada.estilo}
       >
-        <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
-        {etiquetasDeTarea.length > 0 && (
-          <span className="tarjeta-kanban__etiquetas">
-            {etiquetasDeTarea.map((etiqueta) => (
-              <PastillaEtiqueta key={etiqueta.id} etiqueta={etiqueta} />
-            ))}
-          </span>
+        {portada.imagen && (
+          <img
+            className="tarjeta-kanban__imagen"
+            src={portada.imagen}
+            alt=""
+            draggable={false}
+            onError={() => setImagenFallida(true)}
+          />
         )}
-        {(chip || tieneAviso || tieneRecurrencia || tieneChecklist || tieneComentarios || tieneAdjuntos) && (
+        <Link
+          id={`tarjeta-${tarea.id}`}
+          className="tarjeta-kanban__enlace"
+          to={rutaTarjeta}
+          onClick={() => cerrarMenu(false)}
+        >
+          <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
+        </Link>
+      </div>
+
+      {(etiquetasDeTarea.length > 0 ||
+        chip ||
+        tieneAviso ||
+        tieneRecurrencia ||
+        tieneChecklist ||
+        tieneComentarios ||
+        tieneAdjuntos) && (
+        <div className="tarjeta-kanban__pie">
+          {etiquetasDeTarea.length > 0 && (
+            <span className="tarjeta-kanban__etiquetas">
+              {etiquetasDeTarea.map((etiqueta) => (
+                <PastillaEtiqueta key={etiqueta.id} etiqueta={etiqueta} />
+              ))}
+            </span>
+          )}
           <span className="tarjeta-kanban__indicadores">
             {chip && (
               <span className={`chip-fecha chip-fecha--${estadoChip} cifra`}>{chip.texto}</span>
@@ -204,8 +219,8 @@ function TarjetaArrastrable({
               </span>
             )}
           </span>
-        )}
-      </Link>
+        </div>
+      )}
 
       {menuAbierto && (
         <div className="menu-tarjeta" role="menu" aria-label={t("tasks.options")}>
