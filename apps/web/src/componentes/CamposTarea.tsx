@@ -13,6 +13,8 @@ export interface ValoresFormularioTarea {
 interface Propiedades {
   valores: ValoresFormularioTarea;
   onCambio: (valores: ValoresFormularioTarea) => void;
+  /** Campos que no se pintan: la tarjeta abierta usa título y descripción propios. */
+  ocultar?: ReadonlyArray<"titulo" | "descripcion">;
 }
 
 const FRECUENCIAS: FrecuenciaRecurrencia[] = ["ninguna", "diaria", "semanal", "mensual", "anual"];
@@ -27,7 +29,7 @@ export const OPCIONES_RECORDATORIO: Array<{ valor: number; clave: string }> = [
   { valor: 10080, clave: "10080" },
 ];
 
-export function CamposTarea({ valores, onCambio }: Propiedades) {
+export function CamposTarea({ valores, onCambio, ocultar }: Propiedades) {
   const { t } = useTranslation();
   const { recurrencia } = valores;
 
@@ -44,21 +46,25 @@ export function CamposTarea({ valores, onCambio }: Propiedades) {
 
   return (
     <>
-      <label>
-        {t("tasks.taskTitle")}
-        <input
-          value={valores.titulo}
-          onChange={(evento) => onCambio({ ...valores, titulo: evento.target.value })}
-          required
-        />
-      </label>
-      <label>
-        {t("tasks.description")}
-        <input
-          value={valores.descripcion}
-          onChange={(evento) => onCambio({ ...valores, descripcion: evento.target.value })}
-        />
-      </label>
+      {!ocultar?.includes("titulo") && (
+        <label>
+          {t("tasks.taskTitle")}
+          <input
+            value={valores.titulo}
+            onChange={(evento) => onCambio({ ...valores, titulo: evento.target.value })}
+            required
+          />
+        </label>
+      )}
+      {!ocultar?.includes("descripcion") && (
+        <label>
+          {t("tasks.description")}
+          <input
+            value={valores.descripcion}
+            onChange={(evento) => onCambio({ ...valores, descripcion: evento.target.value })}
+          />
+        </label>
+      )}
       <label>
         {t("tasks.dueDate")}
         <input

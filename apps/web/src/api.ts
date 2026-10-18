@@ -48,8 +48,9 @@ export interface TareaApi {
   recordatorioMin?: number | null;
   /** La fase C la añadirá a la API; la de imagen se ignora hasta la fase E. */
   portada?: PortadaTareaApi | null;
-  /** La fase B la añadirá a la API; aún no se pinta en la tarjeta. */
   etiquetas?: string[];
+  /** Resumen del checklist; lo devuelve `GET /tareas/:id` (fase B). */
+  checklist?: { hechos: number; total: number };
   createdAt: string;
   updatedAt: string;
 }

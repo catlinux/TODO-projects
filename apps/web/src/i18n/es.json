@@ -121,7 +121,13 @@
     "closeDialog": "Cerrar",
     "options": "Opciones de la tarjeta",
     "addCard": "Añadir tarjeta",
-    "cardTitle": "Título de la tarjeta"
+    "cardTitle": "Título de la tarjeta",
+    "column": "Columna",
+    "done": "Hecha",
+    "notFound": "Esta tarea no existe o no es tuya",
+    "backToBoard": "Volver al tablero",
+    "addDescription": "Añadir una descripción…",
+    "editDescription": "Editar descripción"
   },
   "columns": {
     "title": "Columnas",

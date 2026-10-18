@@ -348,6 +348,225 @@ a:hover {
   margin-bottom: 0;
 }
 
+/* Tarjeta abierta como ruta (B3): diálogo ancho con scroll interno. */
+.tarjeta-detalle {
+  width: min(720px, calc(100vw - 2rem));
+  max-height: calc(100vh - 3rem);
+  padding: 0;
+  overflow: hidden;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-dialogo);
+  box-shadow: var(--sombra-dialogo);
+}
+
+.tarjeta-detalle::backdrop {
+  background: var(--velo);
+}
+
+.tarjeta-detalle__marco {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100vh - 3rem);
+}
+
+.tarjeta-detalle__portada {
+  display: block;
+  height: 96px;
+  background: var(--chip);
+}
+
+.tarjeta-detalle__cuerpo {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.tarjeta-detalle__cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tarjeta-detalle__columna {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.tarjeta-detalle__titulo-fila {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tarjeta-detalle__titulo {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.tarjeta-detalle__titulo input {
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+}
+
+.tarjeta-detalle__titulo-boton {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--objetivo-tactil);
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border-color: transparent;
+  border-radius: var(--radio-control);
+}
+
+.tarjeta-detalle__titulo-boton:hover:not(:disabled) {
+  color: var(--acento);
+  border-color: transparent;
+}
+
+.tarjeta-detalle__hecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  min-height: var(--objetivo-tactil);
+  padding: 0 0.75rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+
+.tarjeta-detalle__hecha input {
+  width: 18px;
+  min-height: 0;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+}
+
+.tarjeta-detalle__seccion {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--lineas);
+}
+
+.tarjeta-detalle__seccion-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tarjeta-detalle__seccion-cabecera h3 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.tarjeta-detalle form {
+  margin-bottom: 0;
+}
+
+.boton-texto {
+  min-height: 32px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--texto-secundario);
+  background: transparent;
+  border-color: transparent;
+}
+
+.boton-texto:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.tarjeta-detalle__descripcion {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.tarjeta-detalle__descripcion a {
+  color: var(--acento);
+}
+
+.tarjeta-detalle__descripcion-vacia {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: var(--objetivo-tactil);
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  color: var(--texto-secundario);
+  background: transparent;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio-control);
+}
+
+.tarjeta-detalle__descripcion-vacia:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--chip);
+  border-color: var(--texto-secundario);
+}
+
+.tarjeta-detalle__descripcion-textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+/* Subconjunto de formato de las descripciones (formato.tsx). */
+.formato__parrafo,
+.formato__lista {
+  margin: 0 0 0.6rem;
+}
+
+.formato__parrafo:last-child,
+.formato__lista:last-child {
+  margin-bottom: 0;
+}
+
+.formato__lista {
+  padding-left: 1.4rem;
+}
+
+@media (max-width: 640px) {
+  .tarjeta-detalle {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border: none;
+    border-radius: 0;
+  }
+
+  .tarjeta-detalle__marco {
+    height: 100%;
+    max-height: 100vh;
+  }
+}
+
 .dialogo-personalizar {
   width: min(620px, calc(100vw - 2rem));
   overflow-y: auto;
@@ -1094,6 +1313,7 @@ fieldset {
   padding: 10px 12px;
   text-align: left;
   color: var(--texto);
+  text-decoration: none;
   background: transparent;
   border: none;
   border-radius: var(--radio-tarjeta);
@@ -1104,9 +1324,8 @@ fieldset {
   outline-offset: -2px;
 }
 
-.tarjeta-kanban__cuerpo:hover:not(:disabled) {
+.tarjeta-kanban__cuerpo:hover {
   background: var(--chip);
-  border-color: transparent;
 }
 
 .tarjeta-kanban__titulo {
@@ -1169,17 +1388,6 @@ fieldset {
   color: var(--texto-secundario);
 }
 
-.tarjeta-kanban__edicion {
-  display: grid;
-  gap: 8px;
-  padding: 10px 12px;
-}
-
-.tarjeta-kanban__edicion .acciones button {
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
-}
-
 /* Menú de la tarjeta. Va en el flujo para que el recorte de la portada no lo corte. */
 .menu-tarjeta {
   display: grid;
@@ -1192,7 +1400,10 @@ fieldset {
   box-shadow: var(--sombra-2);
 }
 
-.menu-tarjeta button {
+.menu-tarjeta button,
+.menu-tarjeta a {
+  display: flex;
+  align-items: center;
   width: 100%;
   min-height: 32px;
   justify-content: flex-start;
@@ -1200,11 +1411,14 @@ fieldset {
   font-size: 0.85rem;
   text-align: left;
   color: var(--texto);
+  text-decoration: none;
   background: transparent;
-  border-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-control);
 }
 
-.menu-tarjeta button:hover:not(:disabled) {
+.menu-tarjeta button:hover:not(:disabled),
+.menu-tarjeta a:hover {
   background: var(--chip);
   border-color: transparent;
 }

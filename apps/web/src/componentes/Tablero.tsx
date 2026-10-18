@@ -15,18 +15,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { peticion, type ColumnaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
-import {
-  aIsoUtc,
-  aValorLocal,
-  analizarRegla,
-  construirRegla,
-  zonaNavegador,
-} from "../recurrencia-web";
 import { moverTareaEnLista } from "../tablero-utils";
-import { CamposTarea, type ValoresFormularioTarea } from "./CamposTarea";
 
 export interface PropiedadesTablero {
   proyectoId: string;
@@ -45,11 +38,11 @@ export interface ControlTablero {
 
 interface TarjetaProps {
   tarea: TareaApi;
+  proyectoId: string;
   columnas: ColumnaApi[];
   hecha: boolean;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
-  editarTarea(tareaId: string, valores: ValoresFormularioTarea): Promise<void>;
 }
 
 function IconoCampana({ etiqueta }: { etiqueta: string }) {
@@ -103,28 +96,20 @@ function colorDePortada(tarea: TareaApi): string | null {
 
 function TarjetaArrastrable({
   tarea,
+  proyectoId,
   columnas,
   hecha,
   borrarTarea,
   moverTarea,
-  editarTarea,
 }: TarjetaProps) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: tarea.id,
     data: { titulo: tarea.titulo },
   });
-  const [editando, setEditando] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [submenuMover, setSubmenuMover] = useState(false);
   const refOpciones = useRef<HTMLButtonElement>(null);
-  const [valores, setValores] = useState<ValoresFormularioTarea>({
-    titulo: tarea.titulo,
-    descripcion: tarea.descripcion ?? "",
-    venceEnLocal: aValorLocal(tarea.venceEn),
-    recurrencia: analizarRegla(tarea.recurrencia),
-    recordatorioMin: tarea.recordatorioMin ?? null,
-  });
 
   const estilo = {
     transform: CSS.Transform.toString(transform),
@@ -132,19 +117,7 @@ function TarjetaArrastrable({
   };
 
   const columnasOrdenadas = columnas.slice().sort((a, b) => a.posicion - b.posicion);
-
-  function abrirEdicion() {
-    setValores({
-      titulo: tarea.titulo,
-      descripcion: tarea.descripcion ?? "",
-      venceEnLocal: aValorLocal(tarea.venceEn),
-      recurrencia: analizarRegla(tarea.recurrencia),
-      recordatorioMin: tarea.recordatorioMin ?? null,
-    });
-    setMenuAbierto(false);
-    setSubmenuMover(false);
-    setEditando(true);
-  }
+  const rutaTarjeta = `/proyectos/${proyectoId}/tareas/${tarea.id}`;
 
   function cerrarMenu(devolverFoco = true) {
     setMenuAbierto(false);
@@ -209,42 +182,33 @@ function TarjetaArrastrable({
         />
       )}
 
-      {editando ? (
-        <form
-          className="tarjeta-kanban__edicion"
-          onSubmit={(evento) => {
-            evento.preventDefault();
-            void editarTarea(tarea.id, valores).then(() => setEditando(false));
-          }}
-        >
-          <CamposTarea valores={valores} onCambio={setValores} />
-          <div className="acciones">
-            <button type="submit">{t("tasks.save")}</button>
-            <button type="button" onClick={() => setEditando(false)}>
-              {t("tasks.cancel")}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button type="button" className="tarjeta-kanban__cuerpo" onClick={abrirEdicion}>
-          <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
-          {(chip || tieneAviso || tieneRecurrencia) && (
-            <span className="tarjeta-kanban__indicadores">
-              {chip && (
-                <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
-              )}
-              {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
-              {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
-            </span>
-          )}
-        </button>
-      )}
+      <Link
+        id={`tarjeta-${tarea.id}`}
+        className="tarjeta-kanban__cuerpo"
+        to={rutaTarjeta}
+        onClick={() => cerrarMenu(false)}
+      >
+        <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
+        {(chip || tieneAviso || tieneRecurrencia) && (
+          <span className="tarjeta-kanban__indicadores">
+            {chip && (
+              <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
+            )}
+            {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
+            {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
+          </span>
+        )}
+      </Link>
 
       {menuAbierto && (
         <div className="menu-tarjeta" role="menu" aria-label={t("tasks.options")}>
-          <button type="button" role="menuitem" onClick={abrirEdicion}>
+          <Link
+            role="menuitem"
+            to={rutaTarjeta}
+            onClick={() => cerrarMenu(false)}
+          >
             {t("tasks.edit")}
-          </button>
+          </Link>
           <button
             type="button"
             role="menuitem"
@@ -335,24 +299,6 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     await peticion(`/tareas/${tareaId}`, {
       method: "PATCH",
       body: JSON.stringify({ columnaId }),
-    });
-    await cliente.invalidateQueries({ queryKey });
-  }
-
-  async function editarTarea(tareaId: string, valores: ValoresFormularioTarea) {
-    const venceEn = aIsoUtc(valores.venceEnLocal);
-    const recurrencia = venceEn ? construirRegla(valores.recurrencia) : null;
-
-    await peticion(`/tareas/${tareaId}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        titulo: valores.titulo,
-        descripcion: valores.descripcion,
-        venceEn,
-        recurrencia,
-        zona: zonaNavegador(),
-        recordatorioMin: venceEn ? valores.recordatorioMin : null,
-      }),
     });
     await cliente.invalidateQueries({ queryKey });
   }
@@ -594,11 +540,11 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                         <TarjetaArrastrable
                           key={tarea.id}
                           tarea={tarea}
+                          proyectoId={proyectoId}
                           columnas={columnas}
                           hecha={indice === columnasOrdenadas.length - 1}
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}
-                          editarTarea={editarTarea}
                         />
                       ))
                     )}

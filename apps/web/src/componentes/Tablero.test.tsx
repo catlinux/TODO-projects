@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
@@ -68,11 +69,13 @@ function usarTablero() {
   let ref: { current: ControlTablero | null } = { current: null };
   render(
     <QueryClientProvider client={cliente}>
-      <WrapperDePrueba
-        onRef={(r) => {
-          ref = r;
-        }}
-      />
+      <MemoryRouter>
+        <WrapperDePrueba
+          onRef={(r) => {
+            ref = r;
+          }}
+        />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   return { cliente, ref };
@@ -175,7 +178,15 @@ describe("Tablero", () => {
     expect(accionesColumnas.onEliminarColumna).toHaveBeenCalledWith("c2");
   });
 
-  it("abre el menú de una tarjeta y ejecuta editar, mover y eliminar", async () => {
+  it("el cuerpo de la tarjeta enlaza a su ruta", () => {
+    usarTablero();
+
+    const enlace = screen.getByRole("link", { name: /tarea inicial/i });
+    expect(enlace.getAttribute("href")).toBe("/proyectos/p1/tareas/t1");
+    expect(enlace.getAttribute("id")).toBe("tarjeta-t1");
+  });
+
+  it("abre el menú de una tarjeta y permite editar, mover y eliminar", async () => {
     const user = userEvent.setup();
     const peticiones: Array<{ url: string; method: string; body: unknown }> = [];
     vi.stubGlobal(
@@ -203,17 +214,14 @@ describe("Tablero", () => {
 
     await user.click(boton);
     expect(boton.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByRole("menuitem", { name: /^editar$/i })).toBeTruthy();
+    // Editar abre la ruta de la tarjeta, no una edición en línea.
+    expect(
+      screen.getByRole("menuitem", { name: /^editar$/i }).getAttribute("href"),
+    ).toBe("/proyectos/p1/tareas/t1");
     expect(screen.getByRole("menuitem", { name: /mover a/i })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: /^eliminar$/i })).toBeTruthy();
 
-    // Editar abre el formulario de la tarjeta.
-    await user.click(screen.getByRole("menuitem", { name: /^editar$/i }));
-    expect(screen.getByDisplayValue("Tarea inicial")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Cancelar" }));
-
     // Mover a… abre la lista de columnas y mueve la tarea.
-    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta tarea inicial/i }));
     await user.click(screen.getByRole("menuitem", { name: /mover a/i }));
     await user.click(screen.getByRole("menuitem", { name: /^en curso$/i }));
     await waitFor(() => {

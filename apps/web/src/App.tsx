@@ -9,6 +9,7 @@ import Registro from "./paginas/Registro";
 import Hoy from "./paginas/Hoy";
 import Proyectos from "./paginas/Proyectos";
 import ProyectoDetalle from "./paginas/ProyectoDetalle";
+import TarjetaDetalle from "./paginas/TarjetaDetalle";
 import Agenda from "./paginas/Agenda";
 import Ajustes from "./paginas/Ajustes";
 
@@ -57,7 +58,9 @@ export default function App() {
             <ProyectoDetalle />
           </RutaProtegida>
         }
-      />
+      >
+        <Route path="tareas/:tareaId" element={<TarjetaDetalle />} />
+      </Route>
       <Route
         path="/agenda"
         element={

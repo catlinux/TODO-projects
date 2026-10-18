@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
+import { Link, Outlet, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
@@ -331,6 +331,8 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
           onCerrar={() => setPersonalizarAbierto(false)}
         />
       )}
+      {/* Ruta anidada: la tarjeta abierta se pinta encima del tablero (B3). */}
+      <Outlet />
     </main>
   );
 }

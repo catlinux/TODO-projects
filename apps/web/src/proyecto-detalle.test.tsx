@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "./i18n/index";
 import ProyectoDetalle from "./paginas/ProyectoDetalle";
+import TarjetaDetalle from "./paginas/TarjetaDetalle";
 
 describe("ProyectoDetalle", () => {
   afterEach(() => {
@@ -613,6 +614,17 @@ describe("ProyectoDetalle", () => {
 
   it("edita una tarea y quita la fecha", async () => {
     let cuerpoPatch: string | null = null;
+    const tareaConFecha = {
+      id: "t1",
+      proyectoId: "p1",
+      columnaId: "c1",
+      titulo: "Tarea con fecha",
+      posicion: 0,
+      venceEn: "2026-05-10T08:00:00.000Z",
+      recurrencia: "FREQ=WEEKLY;COUNT=3",
+      createdAt: "",
+      updatedAt: "",
+    };
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
@@ -645,22 +657,16 @@ describe("ProyectoDetalle", () => {
           );
         }
         if (url === "/api/proyectos/p1/tareas") {
-          return new Response(
-            JSON.stringify([
-              {
-                id: "t1",
-                proyectoId: "p1",
-                columnaId: "c1",
-                titulo: "Tarea con fecha",
-                posicion: 0,
-                venceEn: "2026-05-10T08:00:00.000Z",
-                recurrencia: "FREQ=WEEKLY;COUNT=3",
-                createdAt: "",
-                updatedAt: "",
-              },
-            ]),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify([tareaConFecha]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url === "/api/tareas/t1" && method === "GET") {
+          return new Response(JSON.stringify(tareaConFecha), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
         }
         if (url === "/api/tareas/t1" && method === "PATCH") {
           cuerpoPatch = String(init?.body ?? "");
@@ -682,17 +688,18 @@ describe("ProyectoDetalle", () => {
       <QueryClientProvider client={cliente}>
         <MemoryRouter initialEntries={["/proyectos/p1"]}>
           <Routes>
-            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />}>
+              <Route path="tareas/:tareaId" element={<TarjetaDetalle />} />
+            </Route>
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     );
 
     expect(await screen.findByRole("img", { name: /se repite/i })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta/i }));
-    await user.click(screen.getByRole("menuitem", { name: /^editar$/i }));
+    await user.click(await screen.findByRole("link", { name: /tarea con fecha/i }));
 
-    const fecha = screen.getAllByLabelText(/fecha y hora/i).at(-1)!;
+    const fecha = await screen.findByLabelText(/fecha y hora/i);
     fireEvent.change(fecha, { target: { value: "" } });
     await user.click(screen.getByRole("button", { name: /guardar/i }));
 
@@ -706,6 +713,18 @@ describe("ProyectoDetalle", () => {
 
   it("edita el aviso y lo quita sin borrar la fecha", async () => {
     let cuerpoPatch: string | null = null;
+    const tareaConAviso = {
+      id: "t1",
+      proyectoId: "p1",
+      columnaId: "c1",
+      titulo: "Con aviso",
+      posicion: 0,
+      venceEn: "2026-05-10T08:00:00.000Z",
+      recurrencia: null,
+      recordatorioMin: 60,
+      createdAt: "",
+      updatedAt: "",
+    };
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
@@ -738,23 +757,16 @@ describe("ProyectoDetalle", () => {
           );
         }
         if (url === "/api/proyectos/p1/tareas") {
-          return new Response(
-            JSON.stringify([
-              {
-                id: "t1",
-                proyectoId: "p1",
-                columnaId: "c1",
-                titulo: "Con aviso",
-                posicion: 0,
-                venceEn: "2026-05-10T08:00:00.000Z",
-                recurrencia: null,
-                recordatorioMin: 60,
-                createdAt: "",
-                updatedAt: "",
-              },
-            ]),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify([tareaConAviso]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url === "/api/tareas/t1" && method === "GET") {
+          return new Response(JSON.stringify(tareaConAviso), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
         }
         if (url === "/api/tareas/t1" && method === "PATCH") {
           cuerpoPatch = String(init?.body ?? "");
@@ -776,17 +788,18 @@ describe("ProyectoDetalle", () => {
       <QueryClientProvider client={cliente}>
         <MemoryRouter initialEntries={["/proyectos/p1"]}>
           <Routes>
-            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />}>
+              <Route path="tareas/:tareaId" element={<TarjetaDetalle />} />
+            </Route>
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
     );
 
     expect(await screen.findByRole("img", { name: /con aviso/i })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta/i }));
-    await user.click(screen.getByRole("menuitem", { name: /^editar$/i }));
+    await user.click(await screen.findByRole("link", { name: /con aviso/i }));
 
-    const selector = screen.getAllByLabelText(/avisar antes/i).at(-1)!;
+    const selector = await screen.findByLabelText(/avisar antes/i);
     await user.selectOptions(selector, "none");
     await user.click(screen.getByRole("button", { name: /guardar/i }));
 
