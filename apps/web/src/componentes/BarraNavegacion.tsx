@@ -59,7 +59,17 @@ function textoSobreColor(fondo: string): string {
   return l > 0.179 ? "#000000" : "#ffffff";
 }
 
-export function BarraNavegacion() {
+export interface PropiedadesBarraNavegacion {
+  /** Abre la paleta de búsqueda (Ctrl/⌘+K). */
+  onAbrirBuscar?: () => void;
+}
+
+/** En macOS el atajo se muestra como ⌘K; en el resto, Ctrl K. */
+function etiquetaAtajoBusqueda(): string {
+  return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? "⌘K" : "Ctrl K";
+}
+
+export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = {}) {
   const { t } = useTranslation();
   const [ahora] = useState(() => new Date());
   const rango = useMemo(() => rangoHoy(ahora), [ahora]);
@@ -111,7 +121,15 @@ export function BarraNavegacion() {
           <span className="menu-lateral__nombre">{t("app.title")}</span>
         </div>
 
-        {/* «Buscar ⌘K» se añade cuando exista la paleta (paso D2). */}
+        {/* «Buscar ⌘K»: abre la paleta (paso D2). */}
+        <button type="button" className="menu-lateral__buscar" onClick={onAbrirBuscar}>
+          <Icono>
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </Icono>
+          <span className="menu-lateral__buscar-texto">{t("nav.search")}</span>
+          <kbd className="menu-lateral__atajo">{etiquetaAtajoBusqueda()}</kbd>
+        </button>
 
         <NavLink to="/hoy" className="menu-lateral__enlace">
           <Icono>

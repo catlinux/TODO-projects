@@ -51,12 +51,24 @@ export function aplicarTema(resuelto: "claro" | "oscuro"): void {
   document.documentElement.dataset.tema = resuelto;
 }
 
+// `useTema` vive en varios componentes (menú y paleta); los cambios se avisan
+// para que todos muestren la misma preferencia.
+const oyentesTema = new Set<(tema: Tema) => void>();
+
 /**
  * Gestiona la preferencia de tema: la guarda, la aplica en `data-tema` y, cuando
  * es "sistema", sigue los cambios de `prefers-color-scheme`.
  */
 export function useTema() {
   const [tema, setTema] = useState<Tema>(() => leerTema());
+
+  useEffect(() => {
+    const oyente = (nuevo: Tema) => setTema(nuevo);
+    oyentesTema.add(oyente);
+    return () => {
+      oyentesTema.delete(oyente);
+    };
+  }, []);
 
   useEffect(() => {
     aplicarTema(temaResuelto(tema));
@@ -74,6 +86,7 @@ export function useTema() {
   const cambiarTema = useCallback((nuevo: Tema) => {
     setTema(nuevo);
     guardarTema(nuevo);
+    oyentesTema.forEach((oyente) => oyente(nuevo));
   }, []);
 
   return { tema, cambiarTema };

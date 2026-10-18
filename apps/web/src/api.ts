@@ -124,6 +124,28 @@ export interface OcurrenciaAgenda {
   recordatorioMin: number | null;
 }
 
+export interface TareaBusquedaApi {
+  id: string;
+  titulo: string;
+  proyectoId: string;
+  proyectoNombre: string;
+  proyectoColor: string | null;
+  columnaId: string;
+  venceEn: string | null;
+  hecha: boolean;
+}
+
+export interface ProyectoBusquedaApi {
+  id: string;
+  nombre: string;
+  color: string | null;
+}
+
+export interface ResultadoBusquedaApi {
+  tareas: TareaBusquedaApi[];
+  proyectos: ProyectoBusquedaApi[];
+}
+
 export type PermisoTokenApi = "lectura" | "escritura" | "calendario";
 
 export interface TokenApi {

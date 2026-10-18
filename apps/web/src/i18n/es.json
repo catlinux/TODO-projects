@@ -10,6 +10,7 @@
     "settings": "Ajustes",
     "hoy": "Hoy",
     "newProject": "Nuevo proyecto",
+    "search": "Buscar",
     "sidebar": "Menú lateral",
     "bottom": "Navegación inferior",
     "theme": "Tema",
@@ -281,6 +282,32 @@
     "more": "más",
     "dayEmpty": "No hay tareas este día",
     "alert": "Aviso: {{valor}}"
+  },
+  "palette": {
+    "title": "Buscar y comandos",
+    "placeholder": "Buscar tareas y proyectos…",
+    "hint": "Escribe al menos 2 caracteres para buscar",
+    "groupActions": "Acciones",
+    "groupTasks": "Tareas",
+    "groupProjects": "Proyectos",
+    "newTask": "Nueva tarea",
+    "goToday": "Ir a Hoy",
+    "goAgenda": "Ir a Agenda",
+    "changeTheme": "Cambiar tema",
+    "results": "Resultados",
+    "searching": "Buscando…",
+    "noResults": "Sin resultados",
+    "error": "No se pudo buscar",
+    "resultsCount": "{{n}} resultados"
+  },
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "search": "Ctrl o ⌘ + K: buscar y comandos",
+    "newTask": "N: nueva tarea en el proyecto abierto",
+    "today": "G y luego H: ir a Hoy",
+    "agenda": "G y luego A: ir a Agenda",
+    "help": "?: mostrar esta ayuda",
+    "escape": "Esc: cerrar diálogos"
   },
   "push": {
     "activar": "Activar avisos del navegador",

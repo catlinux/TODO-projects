@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link, Outlet, useParams } from "react-router-dom";
+import { Link, Outlet, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
 import { peticion, type ColumnaApi, type EtiquetaApi, type ProyectoApi, type TareaApi } from "../api";
@@ -54,6 +54,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const { t } = useTranslation();
   const { id } = useParams();
   const proyectoId = id ?? "";
+  const [parametros, setParametros] = useSearchParams();
   const cliente = useQueryClient();
 
   const proyecto = useQuery({
@@ -94,6 +95,15 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
       setColumnaSeleccionada(columnas.data[0].id);
     }
   }, [columnas.data, columnaSeleccionada]);
+
+  // «?nueva=1» (desde la paleta o el atajo «N»): abre el diálogo y limpia el parámetro.
+  useEffect(() => {
+    if (parametros.get("nueva") !== "1") return;
+    setDialogoTareaAbierto(true);
+    const copia = new URLSearchParams(parametros);
+    copia.delete("nueva");
+    setParametros(copia, { replace: true });
+  }, [parametros, setParametros]);
 
   useEffect(() => {
     const dialogo = refDialogo.current;

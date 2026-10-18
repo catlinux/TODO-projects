@@ -2833,3 +2833,176 @@ fieldset {
 .tarjeta-kanban__insignia--comentarios .tarjeta-kanban__icono {
   color: inherit;
 }
+
+/* Paleta de búsqueda y comandos (paso D2). */
+.menu-lateral__buscar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: var(--objetivo-tactil);
+  padding: 0 0.6rem;
+  margin-bottom: 0.4rem;
+  color: var(--menu-texto);
+  text-align: left;
+  background: var(--tarjeta);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-control);
+}
+
+.menu-lateral__buscar:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--activo);
+  border-color: var(--lineas);
+}
+
+.menu-lateral__buscar-texto {
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.menu-lateral__atajo {
+  flex: 0 0 auto;
+  padding: 0.1rem 0.4rem;
+  font-family: var(--fuente-mono);
+  font-size: 0.7rem;
+  color: var(--texto-secundario);
+  background: var(--chip);
+  border-radius: 6px;
+}
+
+.paleta {
+  width: min(560px, calc(100vw - 2rem));
+  margin-top: 12vh;
+  padding: 0;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-dialogo);
+  box-shadow: var(--sombra-dialogo);
+}
+
+.paleta::backdrop {
+  background: var(--velo);
+}
+
+.paleta__cuerpo {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem;
+}
+
+.paleta__campo {
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: 0 0.8rem;
+  font-size: 1rem;
+}
+
+.paleta__estado {
+  min-height: 1.05rem;
+  margin: 0;
+  padding: 0 0.2rem;
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+.paleta__vacio,
+.paleta__ayuda {
+  margin: 0;
+  padding: 0.4rem 0.6rem;
+  color: var(--texto-secundario);
+}
+
+.paleta__estado--error {
+  color: var(--error);
+}
+
+.paleta__lista {
+  display: grid;
+  gap: 2px;
+  max-height: min(52vh, 420px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.paleta__grupo {
+  padding: 0.5rem 0.5rem 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+.paleta__opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: var(--objetivo-tactil);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radio-control);
+  cursor: pointer;
+}
+
+.paleta__opcion--activa {
+  background: var(--activo);
+}
+
+.paleta__color {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  background: var(--lineas);
+  border-radius: 4px;
+}
+
+.paleta__texto {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.paleta__titulo {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.paleta__titulo--hecha {
+  color: var(--texto-secundario);
+  text-decoration: line-through;
+}
+
+.paleta__detalle {
+  font-size: 0.78rem;
+  color: var(--texto-secundario);
+}
+
+.paleta__fecha {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
+/* Ayuda de atajos («?»). */
+.ayuda-atajos__lista {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ayuda-atajos__fila {
+  padding: 0.55rem 0.7rem;
+  background: var(--chip);
+  border-radius: var(--radio-control);
+}

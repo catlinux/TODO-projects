@@ -246,6 +246,64 @@ describe("ProyectoDetalle", () => {
     await waitFor(() => expect(screen.queryByLabelText(/^título$/i)).toBeNull());
   });
 
+  it("abre el diálogo de nueva tarea con ?nueva=1", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1?nueva=1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByLabelText(/^título$/i)).toBeTruthy();
+  });
+
   it("mueve una tarea con el selector y envía el PATCH", async () => {
     let movido = false;
 
