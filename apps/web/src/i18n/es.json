@@ -101,7 +101,10 @@
     "reminderUnknown": "{{minutos}} minutos antes",
     "new": "Nueva tarea",
     "hasReminder": "Con aviso",
-    "closeDialog": "Cerrar"
+    "closeDialog": "Cerrar",
+    "options": "Opciones de la tarjeta",
+    "addCard": "Añadir tarjeta",
+    "cardTitle": "Título de la tarjeta"
   },
   "columns": {
     "title": "Columnas",

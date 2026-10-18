@@ -339,8 +339,11 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
-    const selector = await screen.findByRole("combobox", { name: /mover a/i });
-    await user.selectOptions(selector, "En curso");
+    await user.click(
+      await screen.findByRole("button", { name: /opciones de la tarjeta tarea movable/i }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: /mover a/i }));
+    await user.click(screen.getByRole("menuitem", { name: /^en curso$/i }));
     await waitFor(() => expect(movido).toBe(true));
   });
 
@@ -686,7 +689,8 @@ describe("ProyectoDetalle", () => {
     );
 
     expect(await screen.findByRole("img", { name: /se repite/i })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: /editar/i }));
+    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta/i }));
+    await user.click(screen.getByRole("menuitem", { name: /^editar$/i }));
 
     const fecha = screen.getAllByLabelText(/fecha y hora/i).at(-1)!;
     fireEvent.change(fecha, { target: { value: "" } });
@@ -779,7 +783,8 @@ describe("ProyectoDetalle", () => {
     );
 
     expect(await screen.findByRole("img", { name: /con aviso/i })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: /editar/i }));
+    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta/i }));
+    await user.click(screen.getByRole("menuitem", { name: /^editar$/i }));
 
     const selector = screen.getAllByLabelText(/avisar antes/i).at(-1)!;
     await user.selectOptions(selector, "none");

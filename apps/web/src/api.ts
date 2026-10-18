@@ -31,6 +31,10 @@ export interface ColumnaApi {
   updatedAt: string;
 }
 
+export type PortadaTareaApi =
+  | { tipo: "color"; valor: string }
+  | { tipo: "imagen"; archivoId: string };
+
 export interface TareaApi {
   id: string;
   proyectoId: string;
@@ -42,6 +46,10 @@ export interface TareaApi {
   recurrencia?: string | null;
   zona?: string | null;
   recordatorioMin?: number | null;
+  /** La fase C la añadirá a la API; la de imagen se ignora hasta la fase E. */
+  portada?: PortadaTareaApi | null;
+  /** La fase B la añadirá a la API; aún no se pinta en la tarjeta. */
+  etiquetas?: string[];
   createdAt: string;
   updatedAt: string;
 }

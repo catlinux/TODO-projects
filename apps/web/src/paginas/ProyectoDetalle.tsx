@@ -124,6 +124,20 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     },
   });
 
+  const crearTareaRapida = useMutation({
+    mutationFn: async ({ columnaId, titulo }: { columnaId: string; titulo: string }) =>
+      peticion(`/proyectos/${proyectoId}/tareas`, {
+        method: "POST",
+        body: JSON.stringify({ titulo, columnaId }),
+      }),
+    onSuccess: async () => {
+      await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
+    },
+    onError: (err: unknown) => {
+      setErrorColumna(err instanceof Error ? err.message : t("auth.error"));
+    },
+  });
+
   const crearColumna = useMutation({
     mutationFn: async (nombre: string) =>
       peticion(`/proyectos/${proyectoId}/columnas`, {
@@ -238,6 +252,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
             proyectoId={proyectoId}
             columnas={listaColumnas}
             tareas={listaTareas}
+            onCrearTarea={(columnaId, titulo) => crearTareaRapida.mutate({ columnaId, titulo })}
             onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
             onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
             onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}

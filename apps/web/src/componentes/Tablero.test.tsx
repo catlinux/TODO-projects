@@ -20,6 +20,7 @@ const tareasIniciales: TareaApi[] = [
     columnaId: "c1",
     titulo: "Tarea inicial",
     posicion: 0,
+    portada: { tipo: "color", valor: "#6e4fe6" },
     createdAt: "",
     updatedAt: "",
   },
@@ -29,6 +30,7 @@ const tareasIniciales: TareaApi[] = [
     columnaId: "c2",
     titulo: "Otra",
     posicion: 0,
+    portada: { tipo: "imagen", archivoId: "a1" },
     createdAt: "",
     updatedAt: "",
   },
@@ -39,6 +41,7 @@ interface FichaProps {
 }
 
 const accionesColumnas = {
+  onCrearTarea: vi.fn(),
   onCrearColumna: vi.fn(),
   onRenombrarColumna: vi.fn(),
   onMoverColumna: vi.fn(),
@@ -170,5 +173,122 @@ describe("Tablero", () => {
     await user.click(screen.getByRole("button", { name: /opciones de la columna en curso/i }));
     await user.click(screen.getByRole("menuitem", { name: /eliminar columna/i }));
     expect(accionesColumnas.onEliminarColumna).toHaveBeenCalledWith("c2");
+  });
+
+  it("abre el menú de una tarjeta y ejecuta editar, mover y eliminar", async () => {
+    const user = userEvent.setup();
+    const peticiones: Array<{ url: string; method: string; body: unknown }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = String(init?.method ?? "GET").toUpperCase();
+        if (url === "/api/tareas/t1" && (method === "PATCH" || method === "DELETE")) {
+          peticiones.push({
+            url,
+            method,
+            body: init?.body ? JSON.parse(String(init.body)) : null,
+          });
+        }
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    usarTablero();
+
+    const boton = screen.getByRole("button", { name: /opciones de la tarjeta tarea inicial/i });
+    expect(boton.getAttribute("aria-expanded")).toBe("false");
+
+    await user.click(boton);
+    expect(boton.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("menuitem", { name: /^editar$/i })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /mover a/i })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /^eliminar$/i })).toBeTruthy();
+
+    // Editar abre el formulario de la tarjeta.
+    await user.click(screen.getByRole("menuitem", { name: /^editar$/i }));
+    expect(screen.getByDisplayValue("Tarea inicial")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    // Mover a… abre la lista de columnas y mueve la tarea.
+    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta tarea inicial/i }));
+    await user.click(screen.getByRole("menuitem", { name: /mover a/i }));
+    await user.click(screen.getByRole("menuitem", { name: /^en curso$/i }));
+    await waitFor(() => {
+      expect(peticiones).toContainEqual({
+        url: "/api/tareas/t1",
+        method: "PATCH",
+        body: { columnaId: "c2" },
+      });
+    });
+
+    // Eliminar ejecuta el DELETE.
+    await user.click(screen.getByRole("button", { name: /opciones de la tarjeta tarea inicial/i }));
+    await user.click(screen.getByRole("menuitem", { name: /^eliminar$/i }));
+    await waitFor(() => {
+      expect(peticiones).toContainEqual({ url: "/api/tareas/t1", method: "DELETE", body: null });
+    });
+  });
+
+  it("cierra el menú de la tarjeta con Esc y devuelve el foco", async () => {
+    const user = userEvent.setup();
+    usarTablero();
+
+    const boton = screen.getByRole("button", { name: /opciones de la tarjeta tarea inicial/i });
+    await user.click(boton);
+    expect(boton.getAttribute("aria-expanded")).toBe("true");
+
+    await user.keyboard("{Escape}");
+    expect(boton.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(boton);
+  });
+
+  it("crea una tarjeta con Intro y deja el campo abierto y vacío", async () => {
+    const user = userEvent.setup();
+    usarTablero();
+
+    await user.click(screen.getAllByRole("button", { name: /añadir tarjeta/i })[0]!);
+    const campo = screen.getByRole("textbox", { name: /título de la tarjeta/i });
+    await user.type(campo, "Nueva tarjeta{Enter}");
+
+    expect(accionesColumnas.onCrearTarea).toHaveBeenCalledWith("c1", "Nueva tarjeta");
+    const siguen = screen.getByRole("textbox", { name: /título de la tarjeta/i });
+    expect((siguen as HTMLInputElement).value).toBe("");
+    expect(document.activeElement).toBe(siguen);
+  });
+
+  it("no crea una tarjeta con el título vacío y cierra con Esc", async () => {
+    const user = userEvent.setup();
+    usarTablero();
+
+    await user.click(screen.getAllByRole("button", { name: /añadir tarjeta/i })[0]!);
+    const campo = screen.getByRole("textbox", { name: /título de la tarjeta/i });
+    await user.type(campo, "{Enter}");
+    expect(accionesColumnas.onCrearTarea).not.toHaveBeenCalled();
+
+    await user.type(campo, "Sin guardar{Escape}");
+    expect(screen.queryByRole("textbox", { name: /título de la tarjeta/i })).toBeNull();
+    expect(screen.getAllByRole("button", { name: /añadir tarjeta/i })).toHaveLength(2);
+    expect(accionesColumnas.onCrearTarea).not.toHaveBeenCalled();
+  });
+
+  it("marca como hecha la tarjeta de la última columna", () => {
+    usarTablero();
+
+    const hecha = screen.getByText("Otra").closest("li");
+    expect(hecha?.className).toContain("tarjeta-kanban--hecha");
+    const pendiente = screen.getByText("Tarea inicial").closest("li");
+    expect(pendiente?.className).not.toContain("tarjeta-kanban--hecha");
+  });
+
+  it("pinta la portada de color e ignora la de imagen", () => {
+    usarTablero();
+
+    const conColor = screen.getByText("Tarea inicial").closest("li");
+    expect(conColor?.querySelector(".tarjeta-kanban__portada")).not.toBeNull();
+    const conImagen = screen.getByText("Otra").closest("li");
+    expect(conImagen?.querySelector(".tarjeta-kanban__portada")).toBeNull();
   });
 });

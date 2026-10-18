@@ -922,14 +922,13 @@ fieldset {
 }
 
 .tarjeta-kanban {
-  list-style: none;
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
-  padding: 0.75rem;
+  position: relative;
+  overflow: hidden;
   display: grid;
-  gap: 0.5rem;
-  box-shadow: var(--sombra-1);
+  list-style: none;
+  background: var(--tarjeta);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tarjeta-kanban--arrastrando {
@@ -937,32 +936,118 @@ fieldset {
 }
 
 .tarjeta-kanban--superpuesta {
-  border-color: var(--acento);
+  padding: 10px 12px;
   box-shadow: var(--sombra-3);
   transform: rotate(-1.5deg);
 }
 
-.tarjeta-kanban__encabezado {
+/* Asa y «⋯»: discretos, aparecen al pasar el ratón o al enfocar la tarjeta. */
+.tarjeta-kanban__barra {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  left: 4px;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
 }
 
-.tarjeta-kanban__titulo {
-  font-weight: 600;
+.tarjeta-kanban:hover .tarjeta-kanban__barra,
+.tarjeta-kanban:focus-within .tarjeta-kanban__barra {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* En táctil no hay hover: los mandos quedan siempre a la vista. */
+@media (hover: none) {
+  .tarjeta-kanban__barra {
+    position: static;
+    padding: 4px 4px 0;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.tarjeta-kanban__asa,
+.tarjeta-kanban__opciones {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--menu-texto);
+  background: var(--chip);
+  border: none;
+  border-radius: 8px;
 }
 
 .tarjeta-kanban__asa {
-  width: 1.75rem;
-  padding: 0.25rem 0;
   cursor: grab;
 }
 
-.tarjeta-kanban__meta {
+.tarjeta-kanban__asa:hover:not(:disabled),
+.tarjeta-kanban__opciones:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--activo);
+  border-color: transparent;
+}
+
+.tarjeta-kanban__portada {
+  display: block;
+  height: 80px;
+  background: var(--chip);
+}
+
+.tarjeta-kanban__cuerpo {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--texto);
+  background: transparent;
+  border: none;
+  border-radius: var(--radio-tarjeta);
+}
+
+/* El recorte de la portada recortaría el anillo de foco: se dibuja dentro. */
+.tarjeta-kanban__cuerpo:focus-visible {
+  outline-offset: -2px;
+}
+
+.tarjeta-kanban__cuerpo:hover:not(:disabled) {
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.tarjeta-kanban__titulo {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.38;
+  overflow-wrap: anywhere;
+}
+
+/* La última columna es «hecha»: título tachado y atenuado. */
+.tarjeta-kanban--hecha .tarjeta-kanban__titulo {
+  color: var(--secundario);
+  text-decoration: line-through;
+}
+
+.tarjeta-kanban__indicadores {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 6px;
+  font-size: 12px;
 }
 
 .chip-fecha {
@@ -988,29 +1073,97 @@ fieldset {
   color: var(--fecha-normal-texto);
 }
 
+.chip-fecha--hecha {
+  background: var(--hecho);
+  color: #fff;
+}
+
+.tarjeta-kanban__indicadores .chip-fecha {
+  padding: 1px 6px;
+  font-size: 12px;
+  border-radius: 5px;
+}
+
 .tarjeta-kanban__icono {
   flex: 0 0 auto;
   color: var(--texto-secundario);
 }
 
-.tarjeta-kanban__mover {
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
-}
-
-.tarjeta-kanban__mover label,
-.tarjeta-kanban__mover select {
-  width: 100%;
-}
-
-.tarjeta-kanban .acciones button {
-  font-size: 0.8rem;
-  color: var(--texto-secundario);
-}
-
 .tarjeta-kanban__edicion {
   display: grid;
-  gap: 0.5rem;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.tarjeta-kanban__edicion .acciones button {
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+}
+
+/* Menú de la tarjeta. Va en el flujo para que el recorte de la portada no lo corte. */
+.menu-tarjeta {
+  display: grid;
+  gap: 2px;
+  margin: 0 6px 6px;
+  padding: 4px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+  box-shadow: var(--sombra-2);
+}
+
+.menu-tarjeta button {
+  width: 100%;
+  min-height: 32px;
+  justify-content: flex-start;
+  padding: 0 8px;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--texto);
+  background: transparent;
+  border-color: transparent;
+}
+
+.menu-tarjeta button:hover:not(:disabled) {
+  background: var(--chip);
+  border-color: transparent;
+}
+
+.menu-tarjeta__submenu {
+  display: grid;
+  gap: 2px;
+  padding-left: 8px;
+}
+
+/* Alta de tarjeta en línea, al pie de la columna. */
+.columna-kanban__anadir {
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  justify-content: flex-start;
+  padding: 0 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--texto-secundario);
+  background: transparent;
+  border: none;
+}
+
+.columna-kanban__anadir:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--superficie);
+  border-color: transparent;
+}
+
+.columna-kanban__anadir-form {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.columna-kanban__anadir-form input {
+  width: 100%;
+  min-width: 0;
 }
 
 .agenda-lista h2 {

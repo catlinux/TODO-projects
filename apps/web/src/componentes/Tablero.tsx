@@ -32,6 +32,7 @@ export interface PropiedadesTablero {
   proyectoId: string;
   columnas: ColumnaApi[];
   tareas: TareaApi[];
+  onCrearTarea(columnaId: string, titulo: string): void;
   onCrearColumna(nombre: string): void;
   onRenombrarColumna(columnaId: string, nombre: string): void;
   onMoverColumna(columnaId: string, posicion: number): void;
@@ -45,11 +46,10 @@ export interface ControlTablero {
 interface TarjetaProps {
   tarea: TareaApi;
   columnas: ColumnaApi[];
+  hecha: boolean;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
   editarTarea(tareaId: string, valores: ValoresFormularioTarea): Promise<void>;
-  moverLabel: string;
-  eliminarLabel: string;
 }
 
 function IconoCampana({ etiqueta }: { etiqueta: string }) {
@@ -96,14 +96,18 @@ function IconoRepeticion({ etiqueta }: { etiqueta: string }) {
   );
 }
 
+/** Color de la portada; la portada de imagen se ignora hasta la fase E. */
+function colorDePortada(tarea: TareaApi): string | null {
+  return tarea.portada?.tipo === "color" ? tarea.portada.valor : null;
+}
+
 function TarjetaArrastrable({
   tarea,
   columnas,
+  hecha,
   borrarTarea,
   moverTarea,
   editarTarea,
-  moverLabel,
-  eliminarLabel,
 }: TarjetaProps) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -111,6 +115,9 @@ function TarjetaArrastrable({
     data: { titulo: tarea.titulo },
   });
   const [editando, setEditando] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const [submenuMover, setSubmenuMover] = useState(false);
+  const refOpciones = useRef<HTMLButtonElement>(null);
   const [valores, setValores] = useState<ValoresFormularioTarea>({
     titulo: tarea.titulo,
     descripcion: tarea.descripcion ?? "",
@@ -124,6 +131,8 @@ function TarjetaArrastrable({
     transition,
   };
 
+  const columnasOrdenadas = columnas.slice().sort((a, b) => a.posicion - b.posicion);
+
   function abrirEdicion() {
     setValores({
       titulo: tarea.titulo,
@@ -132,20 +141,41 @@ function TarjetaArrastrable({
       recurrencia: analizarRegla(tarea.recurrencia),
       recordatorioMin: tarea.recordatorioMin ?? null,
     });
+    setMenuAbierto(false);
+    setSubmenuMover(false);
     setEditando(true);
   }
 
+  function cerrarMenu(devolverFoco = true) {
+    setMenuAbierto(false);
+    setSubmenuMover(false);
+    if (devolverFoco) {
+      refOpciones.current?.focus();
+    }
+  }
+
   const chip = chipFecha(tarea.venceEn);
+  const estadoChip = hecha ? "hecha" : chip?.estado;
   const tieneAviso = tarea.recordatorioMin !== null && tarea.recordatorioMin !== undefined;
   const tieneRecurrencia = Boolean(tarea.recurrencia);
+  const colorPortada = colorDePortada(tarea);
 
   return (
     <li
       ref={setNodeRef}
-      className={`tarjeta-kanban ${isDragging ? "tarjeta-kanban--arrastrando" : ""}`}
+      className={`tarjeta-kanban${hecha ? " tarjeta-kanban--hecha" : ""}${
+        isDragging ? " tarjeta-kanban--arrastrando" : ""
+      }`}
       style={estilo}
+      onKeyDown={(evento) => {
+        if (evento.key === "Escape" && menuAbierto) {
+          evento.preventDefault();
+          evento.stopPropagation();
+          cerrarMenu();
+        }
+      }}
     >
-      <div className="tarjeta-kanban__encabezado">
+      <div className="tarjeta-kanban__barra">
         <button
           type="button"
           className="tarjeta-kanban__asa"
@@ -155,15 +185,28 @@ function TarjetaArrastrable({
         >
           ≡
         </button>
-        <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
+        <button
+          type="button"
+          className="tarjeta-kanban__opciones"
+          ref={refOpciones}
+          aria-label={`${t("tasks.options")} ${tarea.titulo}`}
+          aria-haspopup="menu"
+          aria-expanded={menuAbierto}
+          onClick={() => {
+            setSubmenuMover(false);
+            setMenuAbierto((abierto) => !abierto);
+          }}
+        >
+          ⋯
+        </button>
       </div>
 
-      {(chip || tieneAviso || tieneRecurrencia) && (
-        <div className="tarjeta-kanban__meta">
-          {chip && <span className={`chip-fecha chip-fecha--${chip.estado} mono`}>{chip.texto}</span>}
-          {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
-          {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
-        </div>
+      {colorPortada && (
+        <span
+          className="tarjeta-kanban__portada"
+          style={{ background: colorPortada }}
+          aria-hidden="true"
+        />
       )}
 
       {editando ? (
@@ -183,25 +226,60 @@ function TarjetaArrastrable({
           </div>
         </form>
       ) : (
-        <div className="acciones">
-          <button type="button" onClick={abrirEdicion}>
+        <button type="button" className="tarjeta-kanban__cuerpo" onClick={abrirEdicion}>
+          <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
+          {(chip || tieneAviso || tieneRecurrencia) && (
+            <span className="tarjeta-kanban__indicadores">
+              {chip && (
+                <span className={`chip-fecha chip-fecha--${estadoChip} mono`}>{chip.texto}</span>
+              )}
+              {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
+              {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
+            </span>
+          )}
+        </button>
+      )}
+
+      {menuAbierto && (
+        <div className="menu-tarjeta" role="menu" aria-label={t("tasks.options")}>
+          <button type="button" role="menuitem" onClick={abrirEdicion}>
             {t("tasks.edit")}
           </button>
-          <label className="tarjeta-kanban__mover">
-            {moverLabel}
-            <select
-              value={tarea.columnaId}
-              onChange={(evento) => void moverTarea(tarea.id, evento.target.value)}
-            >
-              {columnas.map((columna) => (
-                <option key={columna.id} value={columna.id}>
+          <button
+            type="button"
+            role="menuitem"
+            aria-haspopup="menu"
+            aria-expanded={submenuMover}
+            onClick={() => setSubmenuMover((abierto) => !abierto)}
+          >
+            {t("tasks.moveTo")}…
+          </button>
+          {submenuMover && (
+            <div className="menu-tarjeta__submenu" role="menu" aria-label={t("tasks.moveTo")}>
+              {columnasOrdenadas.map((columna) => (
+                <button
+                  key={columna.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    cerrarMenu(false);
+                    void moverTarea(tarea.id, columna.id);
+                  }}
+                >
                   {columna.nombre}
-                </option>
+                </button>
               ))}
-            </select>
-          </label>
-          <button type="button" onClick={() => void borrarTarea(tarea.id)}>
-            {eliminarLabel}
+            </div>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              cerrarMenu(false);
+              void borrarTarea(tarea.id);
+            }}
+          >
+            {t("tasks.delete")}
           </button>
         </div>
       )}
@@ -214,6 +292,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     proyectoId,
     columnas,
     tareas,
+    onCrearTarea,
     onCrearColumna,
     onRenombrarColumna,
     onMoverColumna,
@@ -228,6 +307,8 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
   const [columnaRenombrando, setColumnaRenombrando] = useState<string | null>(null);
   const [nombreRenombrado, setNombreRenombrado] = useState("");
+  const [columnaAnadiendo, setColumnaAnadiendo] = useState<string | null>(null);
+  const [tituloNuevaTarjeta, setTituloNuevaTarjeta] = useState("");
   const [creandoColumna, setCreandoColumna] = useState(false);
   const [nombreNuevaColumna, setNombreNuevaColumna] = useState("");
   const refsOpciones = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -304,6 +385,24 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     onCrearColumna(nombre);
     setNombreNuevaColumna("");
     setCreandoColumna(false);
+  }
+
+  function empezarAnadirTarjeta(columnaId: string) {
+    setTituloNuevaTarjeta("");
+    setColumnaAnadiendo(columnaId);
+  }
+
+  function cerrarAnadirTarjeta() {
+    setTituloNuevaTarjeta("");
+    setColumnaAnadiendo(null);
+  }
+
+  function confirmarNuevaTarjeta(columnaId: string) {
+    const titulo = tituloNuevaTarjeta.trim();
+    if (!titulo) return;
+    onCrearTarea(columnaId, titulo);
+    // El campo sigue abierto y vacío para encadenar tarjetas.
+    setTituloNuevaTarjeta("");
   }
 
   const gestionarFinArrastre = async (event: DragEndEvent): Promise<void> => {
@@ -496,17 +595,55 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                           key={tarea.id}
                           tarea={tarea}
                           columnas={columnas}
+                          hecha={indice === columnasOrdenadas.length - 1}
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}
                           editarTarea={editarTarea}
-                          moverLabel={t("tasks.moveTo")}
-                          eliminarLabel={t("tasks.delete")}
                         />
                       ))
                     )}
                   </ul>
                 </SortableContext>
               </ColumnaSolt>
+
+              {columnaAnadiendo === columna.id ? (
+                <form
+                  className="columna-kanban__anadir-form"
+                  onSubmit={(evento) => {
+                    evento.preventDefault();
+                    confirmarNuevaTarjeta(columna.id);
+                  }}
+                  onKeyDown={(evento) => {
+                    if (evento.key === "Escape") {
+                      evento.preventDefault();
+                      evento.stopPropagation();
+                      cerrarAnadirTarjeta();
+                    }
+                  }}
+                >
+                  <input
+                    aria-label={t("tasks.cardTitle")}
+                    placeholder={t("tasks.cardTitle")}
+                    autoFocus
+                    value={tituloNuevaTarjeta}
+                    onChange={(evento) => setTituloNuevaTarjeta(evento.target.value)}
+                  />
+                  <div className="acciones">
+                    <button type="submit">{t("tasks.create")}</button>
+                    <button type="button" onClick={cerrarAnadirTarjeta}>
+                      {t("tasks.cancel")}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  className="columna-kanban__anadir"
+                  onClick={() => empezarAnadirTarjeta(columna.id)}
+                >
+                  {t("tasks.addCard")}
+                </button>
+              )}
             </section>
           );
         })}
