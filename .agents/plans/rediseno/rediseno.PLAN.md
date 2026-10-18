@@ -30,7 +30,7 @@ Maqueta aprobada por el usuario: https://claude.ai/artifact/UneU1zYrzgqnNWkwrgJs
 - Archivos: `paginas/Hoy.tsx` (nuevo) + test, `App.tsx`, `componentes/BarraNavegacion.tsx`, `i18n/es.json`.
 - Ruta `/hoy`, que pasa a ser la de inicio (`/` redirige allí): Atrasadas, Hoy y Próximos 7 días a partir de `GET /agenda`, con enlace a su proyecto. Casilla para completar solo si ya existe una forma de marcar como hecha (mover a la última columna); si no, sin casilla. Primera entrada de la barra lateral y de la inferior.
 
-### Paso 5 — Página del proyecto · AgentRelay, esfuerzo medio · [ ]
+### Paso 5 — Página del proyecto · AgentRelay, esfuerzo medio · [x]
 - Archivos: `paginas/ProyectoDetalle.tsx` (+ test), `componentes/Tablero.tsx`, `componentes/CamposTarea.tsx`, `estilos.css`, `i18n/es.json`.
 - El tablero arriba y a todo el ancho (sin `max-width` de formulario). «Nueva tarea» abre un `<dialog>` con el formulario actual. La gestión de columnas (renombrar, mover, eliminar) pasa a un menú «⋯» en la cabecera de cada columna; «+ Columna» al final del tablero. Desaparecen las secciones «Columnas» y «Tareas del proyecto» como formularios sueltos.
 

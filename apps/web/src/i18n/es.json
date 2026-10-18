@@ -91,12 +91,15 @@
     "reminderShort": "Aviso: {{valor}}",
     "reminderUnknown": "{{minutos}} minutos antes",
     "new": "Nueva tarea",
-    "hasReminder": "Con aviso"
+    "hasReminder": "Con aviso",
+    "closeDialog": "Cerrar"
   },
   "columns": {
     "title": "Columnas",
     "name": "Nombre de la columna",
     "create": "Añadir columna",
+    "add": "+ Columna",
+    "options": "Opciones de la columna",
     "rename": "Renombrar",
     "save": "Guardar",
     "moveLeft": "Mover a la izquierda",

@@ -168,13 +168,80 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
-    await screen.findByLabelText(/nombre de la columna/i);
-    await user.type(screen.getByLabelText(/nombre de la columna/i), "Nueva");
+    await user.click(await screen.findByRole("button", { name: /\+ columna/i }));
+    await user.type(await screen.findByLabelText(/nombre de la columna/i), "Nueva");
     await user.click(screen.getByRole("button", { name: /añadir columna/i }));
 
     await waitFor(() => {
       expect(screen.getAllByText("Nueva").length).toBeGreaterThanOrEqual(1);
     });
+  });
+
+  it("abre el diálogo de nueva tarea y lo cierra con Escape", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByLabelText(/^título$/i)).toBeNull();
+
+    await user.click(await screen.findByRole("button", { name: /nueva tarea/i }));
+    const dialogo = await screen.findByRole("dialog");
+    expect(await screen.findByLabelText(/^título$/i)).toBeTruthy();
+
+    fireEvent.keyDown(dialogo, { key: "Escape" });
+
+    await waitFor(() => expect(screen.queryByLabelText(/^título$/i)).toBeNull());
   });
 
   it("mueve una tarea con el selector y envía el PATCH", async () => {
@@ -349,10 +416,106 @@ describe("ProyectoDetalle", () => {
       </QueryClientProvider>,
     );
 
-    const boton = await screen.findByRole("button", { name: /eliminar columna/i });
-    await user.click(boton);
+    const opciones = await screen.findByRole("button", {
+      name: /opciones de la columna pendiente/i,
+    });
+    await user.click(opciones);
+    await user.click(screen.getByRole("menuitem", { name: /eliminar columna/i }));
 
     expect(await screen.findByText("La columna no está vacía")).toBeTruthy();
+  });
+
+  it("renombra y mueve una columna desde el menú", async () => {
+    const cuerpos: Array<Record<string, unknown>> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/proyectos/p1") {
+          return new Response(
+            JSON.stringify({
+              id: "p1",
+              nombre: "Proyecto",
+              propietarioId: "u1",
+              createdAt: "",
+              updatedAt: "",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/columnas") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "c1",
+                proyectoId: "p1",
+                nombre: "Pendiente",
+                posicion: 0,
+                createdAt: "",
+                updatedAt: "",
+              },
+              {
+                id: "c2",
+                proyectoId: "p1",
+                nombre: "En curso",
+                posicion: 1,
+                createdAt: "",
+                updatedAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (url === "/api/proyectos/p1/tareas") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        if (url === "/api/columnas/c1" && method === "PATCH") {
+          cuerpos.push(JSON.parse(String(init?.body ?? "{}")));
+          return new Response(JSON.stringify({ id: "c1" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({}), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: /opciones de la columna pendiente/i }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: /renombrar/i }));
+
+    const campo = await screen.findByLabelText(/nombre de la columna/i);
+    await user.clear(campo);
+    await user.type(campo, "Backlog");
+    await user.click(screen.getByRole("button", { name: /guardar/i }));
+
+    await waitFor(() => expect(cuerpos.length).toBeGreaterThanOrEqual(1));
+    expect(cuerpos[0]).toMatchObject({ nombre: "Backlog" });
+
+    await user.click(screen.getByRole("button", { name: /opciones de la columna pendiente/i }));
+    await user.click(screen.getByRole("menuitem", { name: /mover a la derecha/i }));
+
+    await waitFor(() => expect(cuerpos.length).toBeGreaterThanOrEqual(2));
+    expect(cuerpos[1]).toMatchObject({ posicion: 1 });
   });
 
   it("crea una tarea con fecha y recurrencia", async () => {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { peticion, type ColumnaApi, type ProyectoApi, type TareaApi } from "../api";
 import { CamposTarea, type ValoresFormularioTarea } from "../componentes/CamposTarea";
@@ -16,6 +16,25 @@ function valoresIniciales(): ValoresFormularioTarea {
     recurrencia: recurrenciaPorDefecto(),
     recordatorioMin: null,
   };
+}
+
+function IconoCerrar() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6L6 18" />
+    </svg>
+  );
 }
 
 export default function ProyectoDetalle() {
@@ -43,19 +62,33 @@ export default function ProyectoDetalle() {
   });
 
   const [valores, setValores] = useState<ValoresFormularioTarea>(valoresIniciales);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [dialogoTareaAbierto, setDialogoTareaAbierto] = useState(false);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
-  const [nombreColumna, setNombreColumna] = useState("");
-  const [columnaEditando, setColumnaEditando] = useState<{ id: string; nombre: string } | null>(
-    null,
-  );
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
+  const refDialogo = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     if (!columnaSeleccionada && columnas.data && columnas.data.length > 0 && columnas.data[0]) {
       setColumnaSeleccionada(columnas.data[0].id);
     }
   }, [columnas.data, columnaSeleccionada]);
+
+  useEffect(() => {
+    const dialogo = refDialogo.current;
+    if (!dialogo) return;
+    if (dialogoTareaAbierto) {
+      if (typeof dialogo.showModal === "function") {
+        if (!dialogo.open) dialogo.showModal();
+      } else {
+        dialogo.setAttribute("open", "");
+      }
+      dialogo.querySelector<HTMLElement>("input, select, textarea")?.focus();
+    } else if (typeof dialogo.close === "function") {
+      if (dialogo.open) dialogo.close();
+    } else {
+      dialogo.removeAttribute("open");
+    }
+  }, [dialogoTareaAbierto]);
 
   const crearTarea = useMutation({
     mutationFn: async () => {
@@ -75,18 +108,18 @@ export default function ProyectoDetalle() {
     },
     onSuccess: async () => {
       setValores(valoresIniciales());
+      setDialogoTareaAbierto(false);
       await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
     },
   });
 
   const crearColumna = useMutation({
-    mutationFn: async () =>
+    mutationFn: async (nombre: string) =>
       peticion(`/proyectos/${proyectoId}/columnas`, {
         method: "POST",
-        body: JSON.stringify({ nombre: nombreColumna }),
+        body: JSON.stringify({ nombre }),
       }),
     onSuccess: async () => {
-      setNombreColumna("");
       setErrorColumna(null);
       await cliente.invalidateQueries({ queryKey: ["columnas", proyectoId] });
       await cliente.invalidateQueries({ queryKey: ["tareas", proyectoId] });
@@ -103,8 +136,11 @@ export default function ProyectoDetalle() {
         body: JSON.stringify({ nombre }),
       }),
     onSuccess: async () => {
-      setColumnaEditando(null);
+      setErrorColumna(null);
       await cliente.invalidateQueries({ queryKey: ["columnas", proyectoId] });
+    },
+    onError: (err: unknown) => {
+      setErrorColumna(err instanceof Error ? err.message : t("auth.error"));
     },
   });
 
@@ -115,7 +151,11 @@ export default function ProyectoDetalle() {
         body: JSON.stringify({ posicion }),
       }),
     onSuccess: async () => {
+      setErrorColumna(null);
       await cliente.invalidateQueries({ queryKey: ["columnas", proyectoId] });
+    },
+    onError: (err: unknown) => {
+      setErrorColumna(err instanceof Error ? err.message : t("auth.error"));
     },
   });
 
@@ -143,7 +183,7 @@ export default function ProyectoDetalle() {
   const listaTareas = tareas.data ?? [];
 
   return (
-    <main className="contenedor contenedor--ancho">
+    <main className="contenedor contenedor--tablero">
       <nav className="migas" aria-label={t("projects.breadcrumb")}>
         <Link to="/proyectos">{t("nav.projects")}</Link>
         <span aria-hidden="true">/</span>
@@ -155,131 +195,83 @@ export default function ProyectoDetalle() {
         <button
           type="button"
           className="boton-principal"
-          aria-expanded={mostrarFormulario}
-          aria-controls="formulario-tarea"
-          onClick={() => setMostrarFormulario((valor) => !valor)}
+          aria-haspopup="dialog"
+          onClick={() => setDialogoTareaAbierto(true)}
         >
           {t("tasks.new")}
         </button>
       </header>
 
-      {mostrarFormulario && (
-        <section id="formulario-tarea" className="panel-tarea">
-          <form
-            className="formulario"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void crearTarea.mutate();
-            }}
-          >
-            <CamposTarea valores={valores} onCambio={setValores} />
-            <label>
-              {t("columns.title")}
-              <select
-                value={columnaSeleccionada}
-                onChange={(e) => setColumnaSeleccionada(e.target.value)}
-              >
-                {listaColumnas.map((columna) => (
-                  <option key={columna.id} value={columna.id}>
-                    {columna.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" className="boton-principal" disabled={crearTarea.isPending}>
-              {t("tasks.create")}
-            </button>
-          </form>
-        </section>
-      )}
+      {errorColumna && <p className="error">{errorColumna}</p>}
 
-      <section className="tareas">
-        <h2>{t("tasks.listTitle")}</h2>
+      <Tablero
+        proyectoId={proyectoId}
+        columnas={listaColumnas}
+        tareas={listaTareas}
+        onCrearColumna={(nombre) => crearColumna.mutate(nombre)}
+        onRenombrarColumna={(columnaId, nombre) => renombrarColumna.mutate({ columnaId, nombre })}
+        onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
+        onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
+      />
 
-        <Tablero proyectoId={proyectoId} columnas={listaColumnas} tareas={listaTareas} />
-      </section>
-
-      <section className="gestion-columnas">
-        <h2>{t("columns.title")}</h2>
-        <form
-          className="formulario"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setErrorColumna(null);
-            void crearColumna.mutate();
-          }}
-        >
-          <label>
-            {t("columns.name")}
-            <input
-              value={nombreColumna}
-              onChange={(e) => setNombreColumna(e.target.value)}
-              required
-            />
-          </label>
-          {errorColumna && <p className="error">{errorColumna}</p>}
-          <button type="submit" disabled={crearColumna.isPending}>
-            {t("columns.create")}
-          </button>
-        </form>
-
-        <ul className="lista-columnas">
-          {listaColumnas.map((columna, index) => (
-            <li key={columna.id}>
-              {columnaEditando?.id === columna.id ? (
-                <>
-                  <input
-                    aria-label={t("columns.name")}
-                    value={columnaEditando.nombre}
-                    onChange={(e) => setColumnaEditando({ id: columna.id, nombre: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      renombrarColumna.mutate({
-                        columnaId: columna.id,
-                        nombre: columnaEditando.nombre,
-                      })
-                    }
-                  >
-                    {t("columns.save")}
-                  </button>
-                </>
-              ) : (
-                <span>{columna.nombre}</span>
-              )}
+      <dialog
+        ref={refDialogo}
+        className="dialogo-tarea"
+        aria-labelledby="titulo-dialogo-tarea"
+        onCancel={(evento) => {
+          evento.preventDefault();
+          setDialogoTareaAbierto(false);
+        }}
+        onKeyDown={(evento) => {
+          if (evento.key === "Escape") {
+            evento.preventDefault();
+            setDialogoTareaAbierto(false);
+          }
+        }}
+      >
+        {dialogoTareaAbierto && (
+          <div className="dialogo-tarea__cuerpo">
+            <div className="dialogo-tarea__cabecera">
+              <h2 id="titulo-dialogo-tarea">{t("tasks.new")}</h2>
               <button
                 type="button"
-                disabled={index === 0}
-                onClick={() =>
-                  reordenarColumna.mutate({ columnaId: columna.id, posicion: columna.posicion - 1 })
-                }
+                className="dialogo-tarea__cerrar"
+                aria-label={t("tasks.closeDialog")}
+                onClick={() => setDialogoTareaAbierto(false)}
               >
-                {t("columns.moveLeft")}
+                <IconoCerrar />
               </button>
-              <button
-                type="button"
-                disabled={index === listaColumnas.length - 1}
-                onClick={() =>
-                  reordenarColumna.mutate({ columnaId: columna.id, posicion: columna.posicion + 1 })
-                }
-              >
-                {t("columns.moveRight")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setColumnaEditando({ id: columna.id, nombre: columna.nombre })}
-              >
-                {t("columns.rename")}
-              </button>
-              <button type="button" onClick={() => borrarColumna.mutate(columna.id)}>
-                {t("columns.delete")}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {listaColumnas.length === 0 && <p>{t("columns.empty")}</p>}
-      </section>
+            </div>
+            <form
+              className="formulario"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void crearTarea.mutate();
+              }}
+            >
+              <CamposTarea valores={valores} onCambio={setValores} />
+              <label>
+                {t("columns.title")}
+                <select
+                  value={columnaSeleccionada}
+                  onChange={(e) => setColumnaSeleccionada(e.target.value)}
+                >
+                  {listaColumnas.map((columna) => (
+                    <option key={columna.id} value={columna.id}>
+                      {columna.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="acciones">
+                <button type="submit" className="boton-principal" disabled={crearTarea.isPending}>
+                  {t("tasks.create")}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </dialog>
     </main>
   );
 }

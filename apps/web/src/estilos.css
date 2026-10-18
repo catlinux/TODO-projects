@@ -115,12 +115,60 @@ a:hover {
   font-size: 1.6rem;
 }
 
-.panel-tarea {
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+.contenedor--tablero {
+  max-width: none;
+}
+
+.dialogo-tarea {
+  width: min(560px, calc(100vw - 2rem));
+  max-height: calc(100vh - 3rem);
+  padding: 0;
+  color: var(--texto);
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-tarjeta);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+}
+
+.dialogo-tarea::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.dialogo-tarea__cuerpo {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.dialogo-tarea__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dialogo-tarea__cabecera h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.dialogo-tarea__cerrar {
+  display: grid;
+  place-items: center;
+  min-width: var(--objetivo-tactil);
+  padding: 0.25rem;
+  color: var(--texto-secundario);
+  background: transparent;
+  border-color: transparent;
+}
+
+.dialogo-tarea__cerrar:hover:not(:disabled) {
+  background: var(--columna);
+  border-color: transparent;
+}
+
+.dialogo-tarea .formulario {
+  margin-bottom: 0;
 }
 
 .rejilla-proyectos {
@@ -508,12 +556,108 @@ fieldset {
   flex: 1 1 240px;
 }
 
+.columna-agregar {
+  flex: 1 1 240px;
+  min-width: 240px;
+  max-width: 340px;
+  min-height: 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0;
+  padding: 0.75rem;
+  color: var(--texto-secundario);
+  text-align: left;
+  background: transparent;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio-columna);
+}
+
+.columna-agregar:hover:not(:disabled) {
+  color: var(--acento);
+  border-color: var(--acento);
+}
+
+.columna-agregar input {
+  min-width: 0;
+}
+
 .columna-kanban__cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0 0.15rem;
+}
+
+.columna-kanban__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.columna-kanban__opciones {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-width: var(--objetivo-tactil);
+  padding: 0.25rem 0.5rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--texto-secundario);
+  background: transparent;
+  border-color: transparent;
+}
+
+.columna-kanban__opciones:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--superficie);
+  border-color: transparent;
+}
+
+.columna-kanban__renombrar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0;
+}
+
+.columna-kanban__renombrar input {
+  flex: 1;
+  min-width: 0;
+}
+
+.columna-kanban__renombrar button {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.menu-columna {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-control);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+}
+
+.menu-columna button {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 0.6rem;
+  font-size: 0.9rem;
+  text-align: left;
+  color: var(--texto);
+  background: transparent;
+  border-color: transparent;
+}
+
+.menu-columna button:hover:not(:disabled) {
+  background: var(--columna);
+  border-color: transparent;
 }
 
 .columna-kanban__cabecera h3 {
@@ -1035,6 +1179,10 @@ fieldset {
   }
 
   .columna-kanban {
+    max-width: none;
+  }
+
+  .columna-agregar {
     max-width: none;
   }
 }

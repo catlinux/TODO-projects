@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import "../i18n/index";
 import { type ColumnaApi, type TareaApi } from "../api";
 import { Tablero, type ControlTablero } from "./Tablero";
 
@@ -36,10 +38,25 @@ interface FichaProps {
   onRef: (ref: { current: ControlTablero | null }) => void;
 }
 
+const accionesColumnas = {
+  onCrearColumna: vi.fn(),
+  onRenombrarColumna: vi.fn(),
+  onMoverColumna: vi.fn(),
+  onEliminarColumna: vi.fn(),
+};
+
 function WrapperDePrueba({ onRef }: FichaProps) {
   const ref = useRef<ControlTablero>(null);
   useEffect(() => onRef(ref), [onRef]);
-  return <Tablero ref={ref} proyectoId="p1" columnas={columnas} tareas={tareasIniciales} />;
+  return (
+    <Tablero
+      ref={ref}
+      proyectoId="p1"
+      columnas={columnas}
+      tareas={tareasIniciales}
+      {...accionesColumnas}
+    />
+  );
 }
 
 function usarTablero() {
@@ -59,7 +76,11 @@ function usarTablero() {
 }
 
 describe("Tablero", () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
+  });
 
   it("envía el PATCH y actualiza la caché al soltar", async () => {
     const cuerpo: { body: unknown } = { body: undefined };
@@ -128,5 +149,26 @@ describe("Tablero", () => {
     expect(
       cliente.getQueryData<TareaApi[]>(["tareas", "p1"])?.find((t) => t.id === "t1")?.columnaId,
     ).toBe("c1");
+  });
+
+  it("abre el menú de una columna y permite moverla y eliminarla", async () => {
+    const user = userEvent.setup();
+    usarTablero();
+
+    const boton = screen.getByRole("button", { name: /opciones de la columna pendiente/i });
+    expect(boton.getAttribute("aria-expanded")).toBe("false");
+
+    await user.click(boton);
+    expect(boton.getAttribute("aria-expanded")).toBe("true");
+    expect(
+      (screen.getByRole("menuitem", { name: /mover a la izquierda/i }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    await user.click(screen.getByRole("menuitem", { name: /mover a la derecha/i }));
+    expect(accionesColumnas.onMoverColumna).toHaveBeenCalledWith("c1", 1);
+
+    await user.click(screen.getByRole("button", { name: /opciones de la columna en curso/i }));
+    await user.click(screen.getByRole("menuitem", { name: /eliminar columna/i }));
+    expect(accionesColumnas.onEliminarColumna).toHaveBeenCalledWith("c2");
   });
 });

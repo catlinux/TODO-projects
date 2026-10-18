@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -32,6 +32,10 @@ export interface PropiedadesTablero {
   proyectoId: string;
   columnas: ColumnaApi[];
   tareas: TareaApi[];
+  onCrearColumna(nombre: string): void;
+  onRenombrarColumna(columnaId: string, nombre: string): void;
+  onMoverColumna(columnaId: string, posicion: number): void;
+  onEliminarColumna(columnaId: string): void;
 }
 
 export interface ControlTablero {
@@ -206,13 +210,27 @@ function TarjetaArrastrable({
 }
 
 export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function Tablero(
-  { proyectoId, columnas, tareas },
+  {
+    proyectoId,
+    columnas,
+    tareas,
+    onCrearColumna,
+    onRenombrarColumna,
+    onMoverColumna,
+    onEliminarColumna,
+  },
   ref,
 ) {
   const { t } = useTranslation();
   const cliente = useQueryClient();
   const queryKey = ["tareas", proyectoId];
   const [activa, setActiva] = useState<TareaApi | null>(null);
+  const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
+  const [columnaRenombrando, setColumnaRenombrando] = useState<string | null>(null);
+  const [nombreRenombrado, setNombreRenombrado] = useState("");
+  const [creandoColumna, setCreandoColumna] = useState(false);
+  const [nombreNuevaColumna, setNombreNuevaColumna] = useState("");
+  const refsOpciones = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -260,6 +278,32 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
 
   function buscarColumnaDeTarea(tareaId: string): string | null {
     return tareas.find((item) => item.id === tareaId)?.columnaId ?? null;
+  }
+
+  function cerrarMenu(columnaId: string) {
+    setMenuAbierto(null);
+    refsOpciones.current[columnaId]?.focus();
+  }
+
+  function empezarRenombrado(columna: ColumnaApi) {
+    setMenuAbierto(null);
+    setNombreRenombrado(columna.nombre);
+    setColumnaRenombrando(columna.id);
+  }
+
+  function confirmarRenombrado(columnaId: string) {
+    const nombre = nombreRenombrado.trim();
+    if (!nombre) return;
+    onRenombrarColumna(columnaId, nombre);
+    setColumnaRenombrando(null);
+  }
+
+  function confirmarNuevaColumna() {
+    const nombre = nombreNuevaColumna.trim();
+    if (!nombre) return;
+    onCrearColumna(nombre);
+    setNombreNuevaColumna("");
+    setCreandoColumna(false);
   }
 
   const gestionarFinArrastre = async (event: DragEndEvent): Promise<void> => {
@@ -348,14 +392,99 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
       accessibility={{ announcements: anuncios }}
     >
       <div className="tablero" role="list" aria-label={t("tasks.listTitle")}>
-        {columnasOrdenadas.map((columna) => {
+        {columnasOrdenadas.map((columna, indice) => {
           const tareasColumna = tareasPorColumna(columna.id);
+          const menuVisible = menuAbierto === columna.id;
           return (
-            <section key={columna.id} className="columna-kanban" aria-label={columna.nombre}>
+            <section
+              key={columna.id}
+              className="columna-kanban"
+              aria-label={columna.nombre}
+              onKeyDown={(evento) => {
+                if (evento.key === "Escape" && menuVisible) {
+                  evento.preventDefault();
+                  cerrarMenu(columna.id);
+                }
+              }}
+            >
               <div className="columna-kanban__cabecera">
-                <h3>{columna.nombre}</h3>
-                <span className="columna-kanban__contador mono">{tareasColumna.length}</span>
+                {columnaRenombrando === columna.id ? (
+                  <form
+                    className="columna-kanban__renombrar"
+                    onSubmit={(evento) => {
+                      evento.preventDefault();
+                      confirmarRenombrado(columna.id);
+                    }}
+                  >
+                    <input
+                      aria-label={t("columns.name")}
+                      autoFocus
+                      value={nombreRenombrado}
+                      onChange={(evento) => setNombreRenombrado(evento.target.value)}
+                    />
+                    <button type="submit">{t("columns.save")}</button>
+                  </form>
+                ) : (
+                  <div className="columna-kanban__titulo">
+                    <h3>{columna.nombre}</h3>
+                    <span className="columna-kanban__contador mono">{tareasColumna.length}</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="columna-kanban__opciones"
+                  ref={(elemento) => {
+                    refsOpciones.current[columna.id] = elemento;
+                  }}
+                  aria-label={`${t("columns.options")} ${columna.nombre}`}
+                  aria-haspopup="menu"
+                  aria-expanded={menuVisible}
+                  onClick={() => setMenuAbierto(menuVisible ? null : columna.id)}
+                >
+                  ⋯
+                </button>
               </div>
+
+              {menuVisible && (
+                <div className="menu-columna" role="menu" aria-label={t("columns.options")}>
+                  <button type="button" role="menuitem" onClick={() => empezarRenombrado(columna)}>
+                    {t("columns.rename")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={indice === 0}
+                    onClick={() => {
+                      setMenuAbierto(null);
+                      onMoverColumna(columna.id, columna.posicion - 1);
+                    }}
+                  >
+                    {t("columns.moveLeft")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={indice === columnasOrdenadas.length - 1}
+                    onClick={() => {
+                      setMenuAbierto(null);
+                      onMoverColumna(columna.id, columna.posicion + 1);
+                    }}
+                  >
+                    {t("columns.moveRight")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuAbierto(null);
+                      onEliminarColumna(columna.id);
+                    }}
+                  >
+                    {t("columns.delete")}
+                  </button>
+                </div>
+              )}
+
               <ColumnaSolt id={columna.id}>
                 <SortableContext id={columna.id} items={tareasColumna.map((item) => item.id)}>
                   <ul className="columna-kanban__tareas">
@@ -381,6 +510,32 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
             </section>
           );
         })}
+
+        {creandoColumna ? (
+          <form
+            className="columna-agregar"
+            onSubmit={(evento) => {
+              evento.preventDefault();
+              confirmarNuevaColumna();
+            }}
+          >
+            <input
+              aria-label={t("columns.name")}
+              autoFocus
+              value={nombreNuevaColumna}
+              onChange={(evento) => setNombreNuevaColumna(evento.target.value)}
+            />
+            <button type="submit">{t("columns.create")}</button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            className="columna-agregar"
+            onClick={() => setCreandoColumna(true)}
+          >
+            {t("columns.add")}
+          </button>
+        )}
       </div>
       <DragOverlay>
         {activa ? (
