@@ -4,6 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.12.0] - 2026-10-18
+
+### Añadido
+- Comentarios en la tarjeta (Ctrl+Intro para enviar; solo el autor edita o borra) e historial de cambios (creación, movimientos, fechas, etiquetas, checklist y portada) en un panel de actividad: `POST /tareas/:id/comentarios`, `PATCH/DELETE /comentarios/:id` y `GET /tareas/:id/actividad` paginado.
+- Portada de tarjeta: 6 colores y 4 patrones, visible en el tablero; `PATCH /tareas/:id` acepta `portada`.
+- Insignia de comentarios en las tarjetas; `GET /proyectos/:id/tareas` devuelve `comentarios`. Migración `0013`.
+
 ## [0.11.0] - 2026-10-18
 
 ### Añadido
