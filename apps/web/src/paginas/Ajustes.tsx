@@ -12,10 +12,20 @@ import {
 } from "../api";
 import { useCerrarSesion } from "../cerrarSesion";
 import { AvisosNavegador } from "../componentes/AvisosNavegador";
+import { ESTILOS, useEstilo, type Estilo } from "../estilo";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
 import { registrarHuella, soportaHuella } from "../huella";
+import { useTema, type Tema } from "../tema";
 
 const PERMISOS: PermisoTokenApi[] = ["lectura", "escritura", "calendario"];
+
+const MODOS: readonly Tema[] = ["claro", "oscuro", "sistema"];
+
+// Colores fijos de las miniaturas: representan cada tema y no dependen del activo.
+const MAQUETAS_ESTILO: Record<Estilo, { menu: string; panel: string; barra: string }> = {
+  sobrio: { menu: "#17191e", panel: "#f7f8fa", barra: "#d3d7de" },
+  sereno: { menu: "#f3f2f0", panel: "#fdfdfc", barra: "#dcd9d4" },
+};
 
 interface HuellaDispositivoApi {
   id: string;
@@ -27,6 +37,8 @@ interface HuellaDispositivoApi {
 export default function Ajustes() {
   const { t } = useTranslation();
   const cliente = useQueryClient();
+  const { estilo, cambiarEstilo } = useEstilo();
+  const { tema, cambiarTema } = useTema();
 
   const [nombre, setNombre] = useState("");
   const [permiso, setPermiso] = useState<PermisoTokenApi>("lectura");
@@ -159,6 +171,83 @@ export default function Ajustes() {
       <header className="pagina__cabecera">
         <h1 className="pagina__titulo">{t("settings.title")}</h1>
       </header>
+
+      <section className="panel-tarjeta" aria-labelledby="ajustes-apariencia">
+        <div className="panel-tarjeta__cabecera">
+          <h2 className="panel-tarjeta__titulo" id="ajustes-apariencia">
+            {t("settings.appearance")}
+          </h2>
+          <p className="panel-tarjeta__descripcion">{t("settings.appearanceDescription")}</p>
+        </div>
+
+        <h3 className="apariencia__grupo" id="apariencia-estilo">
+          {t("settings.style")}
+        </h3>
+        <div className="apariencia__rejilla" role="radiogroup" aria-label={t("settings.style")}>
+          {ESTILOS.map((opcion) => {
+            const seleccionado = estilo === opcion;
+            const maqueta = MAQUETAS_ESTILO[opcion];
+            return (
+              <button
+                key={opcion}
+                type="button"
+                role="radio"
+                aria-checked={seleccionado}
+                aria-labelledby={`apariencia-estilo-${opcion}`}
+                aria-describedby={`apariencia-estilo-${opcion}-desc`}
+                className={`apariencia__tarjeta${seleccionado ? " apariencia__tarjeta--activa" : ""}`}
+                onClick={() => cambiarEstilo(opcion)}
+              >
+                <span className="apariencia__maqueta" aria-hidden="true">
+                  <span
+                    className="apariencia__maqueta-menu"
+                    style={{ backgroundColor: maqueta.menu }}
+                  />
+                  <span
+                    className="apariencia__maqueta-panel"
+                    style={{ backgroundColor: maqueta.panel }}
+                  >
+                    <span
+                      className="apariencia__maqueta-barra"
+                      style={{ backgroundColor: maqueta.barra }}
+                    />
+                    <span
+                      className="apariencia__maqueta-barra"
+                      style={{ backgroundColor: maqueta.barra }}
+                    />
+                  </span>
+                </span>
+                <span className="apariencia__texto">
+                  <span className="apariencia__nombre" id={`apariencia-estilo-${opcion}`}>
+                    {t(`settings.styles.${opcion}.nombre`)}
+                  </span>
+                  <span className="apariencia__detalle" id={`apariencia-estilo-${opcion}-desc`}>
+                    {t(`settings.styles.${opcion}.descripcion`)}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <h3 className="apariencia__grupo" id="apariencia-modo">
+          {t("settings.mode")}
+        </h3>
+        <div className="apariencia__modos" role="radiogroup" aria-label={t("settings.mode")}>
+          {MODOS.map((opcion) => (
+            <button
+              key={opcion}
+              type="button"
+              role="radio"
+              aria-checked={tema === opcion}
+              className={`apariencia__modo${tema === opcion ? " apariencia__modo--activo" : ""}`}
+              onClick={() => cambiarTema(opcion)}
+            >
+              {t(`nav.themeOptions.${opcion}`)}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="panel-tarjeta" aria-labelledby="ajustes-acceso">
         <div className="panel-tarjeta__cabecera">

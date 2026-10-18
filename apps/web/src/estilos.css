@@ -3293,6 +3293,119 @@ form.columna-agregar button {
   overflow-wrap: anywhere;
 }
 
+/* Apariencia: estilo visual y modo, con miniaturas de cada tema. */
+.apariencia__grupo {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--secundario);
+}
+
+.apariencia__rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.apariencia__tarjeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 12px;
+  text-align: left;
+  background: var(--superficie);
+  border: 2px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: none;
+}
+
+.apariencia__tarjeta:hover:not(.apariencia__tarjeta--activa) {
+  border-color: var(--lineas-fuertes);
+}
+
+.apariencia__tarjeta--activa {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.apariencia__maqueta {
+  display: flex;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid var(--lineas);
+  border-radius: 6px;
+}
+
+.apariencia__maqueta-menu {
+  display: block;
+  flex: 0 0 16px;
+}
+
+.apariencia__maqueta-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+}
+
+.apariencia__maqueta-barra {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.apariencia__texto {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.apariencia__nombre {
+  font-weight: 600;
+}
+
+.apariencia__detalle {
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.apariencia__modos {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--chip);
+  border-radius: var(--radio-control);
+}
+
+.apariencia__modo {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: var(--texto-base);
+  font-weight: 500;
+  color: var(--secundario);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.apariencia__modo:hover:not(.apariencia__modo--activo) {
+  color: var(--texto);
+  background: var(--superficie-2);
+}
+
+.apariencia__modo--activo {
+  color: var(--texto);
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+}
+
 @media (max-width: 1000px) {
   .agenda,
   .hoy {

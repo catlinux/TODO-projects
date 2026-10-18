@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "./../i18n/index";
 import type { ResultadoBusquedaApi } from "../api";
+import { CLAVE_ESTILO } from "../estilo";
 import { CLAVE_TEMA } from "../tema";
 import { Disposicion } from "./Disposicion";
 import { Paleta, ESPERA_BUSQUEDA_MS } from "./Paleta";
@@ -112,6 +113,7 @@ describe("Paleta", () => {
   beforeEach(() => {
     localStorage.clear();
     delete document.documentElement.dataset.tema;
+    delete document.documentElement.dataset.estilo;
   });
 
   afterEach(() => {
@@ -121,6 +123,7 @@ describe("Paleta", () => {
     vi.unstubAllGlobals();
     localStorage.clear();
     delete document.documentElement.dataset.tema;
+    delete document.documentElement.dataset.estilo;
   });
 
   it("espera 150 ms antes de consultar /buscar", async () => {
@@ -224,6 +227,19 @@ describe("Paleta", () => {
     expect(localStorage.getItem(CLAVE_TEMA)).toBe("oscuro");
     fireEvent.click(tema());
     expect(localStorage.getItem(CLAVE_TEMA)).toBe("sistema");
+  });
+
+  it("alterna el estilo sobrio → sereno → sobrio", async () => {
+    renderPaleta();
+
+    const estilo = () => screen.getByRole("option", { name: /cambiar estilo/i });
+    fireEvent.click(estilo());
+    expect(localStorage.getItem(CLAVE_ESTILO)).toBe("sereno");
+    expect(document.documentElement.dataset.estilo).toBe("sereno");
+
+    fireEvent.click(estilo());
+    expect(localStorage.getItem(CLAVE_ESTILO)).toBe("sobrio");
+    expect(document.documentElement.dataset.estilo).toBe("sobrio");
   });
 
   it("abre la paleta con Ctrl+K desde una pantalla protegida", async () => {

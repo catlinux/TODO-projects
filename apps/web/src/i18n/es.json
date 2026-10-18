@@ -353,6 +353,7 @@
     "goInbox": "Ir a la Bandeja",
     "goAgenda": "Ir a Agenda",
     "changeTheme": "Cambiar tema",
+    "changeStyle": "Cambiar estilo",
     "results": "Resultados",
     "searching": "Buscando…",
     "noResults": "Sin resultados",
@@ -382,6 +383,20 @@
   "settings": {
     "browserNotifications": "Avisos en este navegador",
     "title": "Ajustes",
+    "appearance": "Apariencia",
+    "appearanceDescription": "Elige el estilo visual y el modo claro u oscuro.",
+    "style": "Estilo",
+    "mode": "Modo",
+    "styles": {
+      "sobrio": {
+        "nombre": "Sobrio",
+        "descripcion": "Neutros fríos y menú lateral oscuro"
+      },
+      "sereno": {
+        "nombre": "Sereno",
+        "descripcion": "Grises cálidos y menú tenue, con pocas líneas"
+      }
+    },
     "tokens": "Tokens de API",
     "tokensDescription": "Tokens para el conector y suscripciones al calendario.",
     "name": "Nombre",

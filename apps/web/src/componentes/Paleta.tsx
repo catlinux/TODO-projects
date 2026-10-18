@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { peticion, type ResultadoBusquedaApi } from "../api";
+import { useEstilo } from "../estilo";
 import { chipFecha, type EstadoFecha } from "../fechas";
 import { useTema, type Tema } from "../tema";
 
@@ -52,6 +53,7 @@ export function Paleta({ abierto, onCerrar, onNuevaTarea }: PropiedadesPaleta) {
   const { t } = useTranslation();
   const navegar = useNavigate();
   const { tema, cambiarTema } = useTema();
+  const { estilo, cambiarEstilo } = useEstilo();
   const refDialogo = useRef<HTMLDialogElement>(null);
   const refEntrada = useRef<HTMLInputElement>(null);
   const refFocoAnterior = useRef<HTMLElement | null>(null);
@@ -118,8 +120,14 @@ export function Paleta({ abierto, onCerrar, onNuevaTarea }: PropiedadesPaleta) {
         accion: () => cambiarTema(siguienteTema(tema)),
         mantenerAbierta: true,
       },
+      {
+        id: "cambiar-estilo",
+        etiqueta: t("palette.changeStyle"),
+        accion: () => cambiarEstilo(estilo === "sobrio" ? "sereno" : "sobrio"),
+        mantenerAbierta: true,
+      },
     ],
-    [t, navegar, onNuevaTarea, cambiarTema, tema],
+    [t, navegar, onNuevaTarea, cambiarTema, tema, cambiarEstilo, estilo],
   );
 
   const opciones = useMemo(() => {

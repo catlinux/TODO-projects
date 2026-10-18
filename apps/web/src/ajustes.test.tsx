@@ -1,11 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 
 import "./i18n/index";
+import { CLAVE_ESTILO } from "./estilo";
 import Ajustes from "./paginas/Ajustes";
+import { CLAVE_TEMA } from "./tema";
 
 interface TokenListado {
   id: string;
@@ -32,10 +34,38 @@ function renderAjustes() {
 }
 
 describe("Ajustes", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    delete document.documentElement.dataset.estilo;
+    delete document.documentElement.dataset.tema;
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it("cambia el estilo visual y el modo desde Apariencia", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    const { user } = renderAjustes();
+
+    await user.click(await screen.findByRole("radio", { name: "Sereno" }));
+    expect(localStorage.getItem(CLAVE_ESTILO)).toBe("sereno");
+    expect(document.documentElement.dataset.estilo).toBe("sereno");
+
+    await user.click(screen.getByRole("radio", { name: "Oscuro" }));
+    expect(localStorage.getItem(CLAVE_TEMA)).toBe("oscuro");
+    expect(document.documentElement.dataset.tema).toBe("oscuro");
   });
 
   it("crea un token y solo lo muestra al crearlo", async () => {
