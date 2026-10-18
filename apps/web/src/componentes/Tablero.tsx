@@ -667,7 +667,9 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                     onChange={(evento) => setTituloNuevaTarjeta(evento.target.value)}
                   />
                   <div className="acciones">
-                    <button type="submit">{t("tasks.create")}</button>
+                    <button type="submit" className="boton-principal">
+                      {t("tasks.create")}
+                    </button>
                     <button type="button" onClick={cerrarAnadirTarjeta}>
                       {t("tasks.cancel")}
                     </button>
@@ -679,6 +681,9 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                   className="columna-kanban__anadir"
                   onClick={() => empezarAnadirTarjeta(columna.id)}
                 >
+                  <span className="columna-kanban__anadir-signo" aria-hidden="true">
+                    +
+                  </span>
                   {t("tasks.addCard")}
                 </button>
               )}

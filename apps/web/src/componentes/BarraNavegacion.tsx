@@ -13,6 +13,7 @@ import {
 import { useCerrarSesion } from "../cerrarSesion";
 import { colorProyecto } from "../colores";
 import { agruparHoy, pendientesHoy, rangoHoy } from "../hoy";
+import { inicial } from "../inicial";
 import { useTema, type Tema } from "../tema";
 import { AvisosNavegador } from "./AvisosNavegador";
 
@@ -35,11 +36,6 @@ function Icono({ children }: { children: React.ReactNode }) {
       {children}
     </svg>
   );
-}
-
-/** Inicial del nombre, en mayúscula, para el avatar y el cuadrado del proyecto. */
-function inicial(nombre: string): string {
-  return nombre.trim().charAt(0).toLocaleUpperCase("es-ES");
 }
 
 /**
@@ -201,7 +197,9 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
                   >
                     {inicial(proyecto.nombre)}
                   </span>
-                  <span className="menu-lateral__proyecto-nombre">{proyecto.nombre}</span>
+                  <span className="menu-lateral__proyecto-nombre" title={proyecto.nombre}>
+                    {proyecto.nombre}
+                  </span>
                 </NavLink>
               </li>
             );
@@ -219,7 +217,9 @@ export function BarraNavegacion({ onAbrirBuscar }: PropiedadesBarraNavegacion = 
             <span className="menu-lateral__avatar" aria-hidden="true">
               {inicial(usuario?.nombre ?? "")}
             </span>
-            <span className="menu-lateral__perfil-nombre">{usuario?.nombre ?? ""}</span>
+            <span className="menu-lateral__perfil-nombre" title={usuario?.nombre ?? ""}>
+              {usuario?.nombre ?? ""}
+            </span>
           </div>
 
           <NavLink to="/ajustes" className="menu-lateral__enlace">

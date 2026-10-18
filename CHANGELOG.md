@@ -4,6 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.14.1] - 2026-10-18
+
+### Corregido
+- La inicial del proyecto ignora signos y corchetes iniciales («[Prueba] Viaje» → «P»).
+- El menú lateral ya no desborda con nombres largos (elipsis) y el campo de «Añadir tarjeta» no se sale de la columna.
+- Botón «Añadir tarjeta» con más contraste y columnas vacías más discretas.
+
 ## [0.14.0] - 2026-10-18
 
 ### Añadido

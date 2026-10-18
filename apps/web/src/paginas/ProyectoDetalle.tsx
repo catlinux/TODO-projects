@@ -9,12 +9,8 @@ import { FondoProyecto } from "../componentes/FondoProyecto";
 import { PersonalizarProyecto } from "../componentes/PersonalizarProyecto";
 import { PastillaEtiqueta } from "../componentes/SelectorEtiquetas";
 import { Tablero } from "../componentes/Tablero";
+import { inicial } from "../inicial";
 import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
-
-/** Inicial del nombre, en mayúscula, para el cuadrado de la cabecera. */
-function inicial(nombre: string): string {
-  return nombre.trim().charAt(0).toLocaleUpperCase("es-ES");
-}
 
 export interface PropiedadesProyectoDetalle {
   /** Abre el diálogo de personalizar. Sin él, lo abre el estado de la propia página (A6). */

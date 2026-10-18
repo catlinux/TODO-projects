@@ -1500,8 +1500,10 @@ fieldset {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  min-width: 0;
   min-height: var(--objetivo-tactil);
   padding: 0 0.6rem;
+  overflow: hidden;
   font-size: 0.92rem;
   color: var(--menu-texto);
   text-decoration: none;
@@ -1526,6 +1528,8 @@ fieldset {
 }
 
 .menu-lateral__proyecto-nombre {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1585,6 +1589,8 @@ fieldset {
 }
 
 .menu-lateral__perfil-nombre {
+  flex: 1 1 auto;
+  min-width: 0;
   font-weight: 600;
   color: var(--texto);
   overflow: hidden;
@@ -1683,6 +1689,7 @@ fieldset {
 .columna-kanban {
   flex: 0 0 276px;
   width: 276px;
+  min-height: 120px;
   padding: 8px;
   background: var(--columna);
   backdrop-filter: blur(14px);
@@ -1827,10 +1834,14 @@ fieldset {
   margin: 0;
 }
 
+/* Columna vacía: zona discreta, sin texto grande centrado. */
 .columna-kanban__vacia {
+  padding: 8px;
+  font-size: 0.85rem;
+  text-align: left;
   color: var(--texto-secundario);
-  text-align: center;
-  padding: 1rem 0;
+  border: 1px dashed var(--borde);
+  border-radius: var(--radio-control);
 }
 
 .tarjeta-kanban {
@@ -2070,6 +2081,9 @@ fieldset {
 
 /* Alta de tarjeta en línea, al pie de la columna. */
 .columna-kanban__anadir {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   min-height: var(--objetivo-tactil);
   justify-content: flex-start;
@@ -2077,15 +2091,22 @@ fieldset {
   font-size: 0.85rem;
   font-weight: 500;
   text-align: left;
-  color: var(--texto-secundario);
+  color: var(--texto);
   background: transparent;
   border: none;
 }
 
 .columna-kanban__anadir:hover:not(:disabled) {
   color: var(--texto);
-  background: var(--superficie);
+  background: var(--chip);
   border-color: transparent;
+}
+
+/* El «+» acompaña al texto sin robarle espacio al nombre. */
+.columna-kanban__anadir-signo {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .columna-kanban__anadir-form {
@@ -2097,6 +2118,18 @@ fieldset {
 .columna-kanban__anadir-form input {
   width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+}
+
+.columna-kanban__anadir-form .acciones {
+  gap: 0.4rem;
+}
+
+.columna-kanban__anadir-form .acciones button {
+  min-height: 32px;
+  padding: 0 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .agenda-lista h2 {
