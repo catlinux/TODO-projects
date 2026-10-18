@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.16.0] - 2026-10-18
+
+### Añadido
+- Estilos visuales intercambiables, independientes del modo claro/oscuro: «Sobrio» (el de la 0.15.0, por defecto) y «Sereno» (grises cálidos, menú lateral tenue en la misma familia que el contenido y menos líneas). Se eligen en Ajustes › Apariencia, que también reúne el modo, o con «Cambiar estilo» en la paleta (Ctrl/⌘+K). La preferencia se guarda en el navegador.
+
+### Cambiado
+- Los tokens de cada estilo viven en su propio archivo (`apps/web/src/temas/sobrio.css` y `sereno.css`); `estilos.css` solo contiene estructura y componentes.
+
 ## [0.15.0] - 2026-10-18
 
 ### Cambiado
