@@ -15,11 +15,8 @@
 - El bloqueo global del PIN puede mantenerse a 24 h si alguien insiste a propósito (la huella sigue funcionando); se acepta por diseño.
 - Prueba E2E de la huella con el autenticador virtual de Chromium (no hay Playwright en el proyecto).
 
-- Kanban con tarjetas arrastrables (0.2).
-- Calendario, agenda, recurrencias y exportación `.ics` (0.3).
 - `.ics` con recurrencia: las zonas con horario de verano fuera de la UE (p. ej. `America/New_York`) caen al fallback en UTC porque aún no se generan sus reglas de VTIMEZONE.
 - Excepciones de una serie recurrente (mover o editar una sola ocurrencia).
-- Suscripción al calendario `.ics` por URL con token (hoy solo descarga con sesión; llega con el token de la 0.6).
 
 ## Prioridad baja
 
