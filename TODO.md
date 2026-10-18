@@ -10,7 +10,6 @@
 
 ## Prioridad media
 
-- `pnpm test` en paralelo (web y API) hace fallar a veces el `beforeAll` de PGlite por tiempo de espera; por separado pasa siempre. Algo parecido pasa a veces con el test de cerrar sesión de `BarraNavegacion.test.tsx`.
 - El token de `/agenda.ics?token=` queda en los logs de Apache (solo tiene permiso de calendario); valorar no registrar la query de esa ruta.
 - El bloqueo global del PIN puede mantenerse a 24 h si alguien insiste a propósito (la huella sigue funcionando); se acepta por diseño.
 - Prueba E2E de la huella con el autenticador virtual de Chromium (no hay Playwright en el proyecto).

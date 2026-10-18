@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.16.1] - 2026-10-18
+
+### Corregido
+- `pnpm test` en la raíz ejecuta los paquetes en secuencia y el `beforeAll` de PGlite tiene un tiempo de espera de 60 s: ya no falla por carga.
+- El test de cerrar sesión del menú deja de ser intermitente: simula el 401 posterior al cierre y espera al estado final de la caché.
+
 ## [0.16.0] - 2026-10-18
 
 ### Añadido

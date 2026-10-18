@@ -75,6 +75,20 @@ function renderMenu(
   vi.stubGlobal(
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/auth/logout" && String(init?.method) === "POST") {
+        logoutLlamado = true;
+        return new Response(null, { status: 204 });
+      }
+      // Cerrada la sesión la cookie ya no vale: la API responde 401. Así las
+      // consultas que el menú todavía tiene activas al vaciar la caché no
+      // vuelven a llenarla (antes devolvían 200 y repoblaban la caché según el
+      // orden en que resolvieran las promesas).
+      if (logoutLlamado) {
+        return new Response(JSON.stringify({ mensaje: "No autenticado" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
       if (url === "/api/proyectos") {
         return new Response(JSON.stringify(proyectos), {
           status: 200,
@@ -117,10 +131,6 @@ function renderMenu(
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-      }
-      if (url === "/api/auth/logout" && String(init?.method) === "POST") {
-        logoutLlamado = true;
-        return new Response(null, { status: 204 });
       }
       return new Response(JSON.stringify({}), {
         status: 404,
@@ -207,7 +217,7 @@ describe("BarraNavegacion", () => {
 
     await waitFor(() => expect(seCerroSesion()).toBe(true));
     expect(await screen.findByText("Acceso")).toBeTruthy();
-    expect(cliente.getQueryData(["proyectos"])).toBeUndefined();
+    await waitFor(() => expect(cliente.getQueryData(["proyectos"])).toBeUndefined());
   });
 
   it("lista los proyectos y resalta el enlace activo", () => {
