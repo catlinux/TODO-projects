@@ -4,6 +4,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.11.0] - 2026-10-18
+
+### Añadido
+- La tarjeta se abre como página propia (`/proyectos/:id/tareas/:tareaId`) con enlace compartible: título editable, columna, casilla «Hecha», fecha, aviso, repetición y descripción con formato (negrita, cursiva, código, listas y enlaces http/https).
+- Etiquetas por proyecto (8 colores) con selector, creación, renombrado y borrado; `GET/POST /proyectos/:id/etiquetas`, `PATCH/DELETE /etiquetas/:id` y `PUT /tareas/:id/etiquetas`. Filtro por etiqueta en el tablero.
+- Checklist por tarea con progreso, ocultar hechos y reordenación; `GET/POST /tareas/:id/checklist` y `PATCH/DELETE /checklist/:id`. Insignia `n/m` en la tarjeta.
+- `GET /proyectos/:id/tareas` devuelve `etiquetas` y `checklist`. Migraciones `0011` y `0012`.
+
+### Cambiado
+- La edición en línea de la tarjeta se sustituye por la tarjeta abierta.
+
 ## [0.10.0] - 2026-10-18
 
 ### Añadido
