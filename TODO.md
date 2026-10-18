@@ -18,6 +18,8 @@
 
 ## Prioridad baja
 
+- Google Calendar: suscripción de solo lectura con `/agenda.ics` (antes, ocultar el token en los logs de Apache); sincronización bidireccional con la API de Google solo si hace falta editar desde Google.
+- Asistente de IA: servidor MCP sobre la API con tokens de permisos limitados; chat integrado en la web como segunda fase.
 - Telegram, SMS y WhatsApp (0.9).
 - Android (después de la 1.0).
 
