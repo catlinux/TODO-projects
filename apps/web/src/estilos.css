@@ -1,36 +1,93 @@
 :root {
   color-scheme: light;
 
-  /* Sistema visual del rediseño (Paso 1). */
+  /* Sistema visual v3: variables claras. Los nombres heredados del rediseño
+     anterior se conservan apuntando a la paleta v3 para no tocar el resto. */
+  --menu: #f7f7f9;
+  --menu-texto: #3f4451;
+  --activo: #e8e9ef;
+  --lineas: #e4e5eb;
+  --texto: #15171c;
+  --secundario: #6a7080;
+  --columna: rgba(243, 244, 247, 0.93);
+  --tarjeta: #ffffff;
+  --chip: #eef0f4;
+  --acento: #5b5bd6;
+  --acento-hover: #4848bf;
+  --acento-suave: #ececfa;
+  --texto-sobre-acento: #ffffff;
+  --velo: rgba(15, 23, 42, 0.45);
+
   --fondo: #f3f4f6;
-  --superficie: #ffffff;
-  --borde: #dde1e8;
-  --columna: #e9ebf0;
-  --texto: #1b1f27;
-  --texto-secundario: #5a6272;
+  --superficie: var(--tarjeta);
+  --borde: var(--lineas);
+  --texto-secundario: var(--secundario);
 
-  --acento: #2f4bc4;
-  --acento-hover: #1f358f;
-  --acento-suave: #eef1fd;
+  --fecha-proxima-fondo: #ffe7c2;
+  --fecha-proxima-texto: #8a4f06;
+  --fecha-atrasada-fondo: #c8303a;
+  --fecha-atrasada-texto: #ffffff;
+  --fecha-normal-fondo: var(--chip);
+  --fecha-normal-texto: var(--menu-texto);
+  --hecho: #18794e;
+  --error: #c8303a;
 
-  --fecha-proxima-fondo: #fce9d6;
-  --fecha-proxima-texto: #8a3f0c;
-  --fecha-atrasada-fondo: #fbe3e1;
-  --fecha-atrasada-texto: #9b1c14;
-  --fecha-normal-fondo: #eef0f4;
-  --fecha-normal-texto: #3a4150;
-  --hecho: #2f8f62;
+  /* Etiquetas: 8 colores con texto blanco (contraste ≥ 4.5:1). */
+  --etiqueta-violeta: #6e4fe6;
+  --etiqueta-rojo: #c8303a;
+  --etiqueta-azul: #2563d9;
+  --etiqueta-verde: #18794e;
+  --etiqueta-naranja: #b4530a;
+  --etiqueta-turquesa: #0e7490;
+  --etiqueta-magenta: #a21caf;
+  --etiqueta-gris: #4b5563;
+  --etiqueta-texto: #ffffff;
 
   --radio-control: 8px;
+  --radio-control-grande: 10px;
   --radio-tarjeta: 10px;
-  --radio-columna: 12px;
+  --radio-columna: 14px;
+  --radio-dialogo: 18px;
   --objetivo-tactil: 40px;
   --ancho-menu: 232px;
 
-  --fuente: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --fuente-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Sombras suaves en capas. */
+  --sombra-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 1px rgba(15, 23, 42, 0.04);
+  --sombra-2: 0 4px 12px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --sombra-3: 0 12px 28px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+  --sombra-dialogo: 0 24px 60px rgba(15, 23, 42, 0.28);
+
+  --fuente: "Geist Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   font-family: var(--fuente);
+}
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+
+  --menu: #111217;
+  --menu-texto: #b4b9c5;
+  --activo: #1e2028;
+  --lineas: #24262e;
+  --texto: #ecedf1;
+  --secundario: #8d93a1;
+  --columna: rgba(18, 19, 24, 0.86);
+  --tarjeta: #1f2129;
+  --chip: #2a2d37;
+  --acento: #7b7bf0;
+  --acento-hover: #9494f5;
+  --acento-suave: #23243a;
+  --texto-sobre-acento: #101218;
+  --velo: rgba(0, 0, 0, 0.6);
+
+  --fondo: #0b0c10;
+  --error: #f2797f;
+
+  --sombra-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --sombra-2: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sombra-3: 0 12px 28px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --sombra-dialogo: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
 
 body {
@@ -126,12 +183,12 @@ a:hover {
   color: var(--texto);
   background: var(--superficie);
   border: 1px solid var(--borde);
-  border-radius: var(--radio-tarjeta);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border-radius: var(--radio-dialogo);
+  box-shadow: var(--sombra-dialogo);
 }
 
 .dialogo-tarea::backdrop {
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--velo);
 }
 
 .dialogo-tarea__cuerpo {
@@ -185,7 +242,7 @@ a:hover {
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-tarjeta);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--sombra-1);
 }
 
 .tarjeta-proyecto__color {
@@ -277,7 +334,7 @@ button:disabled {
 .boton-principal {
   background: var(--acento);
   border-color: var(--acento);
-  color: #ffffff;
+  color: var(--texto-sobre-acento);
   font-weight: 600;
 }
 
@@ -287,7 +344,7 @@ button:disabled {
 }
 
 .error {
-  color: var(--fecha-atrasada-texto);
+  color: var(--error);
 }
 
 ul {
@@ -358,7 +415,7 @@ fieldset {
   place-items: center;
   width: 32px;
   height: 32px;
-  color: #ffffff;
+  color: var(--texto-sobre-acento);
   background: var(--acento);
   border-radius: var(--radio-control);
 }
@@ -456,7 +513,7 @@ fieldset {
   font-weight: 600;
   line-height: 1.4rem;
   text-align: center;
-  color: #ffffff;
+  color: var(--texto-sobre-acento);
   background: var(--acento);
   border-radius: 999px;
 }
@@ -641,7 +698,7 @@ fieldset {
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio-control);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  box-shadow: var(--sombra-3);
 }
 
 .menu-columna button {
@@ -697,7 +754,7 @@ fieldset {
   padding: 0.75rem;
   display: grid;
   gap: 0.5rem;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--sombra-1);
 }
 
 .tarjeta-kanban--arrastrando {
@@ -706,7 +763,7 @@ fieldset {
 
 .tarjeta-kanban--superpuesta {
   border-color: var(--acento);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+  box-shadow: var(--sombra-3);
   transform: rotate(-1.5deg);
 }
 
@@ -999,7 +1056,7 @@ fieldset {
   width: 1.75rem;
   height: 1.75rem;
   padding: 0;
-  color: #ffffff;
+  color: var(--texto-sobre-acento);
   background: var(--acento);
   border-radius: 999px;
 }
@@ -1171,8 +1228,8 @@ fieldset {
   padding: 1.75rem;
   background: var(--superficie);
   border: 1px solid var(--borde);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
 }
 
 .tarjeta-acceso h1 {
@@ -1202,9 +1259,9 @@ fieldset {
   place-items: center;
   width: 44px;
   height: 44px;
-  color: #ffffff;
+  color: var(--texto-sobre-acento);
   background: var(--acento);
-  border-radius: 12px;
+  border-radius: var(--radio-control-grande);
 }
 
 .marca__nombre {
@@ -1248,8 +1305,8 @@ fieldset {
   padding: 1.25rem;
   background: var(--superficie);
   border: 1px solid var(--borde);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-1);
 }
 
 .tarjeta-ajustes__cabecera {
