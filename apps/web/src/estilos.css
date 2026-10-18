@@ -4697,6 +4697,7 @@ a.asistente__accion:hover {
 
 .asistente__redactor {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 8px;
   margin: 12px 0 0;
@@ -4718,9 +4719,73 @@ a.asistente__accion:hover {
   gap: 8px;
 }
 
-/* Hueco reservado para el botón de voz (paso 4). */
-.asistente__hueco-voz {
+/* Dictado por voz (Web Speech API). */
+.asistente__voz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.asistente__voz-idioma {
+  min-height: var(--objetivo-tactil);
+  padding: 0 6px;
+  font-size: var(--texto-sm);
+}
+
+.asistente__voz-boton {
   width: var(--objetivo-tactil);
+  min-width: var(--objetivo-tactil);
+  padding: 0;
+  color: var(--secundario);
+}
+
+.asistente__voz-boton[aria-pressed="true"] {
+  color: var(--acento-texto);
+  background: var(--acento-suave);
+  border-color: var(--acento);
+  animation: voz-pulso 1.6s ease-in-out infinite;
+}
+
+@keyframes voz-pulso {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--acento) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--acento) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asistente__voz-boton[aria-pressed="true"] {
+    animation: none;
+  }
+}
+
+.asistente__voz-envio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--objetivo-tactil);
+  font-size: var(--texto-sm);
+  font-weight: 500;
+}
+
+.asistente__voz-estado,
+.asistente__voz-ayuda {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--secundario);
+}
+
+.asistente__voz-estado:empty {
+  display: none;
+}
+
+.asistente__voz-estado--error {
+  color: var(--error);
 }
 
 @media (max-width: 740px) {

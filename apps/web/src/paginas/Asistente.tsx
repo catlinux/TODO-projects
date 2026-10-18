@@ -9,6 +9,7 @@ import {
   type AccionAsistenteApi,
   type RespuestaChatAsistenteApi,
 } from "../api";
+import { BotonVoz } from "../componentes/BotonVoz";
 
 /** Clave de la conversación en `sessionStorage`; se pierde al cerrar la pestaña. */
 const CLAVE_CONVERSACION = "todo-asistente-conversacion";
@@ -147,8 +148,8 @@ export default function Asistente() {
 
   const esperando = enviar.isPending;
 
-  function enviarTexto() {
-    const texto = borrador.trim();
+  function enviarTexto(textoDictado?: string) {
+    const texto = (textoDictado ?? borrador).trim();
     if (!texto || esperando) return;
     const historial = [...mensajes, { id: nuevoId(), rol: "user" as const, texto }];
     setMensajes(historial);
@@ -296,8 +297,12 @@ export default function Asistente() {
           }}
         />
         <div className="asistente__redactor-botones">
-          {/* Hueco reservado para el botón de voz (paso 4), a la izquierda de Enviar. */}
-          <span className="asistente__hueco-voz" aria-hidden="true" />
+          <BotonVoz
+            texto={borrador}
+            alCambiarTexto={setBorrador}
+            alEnviar={enviarTexto}
+            deshabilitado={esperando}
+          />
           <button
             type="submit"
             className="boton-principal"

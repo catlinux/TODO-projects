@@ -457,7 +457,28 @@
     "goToSettings": "Ir a Ajustes",
     "errorProvider": "No se pudo contactar con el proveedor. Inténtalo de nuevo.",
     "errorLimit": "Has hecho demasiadas peticiones seguidas. Espera un momento y reinténtalo.",
-    "errorNetwork": "No hay conexión con el servidor. Comprueba tu red y vuelve a intentarlo."
+    "errorNetwork": "No hay conexión con el servidor. Comprueba tu red y vuelve a intentarlo.",
+    "voz": {
+      "idioma": "Idioma del dictado",
+      "idiomas": {
+        "es-ES": "Castellano",
+        "ca-ES": "Català",
+        "en-US": "English"
+      },
+      "empezar": "Dictar por voz",
+      "detener": "Detener el dictado",
+      "escuchando": "Escuchando…",
+      "enviarAlTerminar": "Enviar al terminar",
+      "ayuda": "El dictado usa el servicio de voz del navegador; en Chrome el audio lo procesa Google.",
+      "errores": {
+        "denegado": "No hay permiso para usar el micrófono. Actívalo en los permisos del sitio y vuelve a intentarlo.",
+        "sin-voz": "No se ha detectado voz. Acércate al micrófono y vuelve a intentarlo.",
+        "red": "Sin conexión con el servicio de dictado. Comprueba tu red y vuelve a intentarlo.",
+        "ocupado": "El micrófono está ocupado o no disponible. Cierra lo que lo esté usando.",
+        "idioma": "El navegador no admite el idioma elegido para el dictado.",
+        "desconocido": "No se ha podido dictar. Inténtalo de nuevo."
+      }
+    }
   },
   "settings": {
     "version": "Versión",

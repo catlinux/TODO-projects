@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.21.0] - 2026-10-19
+
+### Añadido
+- Asistente de IA: chat en la web (menú «Asistente») para crear y editar proyectos, tareas, checklists y excepciones de ocurrencias, mover tareas entre columnas y consultar la agenda en lenguaje natural, con botón de voz (reconocimiento del navegador; castellano, catalán e inglés). Sin herramientas de borrado.
+- Proveedor configurable en Ajustes con presets de DeepSeek (`deepseek-flash`) y OpenAI (`gpt-6-luna`) y modo personalizado para cualquier servicio compatible con Chat Completions. La clave se guarda cifrada con `ASISTENTE_CLAVE_CIFRADO` (nuevo en `.env`; sin ella el asistente queda desactivado). Migración `0017` (tabla `asistente_config`).
+
 ## [0.20.1] - 2026-10-18
 
 ### Cambiado

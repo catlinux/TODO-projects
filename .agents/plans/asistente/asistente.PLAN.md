@@ -32,11 +32,11 @@ Hecho cuando: bucle de herramientas con los límites anteriores, errores del pro
 Archivos: `apps/web/src/paginas/Asistente.tsx`, tarjeta «Asistente» en `Ajustes.tsx`, ruta y entrada de menú, i18n, estilos, tests.
 Hecho cuando: en Ajustes se elige proveedor (preset), modelo y clave (campo de contraseña) y se prueba; el chat muestra la conversación, un indicador de «pensando», las acciones realizadas con enlaces, y refresca las consultas de tareas/agenda; si no está configurado, lleva a Ajustes.
 
-### 4 · Web: voz · AgentRelay medio · [ ]
+### 4 · Web: voz · AgentRelay medio · [x]
 Archivos: `apps/web/src/componentes/BotonVoz.tsx`, integración en el chat, i18n, tests (con `SpeechRecognition` simulado).
 Hecho cuando: botón de micrófono accesible con estado (escuchando), selector de idioma, texto parcial en el cuadro, manejo de permiso denegado y de navegador no soportado.
 
-### 5 · Versión 0.21.0 y documentación · sesión · [ ]
+### 5 · Versión 0.21.0 y documentación · sesión · [x]
 `VERSION`, `CHANGELOG`, `README`, `docs/` (cómo configurar el asistente y la variable `ASISTENTE_CLAVE_CIFRADO`; privacidad: el texto del chat y de tus tareas sale hacia el proveedor elegido), `TODO.md`.
 
 ## Fuera de este plan (necesitan al usuario)

@@ -2,7 +2,7 @@
 
 Gestor de tareas, agenda y proyectos con esteroides: tablero Kanban con tarjetas arrastrables, calendario, avisos por correo y notificaciones, trabajo en equipo en el mismo proyecto y un conector para que una IA pueda gestionarlo.
 
-> **Estado: v0.20.1.** Acceso personal con PIN y huella, vista «Hoy», proyectos, tareas con fecha y recurrencia (con excepciones por ocurrencia), tablero Kanban con columnas configurables, agenda con calendario, exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
+> **Estado: v0.21.0.** Acceso personal con PIN y huella, vista «Hoy», proyectos, tareas con fecha y recurrencia (con excepciones por ocurrencia), tablero Kanban con columnas configurables, agenda con calendario, asistente de IA con chat y voz (opcional, ver [docs/ASISTENTE.md](docs/ASISTENTE.md)), exportación `.ics` y recordatorios por correo y por el navegador (requieren configurar SMTP y claves VAPID, ver [despliegue](docs/DESPLIEGUE.md)). Aún sin trabajo en equipo: ver la [hoja de ruta](docs/HOJA-DE-RUTA.md).
 
 - **Autor y mantenedor:** CatLinux
 - **Idioma:** todo el proyecto (interfaz, documentación y commits) está en español.
@@ -33,6 +33,7 @@ TypeScript en todo el proyecto, con monorepo pnpm: Fastify + Drizzle + PostgreSQ
 - [Arquitectura](docs/ARQUITECTURA.md)
 - [Hoja de ruta](docs/HOJA-DE-RUTA.md)
 - [Despliegue en producción](docs/DESPLIEGUE.md)
+- [Asistente de IA (chat y voz)](docs/ASISTENTE.md)
 - [Plan de trabajo ejecutable](.agents/plans/base/base.PLAN.md)
 - [Cambios](CHANGELOG.md) · [Pendiente](TODO.md)
 
