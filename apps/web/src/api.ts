@@ -17,6 +17,8 @@ export interface ProyectoApi {
   descripcion?: string | null;
   color?: string | null;
   fondo?: FondoProyectoApi | null;
+  /** La bandeja de entrada no se puede borrar. */
+  esBandeja?: boolean;
   propietarioId: string;
   createdAt: string;
   updatedAt: string;

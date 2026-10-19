@@ -13,6 +13,7 @@ import {
 import { useCerrarSesion } from "../cerrarSesion";
 import { AjustesAsistente } from "../componentes/AjustesAsistente";
 import { AvisosNavegador } from "../componentes/AvisosNavegador";
+import { BibliotecaImagenes } from "../componentes/BibliotecaImagenes";
 import { VersionApp } from "../componentes/VersionApp";
 import { ESTILOS, useEstilo, type Estilo } from "../estilo";
 import { aIsoUtc, formatearFechaHoraEs } from "../recurrencia-web";
@@ -252,6 +253,8 @@ export default function Ajustes() {
       </section>
 
       <AjustesAsistente />
+
+      <BibliotecaImagenes />
 
       <section className="panel-tarjeta" aria-labelledby="ajustes-acceso">
         <div className="panel-tarjeta__cabecera">

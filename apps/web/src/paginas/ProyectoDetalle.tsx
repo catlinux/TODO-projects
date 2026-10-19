@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Outlet, useParams, useSearchParams } from "react-router-dom";
+import { Outlet, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
 import { peticion, type ColumnaApi, type EtiquetaApi, type ProyectoApi, type TareaApi } from "../api";
@@ -112,6 +112,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const proyectoId = id ?? "";
   const [parametros, setParametros] = useSearchParams();
   const cliente = useQueryClient();
+  const navegar = useNavigate();
 
   const proyecto = useQuery({
     queryKey: ["proyecto", proyectoId],
@@ -148,7 +149,10 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const [editandoDescripcion, setEditandoDescripcion] = useState(false);
   const [descripcion, setDescripcion] = useState("");
   const [errorDescripcion, setErrorDescripcion] = useState<string | null>(null);
+  const [borrarAbierto, setBorrarAbierto] = useState(false);
+  const [errorBorrar, setErrorBorrar] = useState<string | null>(null);
   const refDialogo = useRef<HTMLDialogElement>(null);
+  const refDialogoBorrar = useRef<HTMLDialogElement>(null);
 
   // Al cambiar de proyecto, la vista guardada de ese proyecto.
   useEffect(() => {
@@ -186,6 +190,23 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
       dialogo.removeAttribute("open");
     }
   }, [dialogoTareaAbierto]);
+
+  useEffect(() => {
+    const dialogo = refDialogoBorrar.current;
+    if (!dialogo) return;
+    if (borrarAbierto) {
+      if (typeof dialogo.showModal === "function") {
+        if (!dialogo.open) dialogo.showModal();
+      } else {
+        dialogo.setAttribute("open", "");
+      }
+      dialogo.querySelector<HTMLElement>("button")?.focus();
+    } else if (typeof dialogo.close === "function") {
+      if (dialogo.open) dialogo.close();
+    } else {
+      dialogo.removeAttribute("open");
+    }
+  }, [borrarAbierto]);
 
   const crearTarea = useMutation({
     mutationFn: async () => {
@@ -297,6 +318,24 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     },
     onError: (err: unknown) => {
       setErrorDescripcion(err instanceof Error ? err.message : t("auth.error"));
+    },
+  });
+
+  const borrarProyecto = useMutation({
+    mutationFn: async () => peticion(`/proyectos/${proyectoId}`, { method: "DELETE" }),
+    onMutate: () => setErrorBorrar(null),
+    onSuccess: async () => {
+      setBorrarAbierto(false);
+      await Promise.all([
+        cliente.invalidateQueries({ queryKey: ["proyectos"] }),
+        cliente.invalidateQueries({ queryKey: ["hoy"] }),
+        cliente.invalidateQueries({ queryKey: ["agenda"] }),
+        cliente.invalidateQueries({ queryKey: ["bandeja"] }),
+      ]);
+      navegar("/proyectos");
+    },
+    onError: (err: unknown) => {
+      setErrorBorrar(err instanceof Error ? err.message : t("projects.deleteProjectError"));
     },
   });
 
@@ -474,6 +513,19 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
               <IconoFondo />
               {t("projects.background")}
             </button>
+            {proyecto.data && proyecto.data.esBandeja !== true && (
+              <button
+                type="button"
+                className="boton-cabecera"
+                aria-haspopup="dialog"
+                onClick={() => {
+                  setErrorBorrar(null);
+                  setBorrarAbierto(true);
+                }}
+              >
+                {t("projects.deleteProject")}
+              </button>
+            )}
             <button
               type="button"
               className="boton-cabecera boton-cabecera--blanco"
@@ -611,6 +663,68 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
           </div>
         )}
       </dialog>
+
+      <dialog
+        ref={refDialogoBorrar}
+        className="dialogo"
+        aria-labelledby="titulo-dialogo-borrar-proyecto"
+        onCancel={(evento) => {
+          evento.preventDefault();
+          setBorrarAbierto(false);
+        }}
+        onKeyDown={(evento) => {
+          if (evento.key === "Escape") {
+            evento.preventDefault();
+            setBorrarAbierto(false);
+          }
+        }}
+      >
+        {borrarAbierto && (
+          <div className="dialogo__cuerpo">
+            <div className="dialogo__cabecera">
+              <h2 id="titulo-dialogo-borrar-proyecto">{t("projects.deleteProjectTitle")}</h2>
+              <button
+                type="button"
+                className="boton-icono"
+                aria-label={t("tasks.closeDialog")}
+                onClick={() => setBorrarAbierto(false)}
+              >
+                <IconoCerrar />
+              </button>
+            </div>
+            <p>
+              {t("projects.deleteProjectWarning", {
+                nombre: proyecto.data?.nombre ?? "",
+                count: listaTareas.length,
+              })}
+            </p>
+            <p className="proyecto-eliminar__aviso">{t("projects.deleteProjectIrreversible")}</p>
+            {errorBorrar && (
+              <p className="error" role="alert">
+                {errorBorrar}
+              </p>
+            )}
+            <div className="dialogo__pie">
+              <button
+                type="button"
+                className="boton-fantasma"
+                onClick={() => setBorrarAbierto(false)}
+              >
+                {t("tasks.cancel")}
+              </button>
+              <button
+                type="button"
+                className="boton-peligro"
+                disabled={borrarProyecto.isPending}
+                onClick={() => borrarProyecto.mutate()}
+              >
+                {t("projects.deleteProjectConfirm")}
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
+
       {proyecto.data && (
         <PersonalizarProyecto
           proyecto={proyecto.data}

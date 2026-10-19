@@ -1349,6 +1349,75 @@ button.tarjeta-detalle__accion {
   border-radius: 6px;
 }
 
+/* Imágenes de la biblioteca: selección múltiple dentro del fondo del proyecto. */
+.personalizar__elegir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.personalizar__biblioteca {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  background: var(--chip);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-control-grande);
+}
+
+.personalizar__biblioteca-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personalizar__biblioteca-opcion {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: var(--objetivo-tactil);
+  padding: 4px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.personalizar__biblioteca-opcion[aria-pressed="true"] {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.personalizar__biblioteca-miniatura {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.personalizar__biblioteca-nombre {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.personalizar__biblioteca-marca {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  color: var(--texto-sobre-acento);
+  background: var(--acento);
+  border-radius: 50%;
+}
+
 /* Proyectos: rejilla de tarjetas con miniatura del fondo del proyecto. */
 .rejilla-proyectos {
   display: grid;
@@ -4792,4 +4861,101 @@ a.asistente__accion:hover {
   .asistente__mensaje {
     max-width: 92%;
   }
+}
+
+/* Biblioteca de imágenes de Ajustes: subida con cola y rejilla de miniaturas. */
+.biblioteca__contador {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.biblioteca__zona {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: var(--chip);
+  border: 1px dashed var(--lineas-fuertes);
+  border-radius: var(--radio-control-grande);
+}
+
+.biblioteca__zona--activa {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.biblioteca__progreso {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.biblioteca__errores {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.biblioteca__vacia {
+  margin-top: 12px;
+  color: var(--secundario);
+}
+
+.biblioteca__vacia p {
+  margin: 0 0 4px;
+}
+
+.biblioteca__rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.biblioteca__imagen {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-tarjeta);
+}
+
+.biblioteca__vista {
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--chip);
+  border-radius: var(--radio-control);
+}
+
+.biblioteca__miniatura {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.biblioteca__nombre {
+  font-size: 13px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.biblioteca__detalle {
+  font-size: 12px;
+  color: var(--secundario);
+}
+
+.biblioteca__eliminar {
+  justify-self: end;
+  min-height: var(--objetivo-tactil);
+}
+
+.proyecto-eliminar__aviso {
+  margin: 0;
+  font-weight: 500;
+  color: var(--error);
 }

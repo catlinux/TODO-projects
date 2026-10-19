@@ -37,6 +37,8 @@ const MAX_IMAGENES = 10;
 const INTERVALO_MIN = 10;
 const INTERVALO_MAX = 600;
 const INTERVALO_POR_DEFECTO = 30;
+/** El fondo aleatorio de la biblioteca se mueve cada minuto. */
+const INTERVALO_ALEATORIO = 60;
 
 /** Segundos válidos a partir del campo de texto, o `null` si no lo son. */
 function leerIntervalo(valor: string): number | null {
@@ -99,14 +101,24 @@ export function PersonalizarProyecto({
   const [orden, setOrden] = useState<string[]>([]);
   const [intervalo, setIntervalo] = useState(String(INTERVALO_POR_DEFECTO));
   const [arrastrando, setArrastrando] = useState(false);
+  const [mostrarBiblioteca, setMostrarBiblioteca] = useState(false);
 
   const fondos = useQuery({
     queryKey: ["fondos", proyecto.id],
     queryFn: () => peticion<ArchivoApi[]>(`/proyectos/${proyecto.id}/fondos`),
     enabled: abierto,
   });
+  const biblioteca = useQuery({
+    queryKey: ["biblioteca"],
+    queryFn: () => peticion<ArchivoApi[]>("/biblioteca"),
+    enabled: abierto,
+  });
   const listaFondos = Array.isArray(fondos.data) ? fondos.data : [];
-  const porId = new Map(listaFondos.map((archivo) => [archivo.id, archivo]));
+  const listaBiblioteca = Array.isArray(biblioteca.data) ? biblioteca.data : [];
+  const porId = new Map(
+    [...listaFondos, ...listaBiblioteca].map((archivo) => [archivo.id, archivo] as const),
+  );
+  const idsBiblioteca = new Set(listaBiblioteca.map((archivo) => archivo.id));
   const imagenesOrdenadas = orden
     .map((id) => ({ id, archivo: porId.get(id) }))
     .filter((item): item is { id: string; archivo: ArchivoApi } => item.archivo !== undefined);
@@ -125,22 +137,31 @@ export function PersonalizarProyecto({
         : String(INTERVALO_POR_DEFECTO),
     );
     setError(null);
+    setMostrarBiblioteca(false);
     // Solo al abrir: no reajustar mientras se edita si la consulta se refresca.
   }, [abierto]);
 
-  // La lista de la API manda: descarta ids que ya no existen y añade los nuevos.
+  // La lista de la API manda: descarta ids que ya no existen y añade los fondos
+  // propios nuevos. Las imágenes de la biblioteca solo entran si se eligen.
   useEffect(() => {
     if (!abierto || !Array.isArray(fondos.data)) return;
-    const datos = fondos.data;
+    const propios = fondos.data.map((archivo) => archivo.id);
     setOrden((actual) => {
-      const disponibles = new Set(datos.map((archivo) => archivo.id));
-      const conservados = actual.filter((id) => disponibles.delete(id));
-      const siguiente = [...conservados, ...disponibles];
+      const deBiblioteca = Array.isArray(biblioteca.data)
+        ? new Set(biblioteca.data.map((archivo) => archivo.id))
+        : null;
+      const disponibles = new Set(propios);
+      if (deBiblioteca) {
+        for (const id of deBiblioteca) disponibles.add(id);
+      }
+      const conservados = actual.filter((id) => deBiblioteca === null || disponibles.has(id));
+      const extras = propios.filter((id) => !conservados.includes(id));
+      const siguiente = [...conservados, ...extras];
       return siguiente.length === actual.length && siguiente.every((id, i) => id === actual[i])
         ? actual
         : siguiente;
     });
-  }, [abierto, fondos.data]);
+  }, [abierto, fondos.data, biblioteca.data]);
 
   /** Si una imagen usada desaparece, el servidor limpia la referencia. */
   function invalidarTrasBorrar(id: string) {
@@ -193,6 +214,30 @@ export function PersonalizarProyecto({
     onError: (err: unknown) => setError(mensajeError(err)),
   });
 
+  const aleatorias = useMutation({
+    mutationFn: () => peticion<{ ids: string[] }>("/biblioteca/aleatorias", { method: "POST" }),
+    onMutate: () => setError(null),
+    onSuccess: (datos) => {
+      const ids = Array.isArray(datos.ids) ? datos.ids.slice(0, MAX_IMAGENES) : [];
+      if (ids.length === 0) return;
+      const intervaloSeg =
+        fondo.tipo === "imagenes" ? fondo.intervaloSeg : INTERVALO_ALEATORIO;
+      setOrden(ids);
+      setIntervalo(String(intervaloSeg));
+      setFondo({ tipo: "imagenes", ids, intervaloSeg });
+    },
+    onError: (err: unknown) => setError(mensajeError(err)),
+  });
+
+  function alternarBiblioteca(id: string) {
+    setError(null);
+    setOrden((actual) => {
+      if (actual.includes(id)) return actual.filter((imagenId) => imagenId !== id);
+      if (actual.length >= MAX_IMAGENES) return actual;
+      return [...actual, id];
+    });
+  }
+
   function subirFicheros(ficheros: FileList | File[] | null) {
     if (!ficheros) return;
     const seleccion = Array.from(ficheros);
@@ -236,6 +281,11 @@ export function PersonalizarProyecto({
   }
 
   function confirmarBorrado(archivo: ArchivoApi) {
+    // Una imagen de la biblioteca solo se quita del fondo; no se borra de la biblioteca.
+    if (idsBiblioteca.has(archivo.id)) {
+      setOrden((actual) => actual.filter((imagenId) => imagenId !== archivo.id));
+      return;
+    }
     if (!confirm(t("projects.personalize.confirmDeleteImage", { nombre: archivo.nombre }))) return;
     quitar.mutate(archivo.id);
   }
@@ -304,7 +354,7 @@ export function PersonalizarProyecto({
     },
   });
 
-  const ocupado = subir.isPending || quitar.isPending || guardar.isPending;
+  const ocupado = subir.isPending || quitar.isPending || guardar.isPending || aleatorias.isPending;
   const segundos = leerIntervalo(intervalo);
 
   return (
@@ -493,6 +543,97 @@ export function PersonalizarProyecto({
                   {t("projects.personalize.addImages")}
                 </button>
               </div>
+
+              <div className="personalizar__elegir">
+                <button
+                  type="button"
+                  className="boton-secundario"
+                  aria-expanded={mostrarBiblioteca}
+                  aria-controls="personalizar-biblioteca"
+                  disabled={listaBiblioteca.length === 0 || ocupado}
+                  onClick={() => setMostrarBiblioteca((visible) => !visible)}
+                >
+                  {t("projects.personalize.chooseFromLibrary")}
+                </button>
+                <button
+                  type="button"
+                  className="boton-secundario"
+                  disabled={listaBiblioteca.length === 0 || ocupado}
+                  onClick={() => aleatorias.mutate()}
+                >
+                  {t("projects.personalize.randomSeven")}
+                </button>
+              </div>
+
+              {mostrarBiblioteca && biblioteca.isError && (
+                <p className="error" role="alert">
+                  {t("projects.personalize.libraryLoadError")}
+                </p>
+              )}
+
+              {!biblioteca.isPending &&
+                !biblioteca.isError &&
+                listaBiblioteca.length === 0 && (
+                  <p className="personalizar__etiqueta">
+                    {t("projects.personalize.libraryEmpty")}{" "}
+                    <a href="/ajustes">{t("projects.personalize.libraryGoToSettings")}</a>
+                  </p>
+                )}
+
+              {mostrarBiblioteca && biblioteca.isPending && (
+                <p className="personalizar__etiqueta">{t("app.loading")}</p>
+              )}
+
+              {mostrarBiblioteca && listaBiblioteca.length > 0 && (
+                <div className="personalizar__biblioteca" id="personalizar-biblioteca">
+                  <ul
+                    className="personalizar__biblioteca-lista"
+                    aria-label={t("projects.personalize.libraryTitle")}
+                  >
+                    {listaBiblioteca.map((archivo) => {
+                      const usada = orden.includes(archivo.id);
+                      const url = urlArchivo(archivo.id);
+                      const llena = !usada && orden.length >= MAX_IMAGENES;
+                      return (
+                        <li key={archivo.id}>
+                          <button
+                            type="button"
+                            className="personalizar__biblioteca-opcion"
+                            aria-pressed={usada}
+                            aria-label={archivo.nombre}
+                            title={archivo.nombre}
+                            disabled={llena || ocupado}
+                            onClick={() => alternarBiblioteca(archivo.id)}
+                          >
+                            {url && (
+                              <img
+                                src={url}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                className="personalizar__biblioteca-miniatura"
+                              />
+                            )}
+                            <span className="personalizar__biblioteca-nombre">
+                              {archivo.nombre}
+                            </span>
+                            {usada && (
+                              <span className="personalizar__biblioteca-marca" aria-hidden="true">
+                                ✓
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {orden.length >= MAX_IMAGENES && (
+                    <p className="personalizar__etiqueta">
+                      {t("projects.personalize.imagesMaxReached")}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {subir.isPending && (
                 <p className="personalizar__estado" role="status">

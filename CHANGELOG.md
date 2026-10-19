@@ -4,6 +4,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.22.0] - 2026-10-19
+
+### Añadido
+- Biblioteca de imágenes en Ajustes: subida múltiple (también arrastrando) de hasta 300 imágenes por usuario, con cola, progreso y errores por archivo. Las imágenes de más de 2560 px se reducen en el navegador antes de subir. Migración `0018` (tercer destino «biblioteca» en `archivos`).
+- Los proyectos nuevos nacen con un fondo de hasta 7 imágenes al azar de la biblioteca (si no hay biblioteca, el bosque de siempre). En «Personalizar» de cada proyecto se pueden elegir imágenes de la biblioteca (hasta 10) o pulsar «Elegir 7 al azar».
+- Botón «Eliminar proyecto» en la cabecera del proyecto, con confirmación que indica cuántas tareas se pierden (no disponible en la Bandeja).
+- El asistente deja en la Bandeja de entrada las tareas sin proyecto indicado.
+
+### Cambiado
+- El dictado por voz ya no se corta con pausas cortas: sigue escuchando hasta pulsar el botón o 5 s de silencio, y se reinicia solo si el navegador lo corta.
+
 ## [0.21.0] - 2026-10-19
 
 ### Añadido
