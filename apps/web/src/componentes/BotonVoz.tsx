@@ -9,6 +9,7 @@ import {
   leerEnvioAutomatico,
   leerIdiomaVoz,
   soportaVoz,
+  unirTexto,
   useReconocimientoVoz,
   type IdiomaVoz,
 } from "../voz";
@@ -22,15 +23,6 @@ interface PropiedadesBotonVoz {
   alEnviar: (texto: string) => void;
   /** El asistente está respondiendo: el dictado se desactiva. */
   deshabilitado?: boolean;
-}
-
-/** Añade un fragmento al texto previo separándolos con un solo espacio. */
-function unir(previo: string, nuevo: string): string {
-  const izquierda = previo.replace(/\s+$/, "");
-  const derecha = nuevo.trim();
-  if (!izquierda) return derecha;
-  if (!derecha) return izquierda;
-  return `${izquierda} ${derecha}`;
 }
 
 function IconoMicrofono() {
@@ -70,12 +62,17 @@ export function BotonVoz({
 
   const { estado, error, empezar, detener } = useReconocimientoVoz({
     idioma,
-    alTexto: (reconocido, esFinal) => {
-      const nuevo = unir(baseRef.current, reconocido);
-      alCambiarTexto(nuevo);
-      if (!esFinal) return;
-      baseRef.current = nuevo;
-      if (envioAutomatico) alEnviar(nuevo);
+    alTexto: ({ final, parcial }) => {
+      const reconocido = unirTexto(final, parcial);
+      if (!reconocido) return;
+      alCambiarTexto(unirTexto(baseRef.current, reconocido));
+    },
+    alTerminar: (final) => {
+      if (!final.trim()) return;
+      const completo = unirTexto(baseRef.current, final);
+      baseRef.current = completo;
+      alCambiarTexto(completo);
+      if (envioAutomatico) alEnviar(completo);
     },
   });
 
