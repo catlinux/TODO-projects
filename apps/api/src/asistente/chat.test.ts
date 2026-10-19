@@ -155,12 +155,16 @@ describe("chat del asistente con herramientas", () => {
     await client.close();
   });
 
-  async function crearApp(opciones: OpcionesApp = {}): Promise<FastifyInstance> {
+  async function crearApp(
+    opciones: OpcionesApp = {},
+    antesDeListo?: (app: FastifyInstance) => void,
+  ): Promise<FastifyInstance> {
     const app = await buildApp(db as unknown as Database, {
       limiteAuth: { max: 100000, ventanaMs: 60 * 60 * 1000, maxPorCorreo: 100000 },
       ...opciones,
       asistente: opciones.asistente ?? OPCIONES_CHAT,
     });
+    antesDeListo?.(app);
     await app.ready();
     apps.push(app);
     return app;
@@ -463,6 +467,147 @@ describe("chat del asistente con herramientas", () => {
         expect(peticion.agenteUsuario).toBe(`TODO-projects-asistente/${VERSION}`);
         expect(peticion.sesion).toBe(conversacionId);
       }
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("crea en la Bandeja de entrada la tarea sin proyecto y con su fecha", async () => {
+    const app = await crearApp();
+    const cookie = await registrar(app, "bandeja-tarea");
+    const vence = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const proveedor = await crearProveedorFalso([
+      { llamadas: [{ nombre: "listar_proyectos", argumentos: {} }] },
+      {
+        llamadas: [
+          {
+            nombre: "crear_tarea",
+            argumentos: { titulo: "Llamar al banco", venceEn: vence.toISOString() },
+          },
+        ],
+      },
+      { contenido: "La he dejado en tu Bandeja de entrada." },
+    ]);
+    try {
+      await configurar(app, cookie, proveedor.baseUrl);
+      const chat = await chatear(app, cookie, [
+        { rol: "user", texto: "Crea una tarea para llamar al banco mañana" },
+      ]);
+
+      expect(chat.statusCode).toBe(200);
+      const cuerpo = chat.json() as {
+        mensaje: string;
+        acciones: Array<{ resumen: string; enlace?: string }>;
+      };
+      expect(cuerpo.mensaje).toContain("Bandeja");
+      expect(cuerpo.acciones[0]!.resumen).toContain("Bandeja de entrada");
+      expect(cuerpo.acciones[0]!.enlace).toMatch(/^\/proyectos\/.+\/tareas\/.+$/);
+
+      const bandeja = await app.inject({
+        method: "GET",
+        url: "/bandeja",
+        headers: { cookie: `sesion=${cookie}` },
+      });
+      const datosBandeja = bandeja.json() as {
+        proyecto: { id: string };
+        columnas: Array<{ id: string }>;
+        tareas: Array<{ id: string }>;
+      };
+
+      const [fila] = await db
+        .select()
+        .from(tareas)
+        .where(eq(tareas.titulo, "Llamar al banco"));
+      expect(fila).toBeDefined();
+      expect(fila!.venceEn?.getTime()).toBe(vence.getTime());
+      expect(fila!.proyectoId).toBe(datosBandeja.proyecto.id);
+      expect(fila!.columnaId).toBe(datosBandeja.columnas[0]!.id);
+      expect(datosBandeja.tareas.some((tarea) => tarea.id === fila!.id)).toBe(true);
+
+      const sistema = String(mensajesDe(proveedor.peticiones[0]!)[0]!.content);
+      expect(sistema).toContain("Bandeja de entrada");
+      expect(sistema).toContain("Entrada");
+      expect(sistema).toContain(datosBandeja.proyecto.id);
+
+      // listar_proyectos también devuelve la bandeja, marcada como tal.
+      const listado = mensajesDe(proveedor.peticiones[1]!).find(
+        (mensaje) => mensaje.role === "tool",
+      );
+      expect(String(listado?.content)).toContain(datosBandeja.proyecto.id);
+      expect(String(listado?.content)).toContain('"esBandeja":true');
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("respeta el proyecto explícito en vez de usar la Bandeja", async () => {
+    const app = await crearApp();
+    const cookie = await registrar(app, "proyecto-explicito");
+    const proyecto = await crearProyecto(app, cookie, "Casa");
+
+    const proveedor = await crearProveedorFalso([
+      {
+        llamadas: [
+          {
+            nombre: "crear_tarea",
+            argumentos: { proyectoId: proyecto.id, titulo: "Renovar el seguro" },
+          },
+        ],
+      },
+      { contenido: "Creada en Casa." },
+    ]);
+    try {
+      await configurar(app, cookie, proveedor.baseUrl);
+      const chat = await chatear(app, cookie, [
+        { rol: "user", texto: "Crea una tarea en Casa para renovar el seguro" },
+      ]);
+      expect(chat.statusCode).toBe(200);
+
+      const [fila] = await db
+        .select()
+        .from(tareas)
+        .where(eq(tareas.titulo, "Renovar el seguro"));
+      expect(fila!.proyectoId).toBe(proyecto.id);
+
+      const bandeja = await app.inject({
+        method: "GET",
+        url: "/bandeja",
+        headers: { cookie: `sesion=${cookie}` },
+      });
+      const datosBandeja = bandeja.json() as { tareas: Array<{ id: string }> };
+      expect(datosBandeja.tareas.some((tarea) => tarea.id === fila!.id)).toBe(false);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("sigue funcionando si GET /bandeja falla", async () => {
+    const app = await crearApp({}, (servidor) => {
+      servidor.addHook("onRequest", async (request, reply) => {
+        if (request.url.startsWith("/bandeja")) {
+          reply.code(500).send({ mensaje: "La bandeja no está disponible" });
+        }
+      });
+    });
+    const cookie = await registrar(app, "sin-bandeja");
+    await crearProyecto(app, cookie, "Trabajo");
+
+    const proveedor = await crearProveedorFalso([
+      { llamadas: [{ nombre: "listar_proyectos", argumentos: {} }] },
+      { contenido: "Puedo ayudarte con Trabajo." },
+    ]);
+    try {
+      await configurar(app, cookie, proveedor.baseUrl);
+      const chat = await chatear(app, cookie, [
+        { rol: "user", texto: "¿Qué proyectos tengo?" },
+      ]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toContain("Trabajo");
+
+      const sistema = String(mensajesDe(proveedor.peticiones[0]!)[0]!.content);
+      expect(sistema).toContain("Trabajo");
+      expect(sistema).not.toContain("[BANDEJA DE ENTRADA");
     } finally {
       await proveedor.cerrar();
     }

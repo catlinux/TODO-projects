@@ -38,6 +38,8 @@ export interface EstructuraProyecto {
   descripcion: string | null;
   columnas: Array<{ id: string; nombre: string }>;
   etiquetas: Array<{ id: string; nombre: string }>;
+  /** Proyecto especial del usuario donde van las tareas sin proyecto. */
+  esBandeja?: boolean;
 }
 
 interface RespuestaRuta {
@@ -126,18 +128,58 @@ async function obtenerColumnas(
   });
 }
 
+/**
+ * Bandeja de entrada del usuario. GET /proyectos no la incluye, así que se lee
+ * de su propia ruta; si falla, el asistente sigue sin ella.
+ */
+export async function obtenerBandejaAsistente(
+  app: FastifyInstance,
+  contexto: ContextoAsistente,
+): Promise<EstructuraProyecto | null> {
+  try {
+    const respuesta = await llamarRuta(app, contexto, "GET", "/bandeja");
+    if (!respuesta.ok) {
+      return null;
+    }
+
+    const datos = registro(respuesta.datos);
+    const proyecto = registro(datos.proyecto);
+    const id = texto(proyecto.id);
+    if (!id) {
+      return null;
+    }
+
+    return {
+      id,
+      nombre: texto(proyecto.nombre, "Bandeja de entrada"),
+      descripcion: typeof proyecto.descripcion === "string" ? proyecto.descripcion : null,
+      columnas: lista(datos.columnas).map((columna) => {
+        const fila = registro(columna);
+        return { id: texto(fila.id), nombre: texto(fila.nombre) };
+      }),
+      etiquetas: [],
+      esBandeja: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Proyectos del usuario con sus columnas y etiquetas, leídos por las rutas. */
 export async function obtenerEstructuraAsistente(
   app: FastifyInstance,
   contexto: ContextoAsistente,
 ): Promise<EstructuraProyecto[] | null> {
-  const respuesta = await llamarRuta(app, contexto, "GET", "/proyectos");
+  const [respuesta, bandeja] = await Promise.all([
+    llamarRuta(app, contexto, "GET", "/proyectos"),
+    obtenerBandejaAsistente(app, contexto),
+  ]);
   if (!respuesta.ok || !Array.isArray(respuesta.datos)) {
     return null;
   }
 
   const proyectos = respuesta.datos.slice(0, MAX_PROYECTOS_ESTRUCTURA);
-  return Promise.all(
+  const estructura = await Promise.all(
     proyectos.map(async (proyecto) => {
       const fila = registro(proyecto);
       const id = texto(fila.id);
@@ -159,6 +201,11 @@ export async function obtenerEstructuraAsistente(
       };
     }),
   );
+
+  if (bandeja && !estructura.some((proyecto) => proyecto.id === bandeja.id)) {
+    estructura.push(bandeja);
+  }
+  return estructura;
 }
 
 const idUuid = { type: "string", format: "uuid", description: "Identificador UUID del recurso" };
@@ -227,11 +274,15 @@ export const HERRAMIENTAS_ASISTENTE: HerramientaModelo[] = [
     function: {
       name: "crear_tarea",
       description:
-        "Crea una tarea en un proyecto. Si no se indica columna se usa la primera. Acepta etiquetas existentes del proyecto y un checklist inicial.",
+        "Crea una tarea en un proyecto. Si se omite proyectoId se crea en la Bandeja de entrada. Si no se indica columna se usa la primera. Acepta etiquetas existentes del proyecto y un checklist inicial.",
       parameters: {
         type: "object",
         properties: {
-          proyectoId: idUuid,
+          proyectoId: {
+            ...idUuid,
+            description:
+              "Proyecto destino (opcional). Omítelo para crear la tarea en la Bandeja de entrada",
+          },
           titulo: { type: "string", description: "Título de la tarea" },
           descripcion: { type: "string", description: "Descripción opcional" },
           columnaId: { type: "string", format: "uuid", description: "Columna destino (opcional)" },
@@ -257,7 +308,7 @@ export const HERRAMIENTAS_ASISTENTE: HerramientaModelo[] = [
             description: "Elementos iniciales del checklist",
           },
         },
-        required: ["proyectoId", "titulo"],
+        required: ["titulo"],
         additionalProperties: false,
       },
     },
@@ -396,7 +447,7 @@ const esquemaCrearProyecto = z.object({
 });
 
 const esquemaCrearTarea = z.object({
-  proyectoId: z.string().uuid(),
+  proyectoId: z.string().uuid().optional(),
   titulo: z.string().trim().min(1).max(300),
   descripcion: z.string().max(5000).optional(),
   columnaId: z.string().uuid().optional(),
@@ -592,20 +643,31 @@ async function ejecutarCrearTarea(
   }
   const datos = validado.datos;
 
-  const respuesta = await llamarRuta(
-    app,
-    contexto,
-    "POST",
-    `/proyectos/${datos.proyectoId}/tareas`,
-    {
-      titulo: datos.titulo,
-      ...(datos.descripcion !== undefined ? { descripcion: datos.descripcion } : {}),
-      ...(datos.columnaId !== undefined ? { columnaId: datos.columnaId } : {}),
-      ...(datos.venceEn !== undefined ? { venceEn: datos.venceEn } : {}),
-      ...(datos.recurrencia !== undefined ? { recurrencia: datos.recurrencia } : {}),
-      ...(datos.recordatorioMin !== undefined ? { recordatorioMin: datos.recordatorioMin } : {}),
-    },
-  );
+  // Sin proyecto explícito, la tarea va a la Bandeja de entrada.
+  let proyectoId = datos.proyectoId;
+  let enBandeja = false;
+  if (!proyectoId) {
+    const bandeja = await obtenerBandejaAsistente(app, contexto);
+    if (!bandeja) {
+      return {
+        datos: {
+          error:
+            "No se pudo obtener la Bandeja de entrada. Indica en qué proyecto crear la tarea.",
+        },
+      };
+    }
+    proyectoId = bandeja.id;
+    enBandeja = true;
+  }
+
+  const respuesta = await llamarRuta(app, contexto, "POST", `/proyectos/${proyectoId}/tareas`, {
+    titulo: datos.titulo,
+    ...(datos.descripcion !== undefined ? { descripcion: datos.descripcion } : {}),
+    ...(datos.columnaId !== undefined ? { columnaId: datos.columnaId } : {}),
+    ...(datos.venceEn !== undefined ? { venceEn: datos.venceEn } : {}),
+    ...(datos.recurrencia !== undefined ? { recurrencia: datos.recurrencia } : {}),
+    ...(datos.recordatorioMin !== undefined ? { recordatorioMin: datos.recordatorioMin } : {}),
+  });
   if (!respuesta.ok) {
     return errorDeRuta(respuesta);
   }
@@ -638,13 +700,16 @@ async function ejecutarCrearTarea(
   return conAccion(
     {
       tarea,
+      ...(enBandeja ? { bandeja: true } : {}),
       ...(creadosChecklist > 0 ? { checklistCreado: creadosChecklist } : {}),
       ...(avisos.length > 0 ? { avisos } : {}),
     },
     {
       herramienta: "crear_tarea",
-      resumen: `Tarea «${texto(tarea.titulo, datos.titulo)}» creada`,
-      enlace: `/proyectos/${datos.proyectoId}/tareas/${tareaId}`,
+      resumen: enBandeja
+        ? `Tarea «${texto(tarea.titulo, datos.titulo)}» creada en la Bandeja de entrada`
+        : `Tarea «${texto(tarea.titulo, datos.titulo)}» creada`,
+      enlace: `/proyectos/${proyectoId}/tareas/${tareaId}`,
     },
   );
 }
