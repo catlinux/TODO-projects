@@ -1,4 +1,5 @@
 import { type FastifyInstance } from "fastify";
+import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 
 import {
@@ -283,6 +284,9 @@ export function registrarRutasAsistente(
         mensajes: [{ role: "user", content: MENSAJE_PRUEBA }],
         maxTokens: MAX_TOKENS_PRUEBA,
         signal: AbortSignal.timeout(tiempoMaximoPrueba),
+        ...((datos.preset ?? existente?.preset) === "opencode-go"
+          ? { sesion: randomUUID() }
+          : {}),
       });
       return { ok: true };
     } catch (error) {

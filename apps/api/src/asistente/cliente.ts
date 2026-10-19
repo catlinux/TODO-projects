@@ -1,5 +1,10 @@
 /** Llamada a un modelo por Chat Completions, reutilizable por el chat (paso 2). */
 
+import { VERSION } from "../version.js";
+
+/** OpenCode Go pide identificar a cada cliente con su propio agente de usuario. */
+const AGENTE_USUARIO = `TODO-projects-asistente/${VERSION}`;
+
 export interface LlamadaHerramientaModelo {
   id: string;
   type: "function";
@@ -31,6 +36,8 @@ export interface OpcionesLlamadaModelo {
   herramientas?: HerramientaModelo[];
   maxTokens: number;
   signal?: AbortSignal;
+  /** Id de sesión estable por conversación; solo se envía con OpenCode Go. */
+  sesion?: string;
 }
 
 export interface RespuestaModelo {
@@ -123,6 +130,8 @@ export async function llamarModelo(opciones: OpcionesLlamadaModelo): Promise<Res
       headers: {
         "content-type": "application/json",
         authorization: `Bearer ${opciones.clave}`,
+        "user-agent": AGENTE_USUARIO,
+        ...(opciones.sesion ? { "x-opencode-session": opciones.sesion } : {}),
       },
       body: JSON.stringify(cuerpo),
       ...(opciones.signal ? { signal: opciones.signal } : {}),

@@ -12,6 +12,7 @@ import type { Database } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { asistenteConfig } from "../db/schema.js";
 import { cifrarClave, descifrarClave, leerClaveCifrado } from "./cifrado.js";
+import { VERSION } from "../version.js";
 
 const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
@@ -42,6 +43,8 @@ function respuestas(app: FastifyInstance, cookie: string) {
 interface PeticionFalsa {
   url: string;
   authorization: string;
+  agenteUsuario: string;
+  sesion: string | null;
   cuerpo: Record<string, unknown>;
 }
 
@@ -61,6 +64,11 @@ function crearServidorFalso(comportamiento: "ok" | "401" | "esperar"): Promise<S
       peticiones.push({
         url: peticion.url ?? "",
         authorization: String(peticion.headers.authorization ?? ""),
+        agenteUsuario: String(peticion.headers["user-agent"] ?? ""),
+        sesion:
+          typeof peticion.headers["x-opencode-session"] === "string"
+            ? peticion.headers["x-opencode-session"]
+            : null,
         cuerpo: JSON.parse(Buffer.concat(trozos).toString("utf8") || "{}") as Record<
           string,
           unknown
@@ -228,6 +236,15 @@ describe("configuración del proveedor del asistente", () => {
       modelo: "otro-modelo",
       claveTermina: "…1234",
     });
+
+    const opencodeGo = await api.put({ preset: "opencode-go" });
+    expect(opencodeGo.json()).toMatchObject({
+      preset: "opencode-go",
+      baseUrl: "https://opencode.ai/inference/go/openai/v1",
+      modelo: "deepseek-v4.1-flash",
+      razonamiento: null,
+      claveTermina: "…1234",
+    });
   });
 
   it("valida la URL base, el modelo y el proveedor", async () => {
@@ -349,6 +366,8 @@ describe("configuración del proveedor del asistente", () => {
       const peticion = servidor.peticiones[0]!;
       expect(peticion.url).toBe("/chat/completions");
       expect(peticion.authorization).toBe("Bearer sk-prueba-1234");
+      expect(peticion.agenteUsuario).toBe(`TODO-projects-asistente/${VERSION}`);
+      expect(peticion.sesion).toBeNull();
       expect(peticion.cuerpo).toMatchObject({
         model: "modelo-falso",
         max_tokens: 16,
@@ -368,6 +387,26 @@ describe("configuración del proveedor del asistente", () => {
       expect(directa.json()).toEqual({ ok: true });
       expect(servidor.peticiones).toHaveLength(2);
       expect(servidor.peticiones[1]!.cuerpo).toMatchObject({ model: "otro-modelo" });
+      expect(servidor.peticiones[1]!.agenteUsuario).toBe(`TODO-projects-asistente/${VERSION}`);
+
+      // OpenCode Go: sesión aleatoria distinta en cada prueba.
+      const primeraGo = await api.probar({
+        preset: "opencode-go",
+        baseUrl: servidor.baseUrl,
+        clave: "sk-go-1111",
+      });
+      const segundaGo = await api.probar({
+        preset: "opencode-go",
+        baseUrl: servidor.baseUrl,
+        clave: "sk-go-2222",
+      });
+      expect(primeraGo.json()).toEqual({ ok: true });
+      expect(segundaGo.json()).toEqual({ ok: true });
+      const sesionGo1 = servidor.peticiones[2]!.sesion;
+      const sesionGo2 = servidor.peticiones[3]!.sesion;
+      expect(sesionGo1).toMatch(/^[0-9a-f-]{36}$/);
+      expect(sesionGo2).toMatch(/^[0-9a-f-]{36}$/);
+      expect(sesionGo1).not.toBe(sesionGo2);
     } finally {
       await servidor.cerrar();
     }

@@ -411,6 +411,7 @@
     "presets": {
       "deepseek": "DeepSeek",
       "openai": "OpenAI",
+      "opencode-go": "OpenCode Go (suscripción)",
       "personalizado": "Personalizado"
     },
     "razonamientos": {
@@ -436,7 +437,8 @@
       "testError": "No se pudo comprobar el proveedor.",
       "remove": "Quitar configuración",
       "removeConfirm": "¿Quitar la configuración del asistente?",
-      "removed": "Configuración eliminada."
+      "removed": "Configuración eliminada.",
+      "ayudaOpenCodeGo": "La clave se obtiene en la consola de OpenCode: suscríbete a Go y copia la clave. El modelo gpt-6-luna no funciona en este preset (usa Responses, que aquí no está soportado). El servicio está pensado para agentes de programación: úsalo bajo tu cuenta y riesgo."
     },
     "placeholder": "Escribe un mensaje…",
     "send": "Enviar",

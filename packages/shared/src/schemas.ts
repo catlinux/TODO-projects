@@ -239,7 +239,12 @@ export const esquemaColumnaParcial = z.object({
   posicion: z.number().int().min(0, "Posición no válida").optional(),
 });
 
-export const PRESETS_ASISTENTE = ["deepseek", "openai", "personalizado"] as const;
+export const PRESETS_ASISTENTE = [
+  "deepseek",
+  "openai",
+  "opencode-go",
+  "personalizado",
+] as const;
 export type PresetAsistente = (typeof PRESETS_ASISTENTE)[number];
 
 export interface DefectosPresetAsistente {
@@ -255,6 +260,11 @@ export const PRESETS_ASISTENTE_DEFECTOS: Record<PresetAsistente, DefectosPresetA
     baseUrl: "https://api.openai.com/v1",
     modelo: "gpt-6-luna",
     razonamiento: "none",
+  },
+  "opencode-go": {
+    baseUrl: "https://opencode.ai/inference/go/openai/v1",
+    modelo: "deepseek-v4.1-flash",
+    razonamiento: null,
   },
   personalizado: null,
 };
@@ -332,6 +342,7 @@ export const esquemaChatAsistente = z.object({
     .array(esquemaMensajeAsistente)
     .min(1, "Hace falta al menos un mensaje")
     .max(20, "El historial no puede superar los 20 mensajes"),
+  conversacionId: z.string().uuid("Conversación no válida").optional(),
   zona: esquemaZona.optional(),
 });
 

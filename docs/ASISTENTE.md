@@ -23,8 +23,13 @@ Todos usan el formato Chat Completions de OpenAI, así que sirve cualquier servi
 |---|---|---|---|
 | DeepSeek | `https://api.deepseek.com` | `deepseek-flash` | Formato estándar de herramientas. |
 | OpenAI | `https://api.openai.com/v1` | `gpt-6-luna` | Con Chat Completions las herramientas solo funcionan con `reasoning_effort: none`, que el preset ya fija. |
+| OpenCode Go (suscripción) | `https://opencode.ai/inference/go/openai/v1` | `deepseek-v4.1-flash` | La clave se obtiene en la consola de OpenCode (suscríbete a Go y cópiala). `gpt-6-luna` no funciona aquí porque usa Responses. El servicio está pensado para agentes de programación: úsalo bajo tu cuenta y riesgo. |
 
 Los nombres de modelo y los precios cambian: compruébalos en la documentación del proveedor y edita el modelo en Ajustes si hace falta.
+
+OpenCode Zen (pago por uso) también se puede usar con el preset «Personalizado» y la URL base `https://opencode.ai/inference/openai/v1`.
+
+Las llamadas al proveedor se identifican con el agente de usuario `TODO-projects-asistente/<versión>`; con OpenCode Go, además, cada conversación envía su id en `x-opencode-session`.
 
 ## Privacidad y seguridad
 

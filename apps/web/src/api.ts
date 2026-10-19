@@ -215,7 +215,7 @@ export interface ActividadApi {
   titulo: string | null;
 }
 
-export type PresetAsistenteApi = "deepseek" | "openai" | "personalizado";
+export type PresetAsistenteApi = "deepseek" | "openai" | "opencode-go" | "personalizado";
 
 export type RazonamientoAsistenteApi = "none" | "low" | "medium" | "high";
 

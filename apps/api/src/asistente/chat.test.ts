@@ -11,6 +11,7 @@ import { buildApp, type OpcionesApp } from "../app.js";
 import type { Database } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { tareas } from "../db/schema.js";
+import { VERSION } from "../version.js";
 
 const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
@@ -40,6 +41,8 @@ interface Guion {
 
 interface PeticionFalsa {
   autorizacion: string;
+  agenteUsuario: string;
+  sesion: string | null;
   cuerpo: Record<string, unknown>;
 }
 
@@ -59,6 +62,11 @@ function crearProveedorFalso(guiones: Guion[]): Promise<ProveedorFalso> {
     peticion.on("end", () => {
       peticiones.push({
         autorizacion: String(peticion.headers.authorization ?? ""),
+        agenteUsuario: String(peticion.headers["user-agent"] ?? ""),
+        sesion:
+          typeof peticion.headers["x-opencode-session"] === "string"
+            ? peticion.headers["x-opencode-session"]
+            : null,
         cuerpo: JSON.parse(Buffer.concat(trozos).toString("utf8") || "{}") as Record<
           string,
           unknown
@@ -171,16 +179,22 @@ describe("chat del asistente con herramientas", () => {
     return obtenerCookie(respuesta);
   }
 
-  async function configurar(app: FastifyInstance, cookie: string, baseUrl: string): Promise<void> {
+  async function configurar(
+    app: FastifyInstance,
+    cookie: string,
+    baseUrl: string,
+    preset = "personalizado",
+  ): Promise<void> {
     const respuesta = await app.inject({
       method: "PUT",
       url: "/asistente/config",
       headers: { cookie: `sesion=${cookie}` },
       payload: {
-        preset: "personalizado",
+        preset,
         baseUrl,
-        modelo: "modelo-falso",
-        razonamiento: null,
+        ...(preset === "personalizado"
+          ? { modelo: "modelo-falso", razonamiento: null }
+          : {}),
         clave: CLAVE_PROVEEDOR,
       },
     });
@@ -192,12 +206,13 @@ describe("chat del asistente con herramientas", () => {
     cookie: string,
     mensajes: Array<{ rol: string; texto: string }>,
     zona?: string,
+    conversacionId?: string,
   ) {
     return app.inject({
       method: "POST",
       url: "/asistente/chat",
       headers: { cookie: `sesion=${cookie}` },
-      payload: { mensajes, ...(zona ? { zona } : {}) },
+      payload: { mensajes, ...(zona ? { zona } : {}), ...(conversacionId ? { conversacionId } : {}) },
     });
   }
 
@@ -273,6 +288,8 @@ describe("chat del asistente con herramientas", () => {
 
       const primera = proveedor.peticiones[0]!;
       expect(primera.autorizacion).toBe(`Bearer ${CLAVE_PROVEEDOR}`);
+      expect(primera.agenteUsuario).toBe(`TODO-projects-asistente/${VERSION}`);
+      expect(primera.sesion).toBeNull();
       const sistema = mensajesDe(primera)[0]!;
       expect(String(sistema.content)).toContain("Casa");
       expect(String(sistema.content)).toContain("DATOS");
@@ -407,6 +424,45 @@ describe("chat del asistente con herramientas", () => {
         "El proveedor no responde en este momento.",
       );
       expect(chat.body).not.toContain(CLAVE_PROVEEDOR);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("usa una sesión estable de OpenCode Go durante la conversación", async () => {
+    const proveedor = await crearProveedorFalso([
+      { llamadas: [{ nombre: "listar_proyectos", argumentos: {} }] },
+      { contenido: "Listo." },
+      { contenido: "Otra vez." },
+    ]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "opencode-go");
+      await configurar(app, cookie, proveedor.baseUrl, "opencode-go");
+
+      const conversacionId = "00000000-0000-4000-8000-000000000123";
+      const primera = await chatear(
+        app,
+        cookie,
+        [{ rol: "user", texto: "Lista mis proyectos" }],
+        undefined,
+        conversacionId,
+      );
+      expect(primera.statusCode).toBe(200);
+      const segunda = await chatear(
+        app,
+        cookie,
+        [{ rol: "user", texto: "Y otra vez" }],
+        undefined,
+        conversacionId,
+      );
+      expect(segunda.statusCode).toBe(200);
+
+      expect(proveedor.peticiones).toHaveLength(3);
+      for (const peticion of proveedor.peticiones) {
+        expect(peticion.agenteUsuario).toBe(`TODO-projects-asistente/${VERSION}`);
+        expect(peticion.sesion).toBe(conversacionId);
+      }
     } finally {
       await proveedor.cerrar();
     }

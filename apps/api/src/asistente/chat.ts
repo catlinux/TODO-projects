@@ -4,6 +4,7 @@
  */
 
 import { type FastifyInstance } from "fastify";
+import { randomUUID } from "node:crypto";
 
 import { ZONA_POR_DEFECTO, esquemaChatAsistente } from "@todo/shared";
 
@@ -126,6 +127,7 @@ export function registrarRutasChat(
     if (request.headers.host) contexto.host = request.headers.host;
 
     const zona = cuerpo.data.zona ?? ZONA_POR_DEFECTO;
+    const conversacionId = cuerpo.data.conversacionId ?? randomUUID();
     const estructura = await obtenerEstructura(app, contexto);
 
     const mensajes: MensajeModelo[] = [
@@ -150,6 +152,7 @@ export function registrarRutasChat(
           herramientas: HERRAMIENTAS_ASISTENTE,
           maxTokens,
           signal,
+          ...(config.preset === "opencode-go" ? { sesion: conversacionId } : {}),
         });
 
         if (respuesta.toolCalls.length === 0) {

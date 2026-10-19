@@ -26,6 +26,12 @@ interface Mensaje {
   acciones?: AccionAsistenteApi[];
 }
 
+/** La conversación y su id estable viven juntos en `sessionStorage`. */
+interface Conversacion {
+  conversacionId: string;
+  mensajes: Mensaje[];
+}
+
 interface ErrorChat {
   texto: string;
   status: number | null;
@@ -43,24 +49,46 @@ function esMensaje(valor: unknown): valor is Mensaje {
   );
 }
 
-function cargarConversacion(): Mensaje[] {
+function cargarConversacion(): Conversacion {
   try {
     const bruto = sessionStorage.getItem(CLAVE_CONVERSACION);
-    if (!bruto) return [];
+    if (!bruto) return { conversacionId: nuevoConversacionId(), mensajes: [] };
     const datos: unknown = JSON.parse(bruto);
-    if (!Array.isArray(datos)) return [];
-    return datos.filter(esMensaje);
+    // Formato anterior: solo la lista de mensajes, sin id de conversación.
+    if (Array.isArray(datos)) {
+      return { conversacionId: nuevoConversacionId(), mensajes: datos.filter(esMensaje) };
+    }
+    if (typeof datos === "object" && datos !== null) {
+      const guardada = datos as { conversacionId?: unknown; mensajes?: unknown };
+      if (
+        typeof guardada.conversacionId === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          guardada.conversacionId,
+        ) &&
+        Array.isArray(guardada.mensajes)
+      ) {
+        return {
+          conversacionId: guardada.conversacionId,
+          mensajes: guardada.mensajes.filter(esMensaje),
+        };
+      }
+    }
+    return { conversacionId: nuevoConversacionId(), mensajes: [] };
   } catch {
-    return [];
+    return { conversacionId: nuevoConversacionId(), mensajes: [] };
   }
 }
 
-function guardarConversacion(mensajes: Mensaje[]): void {
+function guardarConversacion(conversacion: Conversacion): void {
   try {
-    sessionStorage.setItem(CLAVE_CONVERSACION, JSON.stringify(mensajes));
+    sessionStorage.setItem(CLAVE_CONVERSACION, JSON.stringify(conversacion));
   } catch {
     // Sin espacio o almacenamiento bloqueado: la conversación no se conserva.
   }
+}
+
+function nuevoConversacionId(): string {
+  return crypto.randomUUID();
 }
 
 function nuevoId(): string {
@@ -79,15 +107,16 @@ export default function Asistente() {
   const { t } = useTranslation();
   const cliente = useQueryClient();
 
-  const [mensajes, setMensajes] = useState<Mensaje[]>(cargarConversacion);
+  const [conversacion, setConversacion] = useState<Conversacion>(cargarConversacion);
+  const { mensajes, conversacionId } = conversacion;
   const [borrador, setBorrador] = useState("");
   const [error, setError] = useState<ErrorChat | null>(null);
   const refHilo = useRef<HTMLDivElement>(null);
   const refCuadro = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    guardarConversacion(mensajes);
-  }, [mensajes]);
+    guardarConversacion(conversacion);
+  }, [conversacion]);
 
   useEffect(() => {
     const hilo = refHilo.current;
@@ -111,6 +140,7 @@ export default function Asistente() {
       return peticion<RespuestaChatAsistenteApi>("/asistente/chat", {
         method: "POST",
         body: JSON.stringify({
+          conversacionId,
           mensajes: historial
             .slice(-MAX_HISTORIAL)
             .map((mensaje) => ({ rol: mensaje.rol, texto: mensaje.texto })),
@@ -129,7 +159,7 @@ export default function Asistente() {
           ...(respuesta.acciones.length > 0 ? { acciones: respuesta.acciones } : {}),
         });
       }
-      setMensajes(nuevos);
+      setConversacion((actual) => ({ ...actual, mensajes: nuevos }));
       if (respuesta.acciones.length > 0) {
         // Las herramientas han podido crear o mover tareas: refresca lo afectado.
         await Promise.all([
@@ -141,7 +171,7 @@ export default function Asistente() {
       }
     },
     onError: (err, historial) => {
-      setMensajes(historial);
+      setConversacion((actual) => ({ ...actual, mensajes: historial }));
       setError(describirError(err));
     },
   });
@@ -152,7 +182,7 @@ export default function Asistente() {
     const texto = (textoDictado ?? borrador).trim();
     if (!texto || esperando) return;
     const historial = [...mensajes, { id: nuevoId(), rol: "user" as const, texto }];
-    setMensajes(historial);
+    setConversacion((actual) => ({ ...actual, mensajes: historial }));
     setBorrador("");
     setError(null);
     enviar.mutate(historial);
@@ -165,7 +195,7 @@ export default function Asistente() {
   }
 
   function nuevaConversacion() {
-    setMensajes([]);
+    setConversacion({ conversacionId: nuevoConversacionId(), mensajes: [] });
     setError(null);
     setBorrador("");
     refCuadro.current?.focus();

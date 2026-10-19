@@ -10,7 +10,12 @@ import {
 } from "../api";
 
 /** Mismos presets y defectos que `PRESETS_ASISTENTE_DEFECTOS` de @todo/shared. */
-const PRESETS: readonly PresetAsistenteApi[] = ["deepseek", "openai", "personalizado"];
+const PRESETS: readonly PresetAsistenteApi[] = [
+  "deepseek",
+  "openai",
+  "opencode-go",
+  "personalizado",
+];
 
 interface DefectosPreset {
   baseUrl: string;
@@ -21,6 +26,11 @@ interface DefectosPreset {
 const PRESET_DEFECTOS: Record<PresetAsistenteApi, DefectosPreset | null> = {
   deepseek: { baseUrl: "https://api.deepseek.com", modelo: "deepseek-flash", razonamiento: null },
   openai: { baseUrl: "https://api.openai.com/v1", modelo: "gpt-6-luna", razonamiento: "none" },
+  "opencode-go": {
+    baseUrl: "https://opencode.ai/inference/go/openai/v1",
+    modelo: "deepseek-v4.1-flash",
+    razonamiento: null,
+  },
   personalizado: null,
 };
 
@@ -171,6 +181,9 @@ export function AjustesAsistente() {
                 ))}
               </select>
             </label>
+            {preset === "opencode-go" && (
+              <p className="asistente-ajustes__ayuda">{t("asistente.config.ayudaOpenCodeGo")}</p>
+            )}
             <label>
               {t("asistente.config.baseUrl")}
               <input

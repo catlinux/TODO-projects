@@ -81,6 +81,34 @@ describe("Ajustes · tarjeta del Asistente", () => {
     expect(screen.queryByLabelText("Proveedor")).toBeNull();
   });
 
+  it("ofrece OpenCode Go con sus valores por defecto y su ayuda", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/asistente/config") {
+          return respuestaJson(SIN_CONFIGURAR);
+        }
+        return respuestaJson([]);
+      }),
+    );
+
+    const { user } = renderAjustes();
+
+    await user.selectOptions(
+      await screen.findByLabelText("Proveedor"),
+      "opencode-go",
+    );
+    expect((screen.getByLabelText("URL base") as HTMLInputElement).value).toBe(
+      "https://opencode.ai/inference/go/openai/v1",
+    );
+    expect((screen.getByLabelText("Modelo") as HTMLInputElement).value).toBe(
+      "deepseek-v4.1-flash",
+    );
+    expect(screen.getByText(/consola de OpenCode/)).toBeTruthy();
+    expect(screen.getByText(/gpt-6-luna no funciona/)).toBeTruthy();
+    expect(screen.getByText(/bajo tu cuenta y riesgo/)).toBeTruthy();
+  });
+
   it("rellena los campos con el preset y guarda sin perder la clave", async () => {
     let cuerpo: Record<string, unknown> | null = null;
     vi.stubGlobal(
@@ -212,6 +240,7 @@ describe("Ajustes · tarjeta del Asistente", () => {
 
 interface CuerpoChat {
   mensajes: Array<{ rol: string; texto: string }>;
+  conversacionId?: string;
   zona?: string;
 }
 
@@ -422,7 +451,38 @@ describe("Página Asistente", () => {
 
     expect(await screen.findByText("¿En qué te ayudo?")).toBeTruthy();
     expect(screen.queryByText("Hecho")).toBeNull();
-    expect(sessionStorage.getItem(CLAVE_CONVERSACION)).toBe("[]");
+    expect(JSON.parse(sessionStorage.getItem(CLAVE_CONVERSACION) ?? "{}").mensajes).toEqual([]);
+  });
+
+  it("mantiene el conversacionId en mensajes sucesivos y lo renueva con «Nueva conversación»", async () => {
+    const cuerpos: CuerpoChat[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/asistente/chat") {
+          cuerpos.push(JSON.parse(String(init?.body)) as CuerpoChat);
+          return respuestaJson({ mensaje: "Vale", acciones: [] });
+        }
+        return respuestaJson([]);
+      }),
+    );
+
+    const { user } = renderAsistente();
+    await user.type(screen.getByLabelText("Mensaje para el asistente"), "Hola{Enter}");
+    await waitFor(() => expect(cuerpos).toHaveLength(1));
+    await user.type(screen.getByLabelText("Mensaje para el asistente"), "Otra{Enter}");
+    await waitFor(() => expect(cuerpos).toHaveLength(2));
+
+    const primero = cuerpos[0]!.conversacionId;
+    expect(primero).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
+    expect(cuerpos[1]!.conversacionId).toBe(primero);
+
+    await user.click(screen.getByRole("button", { name: "Nueva conversación" }));
+    await user.type(screen.getByLabelText("Mensaje para el asistente"), "Después{Enter}");
+    await waitFor(() => expect(cuerpos).toHaveLength(3));
+    expect(cuerpos[2]!.conversacionId).not.toBe(primero);
   });
 
   it("los ejemplos del estado vacío rellenan el cuadro de mensaje", async () => {
