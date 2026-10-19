@@ -9,7 +9,7 @@ import {
   subirArchivo,
   type ArchivoApi,
 } from "../api";
-import { reducirImagen } from "../imagenes";
+import { OPCIONES_BIBLIOTECA, reducirImagen } from "../imagenes";
 import { urlArchivo } from "../portada";
 import { formatearTamano, MAX_BYTES } from "./Adjuntos";
 
@@ -131,7 +131,7 @@ export function BibliotecaImagenes() {
         if (!fichero) return;
 
         try {
-          const reducida = await reducirImagen(fichero, { ladoMax: 2560, calidad: 0.85 });
+          const reducida = await reducirImagen(fichero, OPCIONES_BIBLIOTECA);
           await subirArchivo<ArchivoApi>("/biblioteca", "archivo", reducida);
         } catch (error) {
           setErrores((actual) => [

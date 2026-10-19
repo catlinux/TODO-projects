@@ -75,6 +75,37 @@ describe("reducirImagen", () => {
     expect(contexto).not.toHaveBeenCalled();
   });
 
+  it("recodifica las fotos que caben en píxeles pero pesan demasiado", async () => {
+    const { dibujar } = (simularBitmap(1600, 900), simularLienzo());
+    const original = new File([new Uint8Array(2_000_000)], "foto.jpg", { type: "image/jpeg" });
+
+    const resultado = await reducirImagen(original);
+
+    expect(resultado).not.toBe(original);
+    expect(resultado.name).toBe("foto.webp");
+    expect(dibujar).toHaveBeenCalledWith(expect.anything(), 0, 0, 1600, 900);
+  });
+
+  it("no sustituye una imagen pesada si la recodificada no pesa menos", async () => {
+    simularBitmap(1600, 900);
+    simularLienzo();
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback: BlobCallback) => {
+      callback(new Blob([new Uint8Array(3_000_000)], { type: "image/webp" }));
+    });
+    const original = new File([new Uint8Array(2_000_000)], "foto.jpg", { type: "image/jpeg" });
+
+    expect(await reducirImagen(original)).toBe(original);
+  });
+
+  it("reduce a 1920 px por defecto", async () => {
+    const { mapa } = simularBitmap(6000, 4000);
+    const { dibujar } = simularLienzo();
+
+    await reducirImagen(imagen("camara.jpg", "image/jpeg"));
+
+    expect(dibujar).toHaveBeenCalledWith(mapa, 0, 0, 1920, 1280);
+  });
+
   it("cae al original si no se puede procesar", async () => {
     vi.stubGlobal(
       "createImageBitmap",

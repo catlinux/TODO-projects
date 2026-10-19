@@ -3,9 +3,18 @@ export interface OpcionesReducirImagen {
   ladoMax: number;
   /** Calidad de la salida con pérdida (0 a 1). */
   calidad: number;
+  /** Peso a partir del cual se recodifica aunque quepa en píxeles (fotos muy pesadas). */
+  bytesMax?: number;
 }
 
-const OPCIONES_POR_DEFECTO: OpcionesReducirImagen = { ladoMax: 2560, calidad: 0.85 };
+/** Suficiente para un fondo a pantalla completa: 1920 px y webp al 80 %. */
+export const OPCIONES_BIBLIOTECA: OpcionesReducirImagen = {
+  ladoMax: 1920,
+  calidad: 0.8,
+  bytesMax: 1_500_000,
+};
+
+const OPCIONES_POR_DEFECTO: OpcionesReducirImagen = OPCIONES_BIBLIOTECA;
 
 /** Los gif se dejan intactos: reducirlos perdería la animación. */
 const TIPOS_REDUCIBLES = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -79,8 +88,8 @@ function conExtension(nombre: string, tipo: string): string {
 
 /**
  * Reduce en el navegador las imágenes png/jpeg/webp cuyo lado mayor supere
- * `ladoMax`, conservando la proporción. Los gif y las imágenes que ya caben se
- * devuelven tal cual. Si algo falla, también se devuelve el original: es mejor
+ * `ladoMax` (o que pesen más de `bytesMax`), conservando la proporción. Los gif
+ * y las imágenes que ya son ligeras se devuelven tal cual. Si algo falla, también se devuelve el original: es mejor
  * subir una imagen grande que perderla.
  */
 export async function reducirImagen(
@@ -96,9 +105,10 @@ export async function reducirImagen(
   try {
     fuente = await cargarFuente(archivo);
     const ladoMayor = Math.max(fuente.ancho, fuente.alto);
-    if (ladoMayor <= ladoMax) return archivo;
+    const cabeEnPixeles = ladoMayor <= ladoMax;
+    if (cabeEnPixeles && archivo.size <= (opciones.bytesMax ?? Infinity)) return archivo;
 
-    const escala = ladoMax / ladoMayor;
+    const escala = Math.min(1, ladoMax / ladoMayor);
     const lienzo = document.createElement("canvas");
     lienzo.width = Math.max(1, Math.round(fuente.ancho * escala));
     lienzo.height = Math.max(1, Math.round(fuente.alto * escala));
@@ -110,6 +120,8 @@ export async function reducirImagen(
     const tipoSalida = soportaWebp(lienzo) ? "image/webp" : "image/jpeg";
     const reducida = await exportar(lienzo, tipoSalida, calidad);
     if (!reducida) return archivo;
+    // Sin cambio de tamaño en píxeles, solo vale la pena si pesa menos que el original.
+    if (cabeEnPixeles && reducida.size >= archivo.size) return archivo;
 
     return new File([reducida], conExtension(archivo.name, tipoSalida), {
       type: tipoSalida,

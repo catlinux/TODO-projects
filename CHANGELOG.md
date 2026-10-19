@@ -7,7 +7,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 ## [0.22.0] - 2026-10-19
 
 ### Añadido
-- Biblioteca de imágenes en Ajustes: subida múltiple (también arrastrando) de hasta 300 imágenes por usuario, con cola, progreso y errores por archivo. Las imágenes de más de 2560 px se reducen en el navegador antes de subir. Migración `0018` (tercer destino «biblioteca» en `archivos`).
+- Biblioteca de imágenes en Ajustes: subida múltiple (también arrastrando) de hasta 300 imágenes por usuario, con cola, progreso y errores por archivo. Las imágenes se reducen en el navegador antes de subir: lado mayor de 1920 px y webp al 80 % (también las fotos que pesan más de 1,5 MB aunque quepan en píxeles); los gif no se tocan. Migración `0018` (tercer destino «biblioteca» en `archivos`).
 - Los proyectos nuevos nacen con un fondo de hasta 7 imágenes al azar de la biblioteca (si no hay biblioteca, el bosque de siempre). En «Personalizar» de cada proyecto se pueden elegir imágenes de la biblioteca (hasta 10) o pulsar «Elegir 7 al azar».
 - Botón «Eliminar proyecto» en la cabecera del proyecto, con confirmación que indica cuántas tareas se pierden (no disponible en la Bandeja).
 - El asistente deja en la Bandeja de entrada las tareas sin proyecto indicado.
