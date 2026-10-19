@@ -1,17 +1,20 @@
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, or } from "drizzle-orm";
 
 import type { FondoProyecto } from "@todo/shared";
 
-import { archivos, tareas } from "./db/schema.js";
+import { archivos, proyectos, tareas } from "./db/schema.js";
 import type { Database } from "./db/index.js";
 
 /** MIME con el que se sirven los ficheros que no son una imagen permitida. */
 export const MIME_OCTET_STREAM = "application/octet-stream";
 
 export const FONDO_POR_DEFECTO: FondoProyecto = { tipo: "ambiente", ambiente: "bosque" };
+
+/** Admite la base de datos o una transacción en curso. */
+type Transaccion = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /**
  * Detecta el tipo de imagen por sus primeros bytes, sin fiarse del Content-Type ni
@@ -151,6 +154,37 @@ export async function recogerArchivosDeProyecto(
   return [...fondos, ...adjuntos].map((fila) => fila.id);
 }
 
+/**
+ * Quita un archivo de los fondos de todos los proyectos del usuario. Si un fondo
+ * se queda sin imágenes, vuelve al ambiente por defecto.
+ */
+export async function quitarArchivoDeFondos(
+  tx: Transaccion,
+  usuarioId: string,
+  archivoId: string,
+): Promise<void> {
+  // Se bloquean los proyectos para que un PATCH simultáneo no reescriba el fondo viejo.
+  const filas = await tx
+    .select({ id: proyectos.id, fondo: proyectos.fondo })
+    .from(proyectos)
+    .where(eq(proyectos.propietarioId, usuarioId))
+    .for("update");
+
+  for (const fila of filas) {
+    const fondo = fila.fondo as { tipo?: string; ids?: unknown } | null | undefined;
+    if (fondo?.tipo !== "imagenes" || !Array.isArray(fondo.ids) || !fondo.ids.includes(archivoId)) {
+      continue;
+    }
+
+    const ids = fondo.ids.filter((valor) => valor !== archivoId);
+    const nuevoFondo = ids.length > 0 ? { ...fondo, ids } : FONDO_POR_DEFECTO;
+    await tx
+      .update(proyectos)
+      .set({ fondo: nuevoFondo, updatedAt: new Date() })
+      .where(eq(proyectos.id, fila.id));
+  }
+}
+
 /** ¿Es `archivoId` una imagen permitida adjunta a esa tarea del usuario? */
 export async function esImagenAdjuntaATarea(
   db: Database,
@@ -173,7 +207,10 @@ export async function esImagenAdjuntaATarea(
   return fila != null && fila.mime !== MIME_OCTET_STREAM;
 }
 
-/** ¿Son todos los ids fondos (imágenes del proyecto) del usuario indicado? */
+/**
+ * ¿Son todos los ids fondos del proyecto o imágenes de la biblioteca del mismo
+ * usuario? Los adjuntos de tareas y las imágenes de otros usuarios no valen.
+ */
 export async function validarFondosDeProyecto(
   db: Database,
   ids: string[],
@@ -189,8 +226,8 @@ export async function validarFondosDeProyecto(
     .from(archivos)
     .where(
       and(
-        eq(archivos.proyectoId, proyectoId),
         eq(archivos.usuarioId, usuarioId),
+        or(eq(archivos.proyectoId, proyectoId), eq(archivos.biblioteca, true)),
         inArray(archivos.id, ids),
       ),
     );

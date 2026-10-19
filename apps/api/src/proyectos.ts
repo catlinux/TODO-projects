@@ -12,6 +12,7 @@ import {
   recogerArchivosDeProyecto,
   validarFondosDeProyecto,
 } from "./almacen-archivos.js";
+import { elegirFondoAleatorio } from "./biblioteca.js";
 
 const esquemaId = z.object({ id: z.string().uuid("Identificador no válido") });
 
@@ -54,12 +55,16 @@ export function registrarRutasProyectos(
     }
 
     const proyecto = await db.transaction(async (tx) => {
+      // Proyecto nuevo: si el usuario tiene biblioteca, arranca con imágenes al azar.
+      const fondo = await elegirFondoAleatorio(tx, usuario.id);
+
       const [creado] = await tx
         .insert(proyectos)
         .values({
           nombre: resultado.data.nombre,
           descripcion: resultado.data.descripcion,
           propietarioId: usuario.id,
+          fondo,
         })
         .returning();
 
@@ -153,7 +158,10 @@ export function registrarRutasProyectos(
         usuario.id,
       );
       if (!valido) {
-        responderValidacion(reply, "Alguna imagen de fondo no pertenece al proyecto");
+        responderValidacion(
+          reply,
+          "Alguna imagen de fondo no pertenece al proyecto ni a tu biblioteca",
+        );
         return;
       }
     }

@@ -17,6 +17,7 @@ import {
   guardarFichero,
   MIME_OCTET_STREAM,
   detectarImagenPermitida,
+  quitarArchivoDeFondos,
   rutaArchivo,
   sanearNombreArchivo,
 } from "./almacen-archivos.js";
@@ -28,11 +29,11 @@ export const MAX_FONDOS_PROYECTO = 10;
 
 const CAMPO_ARCHIVO = "archivo";
 
-type ResultadoSubida =
+export type ResultadoSubida =
   { ok: true; contenido: Buffer; nombre: string } | { ok: false; estado: number; mensaje: string };
 
 /** Lee el único fichero multipart del campo `archivo`, controlando los límites. */
-async function leerArchivoSubido(request: FastifyRequest): Promise<ResultadoSubida> {
+export async function leerArchivoSubido(request: FastifyRequest): Promise<ResultadoSubida> {
   let parte;
   try {
     parte = await request.file();
@@ -434,6 +435,11 @@ export function registrarRutasArchivos(
             .set({ portada: null, updatedAt: new Date() })
             .where(eq(tareas.id, fila.tareaId));
         }
+      }
+
+      // Una imagen de la biblioteca puede estar en el fondo de varios proyectos.
+      if (fila.biblioteca) {
+        await quitarArchivoDeFondos(tx, usuario.id, fila.id);
       }
 
       if (fila.proyectoId) {

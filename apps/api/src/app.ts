@@ -20,6 +20,7 @@ import {
 import { registrarRutasChat, type OpcionesChat } from "./asistente/chat.js";
 import { registrarRutasPush } from "./avisos/rutas.js";
 import { registrarRutasBandeja } from "./bandeja.js";
+import { registrarRutasBiblioteca } from "./biblioteca.js";
 import { registrarRutasBuscar } from "./buscar.js";
 import { registrarRutasColumnas } from "./columnas.js";
 import { registrarRutasChecklist } from "./checklist.js";
@@ -55,6 +56,10 @@ export interface OpcionesApp {
   bloqueoPin?: ReturnType<typeof crearBloqueoGlobal>;
   /** Directorio y tamaño máximo de archivos. Por defecto, ARCHIVOS_DIR y ARCHIVOS_MAX_MB. */
   archivos?: ConfigArchivos;
+  /** Biblioteca de imágenes del usuario: límite por usuario (300 por defecto). */
+  biblioteca?: {
+    maxImagenes?: number;
+  };
   /** Asistente de IA: clave de cifrado (por defecto, ASISTENTE_CLAVE_CIFRADO) y timeout de prueba. */
   asistente?: {
     claveCifrado?: Buffer | null;
@@ -261,6 +266,7 @@ export async function buildApp(db: Database, opciones: OpcionesApp = {}): Promis
   registrarRutasColumnas(app, db);
   registrarRutasTareas(app, db, configArchivos);
   registrarRutasArchivos(app, db, configArchivos);
+  registrarRutasBiblioteca(app, db, configArchivos, opciones.biblioteca ?? {});
   registrarRutasEtiquetas(app, db);
   registrarRutasChecklist(app, db);
   registrarRutasComentarios(app, db);

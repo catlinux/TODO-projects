@@ -102,18 +102,24 @@ export const archivos = pgTable(
     usuarioId: uuid("usuario_id")
       .notNull()
       .references(() => usuarios.id),
-    // Cada fichero pertenece a una tarea (adjunto) o a un proyecto (fondo), nunca a los dos.
+    // Cada fichero pertenece a una tarea (adjunto), a un proyecto (fondo) o a la
+    // biblioteca del usuario, y solo a uno de los tres.
     tareaId: uuid("tarea_id").references(() => tareas.id, { onDelete: "cascade" }),
     proyectoId: uuid("proyecto_id").references(() => proyectos.id, { onDelete: "cascade" }),
+    biblioteca: boolean("biblioteca").notNull().default(false),
     nombre: text("nombre").notNull(),
     mime: text("mime").notNull(),
     tamano: integer("tamano").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (tabla) => [
-    check("archivos_un_destino", sql`(${tabla.tareaId} is null) <> (${tabla.proyectoId} is null)`),
+    check(
+      "archivos_un_destino",
+      sql`((${tabla.tareaId} is not null)::int + (${tabla.proyectoId} is not null)::int + ${tabla.biblioteca}::int) = 1`,
+    ),
     index("archivos_tarea_idx").on(tabla.tareaId),
     index("archivos_proyecto_idx").on(tabla.proyectoId),
+    index("archivos_biblioteca_usuario_idx").on(tabla.usuarioId, tabla.biblioteca),
   ],
 );
 
