@@ -347,6 +347,64 @@ describe("chat del asistente con herramientas", () => {
     }
   });
 
+  it("añade elementos al checklist con textos sueltos u objetos con descripción", async () => {
+    const app = await crearApp();
+    const cookie = await registrar(app, "checklist");
+    const proyecto = await crearProyecto(app, cookie, "Viaje");
+    const cols = await columnas(app, cookie, proyecto.id);
+
+    const creada = await app.inject({
+      method: "POST",
+      url: `/proyectos/${proyecto.id}/tareas`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { titulo: "Preparar el viaje", columnaId: cols[0]!.id },
+    });
+    const tarea = creada.json() as { id: string };
+
+    const proveedor = await crearProveedorFalso([
+      {
+        llamadas: [
+          {
+            nombre: "anadir_checklist",
+            argumentos: {
+              tareaId: tarea.id,
+              textos: [
+                "Pasaporte",
+                { texto: "Maleta", descripcion: "Ropa para tres días y el cargador." },
+              ],
+            },
+          },
+        ],
+      },
+      { contenido: "Añadidos los elementos." },
+    ]);
+    try {
+      await configurar(app, cookie, proveedor.baseUrl);
+      const chat = await chatear(app, cookie, [
+        { rol: "user", texto: "Prepara el checklist del viaje" },
+      ]);
+      expect(chat.statusCode).toBe(200);
+      const cuerpo = chat.json() as {
+        acciones: Array<{ herramienta: string; resumen: string }>;
+      };
+      expect(cuerpo.acciones[0]).toMatchObject({ herramienta: "anadir_checklist" });
+      expect(cuerpo.acciones[0]!.resumen).toContain("2");
+
+      const lista = await app.inject({
+        method: "GET",
+        url: `/tareas/${tarea.id}/checklist`,
+        headers: { cookie: `sesion=${cookie}` },
+      });
+      expect(lista.statusCode).toBe(200);
+      expect(lista.json()).toMatchObject([
+        { texto: "Pasaporte", descripcion: null },
+        { texto: "Maleta", descripcion: "Ropa para tres días y el cargador." },
+      ]);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
   it("aísla a los usuarios: un id ajeno falla en la ruta y no cambia nada", async () => {
     const app = await crearApp();
     const cookieA = await registrar(app, "alice-chat");

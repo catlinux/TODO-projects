@@ -66,6 +66,8 @@ export function textoHistorial(elemento: ElementoHistorialApi, t: TFunction): st
         : t("activity.history.etiquetaAnadida", { nombre: elemento.nombre ?? "" });
     case "checklist":
       return t("activity.history.checklist", { texto: elemento.texto ?? "" });
+    case "descripcion":
+      return t("activity.history.descripcion", { texto: elemento.texto ?? "" });
     case "portada":
       return t("activity.history.portada");
     case "adjunto":

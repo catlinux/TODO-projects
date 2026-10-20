@@ -188,12 +188,36 @@ export const esquemaEtiquetasTarea = z.object({
   ids: z.array(z.string().uuid("Etiqueta no válida")),
 });
 
+export const MAX_TEXTO_CHECKLIST = 500;
+export const MAX_DESCRIPCION_CHECKLIST = 5000;
+
 export const esquemaChecklistItem = z.object({
-  texto: z.string().trim().min(1, "Texto obligatorio").max(300, "Texto demasiado largo"),
+  texto: z
+    .string()
+    .trim()
+    .min(1, "Texto obligatorio")
+    .max(MAX_TEXTO_CHECKLIST, "Texto demasiado largo"),
+  descripcion: z
+    .string()
+    .trim()
+    .max(MAX_DESCRIPCION_CHECKLIST, "Descripción demasiado larga")
+    .nullable()
+    .optional(),
 });
 
 export const esquemaChecklistItemParcial = z.object({
-  texto: z.string().trim().min(1, "Texto obligatorio").max(300, "Texto demasiado largo").optional(),
+  texto: z
+    .string()
+    .trim()
+    .min(1, "Texto obligatorio")
+    .max(MAX_TEXTO_CHECKLIST, "Texto demasiado largo")
+    .optional(),
+  descripcion: z
+    .string()
+    .trim()
+    .max(MAX_DESCRIPCION_CHECKLIST, "Descripción demasiado larga")
+    .nullable()
+    .optional(),
   hecho: z.boolean().optional(),
   posicion: z.number().int().min(0, "Posición no válida").optional(),
 });

@@ -14,6 +14,7 @@ export const TIPOS_HISTORIAL = [
   "fecha",
   "etiqueta",
   "checklist",
+  "descripcion",
   "portada",
   "adjunto",
   "proyecto",

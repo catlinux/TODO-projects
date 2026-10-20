@@ -394,7 +394,23 @@ export const HERRAMIENTAS_ASISTENTE: HerramientaModelo[] = [
           textos: {
             type: "array",
             minItems: 1,
-            items: { type: "string", description: "Texto del elemento" },
+            items: {
+              anyOf: [
+                { type: "string", description: "Texto del elemento" },
+                {
+                  type: "object",
+                  properties: {
+                    texto: { type: "string", description: "Texto del elemento" },
+                    descripcion: {
+                      type: "string",
+                      description: "Descripción larga opcional del elemento",
+                    },
+                  },
+                  required: ["texto"],
+                  additionalProperties: false,
+                },
+              ],
+            },
           },
         },
         required: ["tareaId", "textos"],
@@ -455,7 +471,7 @@ const esquemaCrearTarea = z.object({
   recurrencia: z.string().trim().min(1).optional(),
   recordatorioMin: z.number().int().min(0).max(10080).optional(),
   etiquetaIds: z.array(z.string().uuid()).optional(),
-  checklist: z.array(z.string().trim().min(1).max(300)).max(200).optional(),
+  checklist: z.array(z.string().trim().min(1).max(500)).max(200).optional(),
 });
 
 const esquemaCamposTarea = z.object({
@@ -487,7 +503,17 @@ const esquemaCompletarTarea = z.object({
 
 const esquemaAnadirChecklist = z.object({
   tareaId: z.string().uuid(),
-  textos: z.array(z.string().trim().min(1).max(300)).min(1),
+  textos: z
+    .array(
+      z.union([
+        z.string().trim().min(1).max(500),
+        z.object({
+          texto: z.string().trim().min(1).max(500),
+          descripcion: z.string().trim().max(5000).optional(),
+        }),
+      ]),
+    )
+    .min(1),
 });
 
 const esquemaExcepcion = z.object({
@@ -882,14 +908,20 @@ async function ejecutarAnadirChecklist(
 
   const avisos: string[] = [];
   let creados = 0;
-  for (const textoElemento of textos) {
-    const respuesta = await llamarRuta(app, contexto, "POST", `/tareas/${tareaId}/checklist`, {
-      texto: textoElemento,
-    });
+  for (const elemento of textos) {
+    const datos =
+      typeof elemento === "string"
+        ? { texto: elemento }
+        : {
+            texto: elemento.texto,
+            ...(elemento.descripcion ? { descripcion: elemento.descripcion } : {}),
+          };
+    const respuesta = await llamarRuta(app, contexto, "POST", `/tareas/${tareaId}/checklist`, datos);
     if (respuesta.ok) {
       creados += 1;
     } else {
-      avisos.push(`No se pudo añadir «${textoElemento}»: ${respuesta.mensaje}`);
+      const nombre = typeof elemento === "string" ? elemento : elemento.texto;
+      avisos.push(`No se pudo añadir «${nombre}»: ${respuesta.mensaje}`);
     }
   }
 

@@ -489,6 +489,36 @@ kbd {
   margin-bottom: 0;
 }
 
+/* Elemento del checklist: texto completo y descripción larga. */
+.dialogo-checklist__campo {
+  display: grid;
+  gap: 6px;
+}
+
+.dialogo-checklist__campo > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--secundario);
+}
+
+.dialogo-checklist__campo textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.dialogo-checklist__estado {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secundario);
+  background: var(--chip);
+  border-radius: 999px;
+}
+
+.dialogo-checklist__estado--hecho {
+  color: var(--hecho);
+}
+
 /* Tarjeta abierta: portada a todo el ancho, título editable y secciones. */
 .tarjeta-detalle {
   width: min(720px, calc(100vw - 2rem));
@@ -938,20 +968,39 @@ button.tarjeta-detalle__accion {
 }
 
 .checklist__texto-boton {
+  display: flex;
+  align-items: center;
   justify-content: flex-start;
+  gap: 6px;
   background: transparent;
   border-color: transparent;
+}
+
+.checklist__texto-contenido {
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .checklist__texto-boton:hover:not(:disabled) {
   background: var(--chip);
   border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.checklist__texto-boton:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .checklist__texto-boton--hecho {
   color: var(--secundario);
   text-decoration: line-through;
+}
+
+.checklist__icono-descripcion {
+  flex: 0 0 auto;
+  color: var(--secundario);
 }
 
 /* Las acciones del elemento aparecen al pasar el ratón o al recibir el foco. */
@@ -2602,7 +2651,6 @@ form.columna-agregar button {
   padding: 0 3px;
   font-size: 13px;
   color: var(--texto);
-  cursor: pointer;
   border-radius: var(--radio-control);
 }
 
@@ -2622,10 +2670,45 @@ form.columna-agregar button {
   outline-offset: 2px;
 }
 
+.tarjeta-kanban__checklist-boton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border-color: transparent;
+}
+
+.tarjeta-kanban__checklist-boton:hover:not(:disabled) {
+  background: transparent;
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tarjeta-kanban__checklist-boton:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .tarjeta-kanban__checklist-texto {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.tarjeta-kanban__checklist-boton .checklist__icono-descripcion {
+  width: 13px;
+  height: 13px;
 }
 
 .tarjeta-kanban__checklist-item--hecho .tarjeta-kanban__checklist-texto {

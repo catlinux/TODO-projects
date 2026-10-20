@@ -106,6 +106,7 @@ export function registrarRutasChecklist(app: FastifyInstance, db: Database): voi
         .values({
           tareaId: params.data.id,
           texto: body.data.texto,
+          descripcion: body.data.descripcion?.trim() || null,
           posicion: existentes.length,
         })
         .returning();
@@ -165,9 +166,20 @@ export function registrarRutasChecklist(app: FastifyInstance, db: Database): voi
       return;
     }
 
-    const cambios: { texto?: string; hecho?: boolean; posicion?: number } = {};
+    const cambios: { texto?: string; descripcion?: string | null; hecho?: boolean; posicion?: number } =
+      {};
     if (body.data.texto !== undefined) cambios.texto = body.data.texto;
     if (body.data.hecho !== undefined) cambios.hecho = body.data.hecho;
+
+    let cambiaDescripcion = false;
+    if (body.data.descripcion !== undefined) {
+      // Vacío o null borra la descripción.
+      const descripcion = body.data.descripcion?.trim() || null;
+      if (descripcion !== fila.elemento.descripcion) {
+        cambios.descripcion = descripcion;
+        cambiaDescripcion = true;
+      }
+    }
 
     // Sin campos ni posición no hay nada que actualizar (evita un UPDATE vacío).
     if (body.data.posicion === undefined && Object.keys(cambios).length === 0) {
@@ -205,6 +217,15 @@ export function registrarRutasChecklist(app: FastifyInstance, db: Database): voi
           tareaId: fila.elemento.tareaId,
           usuarioId: usuario.id,
           tipo: "checklist",
+          datos: { texto: elemento.texto },
+        });
+      }
+
+      if (elemento && cambiaDescripcion) {
+        await registrarHistorial(tx, {
+          tareaId: fila.elemento.tareaId,
+          usuarioId: usuario.id,
+          tipo: "descripcion",
           datos: { texto: elemento.texto },
         });
       }

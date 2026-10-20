@@ -88,7 +88,9 @@ describe("checklist por tarea", () => {
   async function listar(
     cookie: string,
     tareaId: string,
-  ): Promise<Array<{ id: string; texto: string; hecho: boolean; posicion: number }>> {
+  ): Promise<
+    Array<{ id: string; texto: string; hecho: boolean; posicion: number; descripcion?: string | null }>
+  > {
     const respuesta = await app.inject({
       method: "GET",
       url: `/tareas/${tareaId}/checklist`,
@@ -100,6 +102,7 @@ describe("checklist por tarea", () => {
       texto: string;
       hecho: boolean;
       posicion: number;
+      descripcion?: string | null;
     }>;
   }
 
@@ -185,7 +188,7 @@ describe("checklist por tarea", () => {
     expect(await listar(cookie, tareaId)).toEqual([]);
   });
 
-  it("valida el texto vacío o de más de 300 caracteres", async () => {
+  it("valida el texto vacío o de más de 500 caracteres", async () => {
     const { cookie } = await registrar(app, "validacion");
     const proyectoId = await crearProyecto(cookie, "Proyecto validación checklist");
     const tareaId = await crearTarea(cookie, proyectoId, "Tarea validación");
@@ -210,13 +213,13 @@ describe("checklist por tarea", () => {
       method: "POST",
       url: `/tareas/${tareaId}/checklist`,
       headers: { cookie: `sesion=${cookie}` },
-      payload: { texto: "a".repeat(301) },
+      payload: { texto: "a".repeat(501) },
     });
     expect(largo.statusCode).toBe(400);
 
-    const limite = await crearElemento(cookie, tareaId, "a".repeat(300));
+    const limite = await crearElemento(cookie, tareaId, "a".repeat(500));
     const limiteOk = await listar(cookie, tareaId);
-    expect(limiteOk[0]).toMatchObject({ id: limite, texto: "a".repeat(300) });
+    expect(limiteOk[0]).toMatchObject({ id: limite, texto: "a".repeat(500) });
 
     const patchVacio = await app.inject({
       method: "PATCH",
@@ -230,9 +233,97 @@ describe("checklist por tarea", () => {
       method: "PATCH",
       url: `/checklist/${limite}`,
       headers: { cookie: `sesion=${cookie}` },
-      payload: { texto: "b".repeat(301) },
+      payload: { texto: "b".repeat(501) },
     });
     expect(patchLargo.statusCode).toBe(400);
+  });
+
+  it("guarda, limpia y registra en el historial la descripción", async () => {
+    const { cookie } = await registrar(app, "descripcion");
+    const proyectoId = await crearProyecto(cookie, "Proyecto descripción");
+    const tareaId = await crearTarea(cookie, proyectoId, "Tarea descripción");
+
+    const conDescripcion = await app.inject({
+      method: "POST",
+      url: `/tareas/${tareaId}/checklist`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { texto: "Preparar informe", descripcion: "Incluir los datos del trimestre." },
+    });
+    expect(conDescripcion.statusCode).toBe(201);
+    const elementoId = (conDescripcion.json() as { id: string }).id;
+    expect(conDescripcion.json()).toMatchObject({
+      descripcion: "Incluir los datos del trimestre.",
+    });
+
+    let lista = await listar(cookie, tareaId);
+    expect(lista[0]).toMatchObject({ id: elementoId, descripcion: "Incluir los datos del trimestre." });
+
+    const cambiada = await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: "Revisar antes de enviar." },
+    });
+    expect(cambiada.statusCode).toBe(200);
+    expect(cambiada.json()).toMatchObject({ descripcion: "Revisar antes de enviar." });
+
+    // Repetir el mismo valor no genera otra entrada de historial.
+    await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: "Revisar antes de enviar." },
+    });
+
+    const conBlancos = await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: "   " },
+    });
+    expect(conBlancos.statusCode).toBe(200);
+    expect((conBlancos.json() as { descripcion: string | null }).descripcion).toBeNull();
+
+    const conNull = await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: null },
+    });
+    expect(conNull.statusCode).toBe(200);
+
+    const actividad = await app.inject({
+      method: "GET",
+      url: `/tareas/${tareaId}/actividad`,
+      headers: { cookie: `sesion=${cookie}` },
+    });
+    expect(actividad.statusCode).toBe(200);
+    const entradas = (
+      actividad.json() as {
+        elementos: Array<{ historialTipo?: string; texto?: string }>;
+      }
+    ).elementos.filter((elemento) => elemento.historialTipo === "descripcion");
+    expect(entradas).toHaveLength(2);
+    expect(entradas[0]).toMatchObject({ texto: "Preparar informe" });
+
+    lista = await listar(cookie, tareaId);
+    expect(lista[0]?.descripcion).toBeNull();
+
+    const demasiadoLarga = await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: "a".repeat(5001) },
+    });
+    expect(demasiadoLarga.statusCode).toBe(400);
+
+    const limite = await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: "a".repeat(5000) },
+    });
+    expect(limite.statusCode).toBe(200);
   });
 
   it("reordena el elemento y reindexa sin huecos ni duplicados", async () => {
@@ -338,6 +429,13 @@ describe("checklist por tarea", () => {
       payload: { hecho: true },
     });
 
+    await app.inject({
+      method: "PATCH",
+      url: `/checklist/${segundo}`,
+      headers: { cookie: `sesion=${cookie}` },
+      payload: { descripcion: "Detalle del segundo paso" },
+    });
+
     const listado = await app.inject({
       method: "GET",
       url: `/proyectos/${proyectoId}/tareas`,
@@ -350,7 +448,13 @@ describe("checklist por tarea", () => {
       checklist: {
         hechos: number;
         total: number;
-        items: Array<{ id: string; texto: string; hecho: boolean }>;
+        items: Array<{
+          id: string;
+          texto: string;
+          hecho: boolean;
+          tieneDescripcion: boolean;
+          descripcion?: unknown;
+        }>;
       };
     }>;
 
@@ -358,11 +462,14 @@ describe("checklist por tarea", () => {
       hechos: 1,
       total: 3,
       items: [
-        { id: primero, texto: "Uno", hecho: true },
-        { id: segundo, texto: "Dos", hecho: false },
-        { id: tercero, texto: "Tres", hecho: false },
+        { id: primero, texto: "Uno", hecho: true, tieneDescripcion: false },
+        { id: segundo, texto: "Dos", hecho: false, tieneDescripcion: true },
+        { id: tercero, texto: "Tres", hecho: false, tieneDescripcion: false },
       ],
     });
+    // La descripción no engorda el listado: solo se anuncia con el booleano.
+    const items = tareas.find((tarea) => tarea.id === tareaConPasos)?.checklist.items ?? [];
+    expect(items.every((item) => !("descripcion" in item))).toBe(true);
     expect(tareas.find((tarea) => tarea.id === tareaVacia)?.checklist).toEqual({
       hechos: 0,
       total: 0,
@@ -411,16 +518,18 @@ describe("checklist por tarea", () => {
     expect(listado.statusCode).toBe(200);
     const tareas = listado.json() as Array<{
       id: string;
-      checklist: { items: Array<{ id: string; texto: string; hecho: boolean }> };
+      checklist: {
+        items: Array<{ id: string; texto: string; hecho: boolean; tieneDescripcion: boolean }>;
+      };
     }>;
 
     expect(tareas.map((tarea) => tarea.id).sort()).toEqual([tareaA, tareaB].sort());
     expect(tareas.find((tarea) => tarea.id === tareaA)?.checklist.items).toEqual([
-      { id: dos, texto: "Dos", hecho: false },
-      { id: uno, texto: "Uno", hecho: false },
+      { id: dos, texto: "Dos", hecho: false, tieneDescripcion: false },
+      { id: uno, texto: "Uno", hecho: false, tieneDescripcion: false },
     ]);
     expect(tareas.find((tarea) => tarea.id === tareaB)?.checklist.items).toEqual([
-      { id: deB, texto: "De B", hecho: false },
+      { id: deB, texto: "De B", hecho: false, tieneDescripcion: false },
     ]);
     expect(tareas.flatMap((tarea) => tarea.checklist.items.map((item) => item.id))).not.toContain(
       elementoOtro,
@@ -477,6 +586,14 @@ describe("checklist por tarea", () => {
       payload: { hecho: true },
     });
     expect(patchAjeno.statusCode).toBe(404);
+
+    const patchDescripcionAjena = await app.inject({
+      method: "PATCH",
+      url: `/checklist/${elementoId}`,
+      headers: { cookie: `sesion=${bob.cookie}` },
+      payload: { descripcion: "Intrusa" },
+    });
+    expect(patchDescripcionAjena.statusCode).toBe(404);
 
     const deleteAjeno = await app.inject({
       method: "DELETE",

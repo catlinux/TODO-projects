@@ -134,6 +134,13 @@
       "when": 1792419223588,
       "tag": "0018_biblioteca_imagenes",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792522659488,
+      "tag": "0019_checklist_descripcion",
+      "breakpoints": true
     }
   ]
 }

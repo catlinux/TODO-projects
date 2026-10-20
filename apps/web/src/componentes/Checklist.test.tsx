@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -15,8 +15,24 @@ function json(cuerpo: unknown, status = 200): Response {
 }
 
 const itemsBase: ChecklistItemApi[] = [
-  { id: "i1", tareaId: "t1", texto: "Comprar leche", hecho: true, posicion: 0, createdAt: "" },
-  { id: "i2", tareaId: "t1", texto: "Llamar al fontanero", hecho: false, posicion: 1, createdAt: "" },
+  {
+    id: "i1",
+    tareaId: "t1",
+    texto: "Comprar leche",
+    descripcion: "Leche entera y una barra de pan.",
+    hecho: true,
+    posicion: 0,
+    createdAt: "",
+  },
+  {
+    id: "i2",
+    tareaId: "t1",
+    texto: "Llamar al fontanero",
+    descripcion: null,
+    hecho: false,
+    posicion: 1,
+    createdAt: "",
+  },
 ];
 
 function montarFetch(items = itemsBase) {
@@ -143,21 +159,94 @@ describe("Checklist", () => {
     expect(await screen.findByText("Comprar leche")).toBeTruthy();
   });
 
-  it("edita el texto en línea", async () => {
+  it("pulsar el texto abre el diálogo y no marca el elemento", async () => {
     const { patches } = montarFetch();
     const user = userEvent.setup();
     renderChecklist();
 
-    await user.click(await screen.findByRole("button", { name: "Llamar al fontanero" }));
-    const area = screen.getByLabelText(/texto del elemento/i);
-    await user.clear(area);
-    await user.type(area, "Llamar al electricista{Enter}");
+    await user.click(await screen.findByRole("button", { name: "Abrir «Llamar al fontanero»" }));
+
+    const dialogo = await screen.findByRole("dialog", { name: /elemento del checklist/i });
+    expect(dialogo).toBeTruthy();
+    expect((screen.getByLabelText(/texto del elemento/i) as HTMLInputElement).value).toBe(
+      "Llamar al fontanero",
+    );
+    expect((screen.getByLabelText(/^descripción$/i) as HTMLTextAreaElement).value).toBe("");
+    expect(screen.getByText("Pendiente")).toBeTruthy();
+    expect(patches).toHaveLength(0);
+  });
+
+  it("pulsar la casilla marca y no abre el diálogo", async () => {
+    const { patches } = montarFetch();
+    const user = userEvent.setup();
+    renderChecklist();
+
+    await user.click(await screen.findByRole("checkbox", { name: /llamar al fontanero/i }));
+
+    await waitFor(() =>
+      expect(patches).toContainEqual({ url: "/api/checklist/i2", body: { hecho: true } }),
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("carga la descripción del elemento y la guarda con PATCH", async () => {
+    const { patches } = montarFetch();
+    const user = userEvent.setup();
+    renderChecklist();
+
+    await user.click(await screen.findByRole("button", { name: "Abrir «Comprar leche»" }));
+    const campo = (await screen.findByLabelText(/^descripción$/i)) as HTMLTextAreaElement;
+    await waitFor(() => expect(campo.value).toBe("Leche entera y una barra de pan."));
+
+    await user.clear(campo);
+    await user.type(campo, "Leche entera, pan y huevos.");
+    await user.click(screen.getByRole("button", { name: /^guardar$/i }));
 
     await waitFor(() =>
       expect(patches).toContainEqual({
-        url: "/api/checklist/i2",
-        body: { texto: "Llamar al electricista" },
+        url: "/api/checklist/i1",
+        body: { texto: "Comprar leche", descripcion: "Leche entera, pan y huevos." },
       }),
     );
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("Escape cierra el diálogo sin guardar", async () => {
+    const { patches } = montarFetch();
+    const user = userEvent.setup();
+    renderChecklist();
+
+    await user.click(await screen.findByRole("button", { name: "Abrir «Llamar al fontanero»" }));
+    const campo = await screen.findByLabelText(/^descripción$/i);
+    await user.type(campo, "No debe guardarse");
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(patches).toHaveLength(0);
+  });
+
+  it("un clic fuera del diálogo lo cierra sin guardar", async () => {
+    const { patches } = montarFetch();
+    const user = userEvent.setup();
+    renderChecklist();
+
+    await user.click(await screen.findByRole("button", { name: "Abrir «Llamar al fontanero»" }));
+    const dialogo = await screen.findByRole("dialog");
+    fireEvent.click(dialogo);
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(patches).toHaveLength(0);
+  });
+
+  it("muestra el icono solo en los elementos con descripción", async () => {
+    montarFetch();
+    renderChecklist();
+
+    await screen.findByText("Comprar leche");
+    expect(screen.getAllByRole("img", { name: "Tiene descripción" })).toHaveLength(1);
+    const conDescripcion = screen.getByRole("button", { name: "Abrir «Comprar leche»" });
+    expect(conDescripcion.querySelector(".checklist__icono-descripcion")).not.toBeNull();
+    const sinDescripcion = screen.getByRole("button", { name: "Abrir «Llamar al fontanero»" });
+    expect(sinDescripcion.querySelector(".checklist__icono-descripcion")).toBeNull();
   });
 });

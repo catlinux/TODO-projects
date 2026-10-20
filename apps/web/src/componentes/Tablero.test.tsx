@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "../i18n/index";
@@ -82,6 +82,11 @@ function usarTablero() {
 }
 
 describe("Tablero", () => {
+  function RutaActual() {
+    const ruta = useLocation();
+    return <span data-testid="ruta-actual">{ruta.pathname}</span>;
+  }
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -321,6 +326,7 @@ describe("Tablero", () => {
     render(
       <QueryClientProvider client={cliente}>
         <MemoryRouter>
+          <RutaActual />
           <Tablero
             proyectoId="p1"
             columnas={columnas}
@@ -383,12 +389,12 @@ describe("Tablero", () => {
             hechos: 1,
             total: 6,
             items: [
-              { id: "e1", texto: "Primero", hecho: false },
-              { id: "e2", texto: "Segundo", hecho: true },
-              { id: "e3", texto: "Tercero", hecho: false },
-              { id: "e4", texto: "Cuarto", hecho: false },
-              { id: "e5", texto: "Quinto", hecho: false },
-              { id: "e6", texto: "Sexto", hecho: false },
+              { id: "e1", texto: "Primero", hecho: false, tieneDescripcion: false },
+              { id: "e2", texto: "Segundo", hecho: true, tieneDescripcion: false },
+              { id: "e3", texto: "Tercero", hecho: false, tieneDescripcion: false },
+              { id: "e4", texto: "Cuarto", hecho: false, tieneDescripcion: false },
+              { id: "e5", texto: "Quinto", hecho: false, tieneDescripcion: false },
+              { id: "e6", texto: "Sexto", hecho: false, tieneDescripcion: false },
             ],
           },
         },
@@ -435,7 +441,7 @@ describe("Tablero", () => {
           checklist: {
             hechos: 0,
             total: 1,
-            items: [{ id: "e1", texto: "Primero", hecho: false }],
+            items: [{ id: "e1", texto: "Primero", hecho: false, tieneDescripcion: false }],
           },
         },
       ],
@@ -451,6 +457,98 @@ describe("Tablero", () => {
         body: { hecho: true },
       });
     });
+    // La casilla es lo único que marca; no abre el diálogo.
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("pulsar el texto abre el diálogo y no marca ni navega", async () => {
+    const user = userEvent.setup();
+    const peticiones: Array<{ url: string; method: string }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = String(init?.method ?? "GET").toUpperCase();
+        peticiones.push({ url, method });
+        if (url === "/api/tareas/t1/checklist" && method === "GET") {
+          return new Response(
+            JSON.stringify([
+              {
+                id: "e1",
+                tareaId: "t1",
+                texto: "Primero",
+                descripcion: "Detalle largo del primer paso.",
+                hecho: false,
+                posicion: 0,
+                createdAt: "",
+              },
+            ]),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    renderConEtiquetas(
+      [
+        {
+          ...tareasIniciales[0]!,
+          checklist: {
+            hechos: 0,
+            total: 1,
+            items: [{ id: "e1", texto: "Primero", hecho: false, tieneDescripcion: true }],
+          },
+        },
+      ],
+      [],
+    );
+
+    await user.click(screen.getByRole("button", { name: "Abrir «Primero»" }));
+
+    expect(await screen.findByRole("dialog", { name: /elemento del checklist/i })).toBeTruthy();
+    expect((screen.getByLabelText(/^descripción$/i) as HTMLTextAreaElement).value).toBe(
+      "Detalle largo del primer paso.",
+    );
+    // El texto no está dentro del enlace de la tarjeta ni cambia de ruta.
+    expect(screen.getByTestId("ruta-actual").textContent).toBe("/");
+    expect(peticiones.some((peticion) => peticion.method === "PATCH")).toBe(false);
+    expect((screen.getByRole("checkbox", { name: "Primero" }) as HTMLInputElement).checked).toBe(
+      false,
+    );
+  });
+
+  it("muestra el icono de descripción solo en los elementos que la tienen", () => {
+    renderConEtiquetas(
+      [
+        {
+          ...tareasIniciales[0]!,
+          checklist: {
+            hechos: 0,
+            total: 2,
+            items: [
+              { id: "e1", texto: "Primero", hecho: false, tieneDescripcion: true },
+              { id: "e2", texto: "Segundo", hecho: false, tieneDescripcion: false },
+            ],
+          },
+        },
+      ],
+      [],
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Abrir «Primero»" }).querySelector(
+        ".checklist__icono-descripcion",
+      ),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Abrir «Segundo»" }).querySelector(
+        ".checklist__icono-descripcion",
+      ),
+    ).toBeNull();
+    expect(screen.getAllByRole("img", { name: "Tiene descripción" })).toHaveLength(1);
   });
 
   it("no pinta la lista del checklist si la tarea no tiene elementos", () => {

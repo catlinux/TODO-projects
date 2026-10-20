@@ -104,12 +104,15 @@ async function checklistPorTarea(
   return porTarea;
 }
 
-/** Elementos (id, texto, hecho) del checklist de varias tareas en una sola consulta. */
+/** Elementos (id, texto, hecho, tieneDescripcion) del checklist de varias tareas. */
 async function itemsChecklistPorTarea(
   db: Database,
   tareaIds: string[],
-): Promise<Map<string, Array<{ id: string; texto: string; hecho: boolean }>>> {
-  const porTarea = new Map<string, Array<{ id: string; texto: string; hecho: boolean }>>();
+): Promise<Map<string, Array<{ id: string; texto: string; hecho: boolean; tieneDescripcion: boolean }>>> {
+  const porTarea = new Map<
+    string,
+    Array<{ id: string; texto: string; hecho: boolean; tieneDescripcion: boolean }>
+  >();
   if (tareaIds.length === 0) {
     return porTarea;
   }
@@ -120,6 +123,8 @@ async function itemsChecklistPorTarea(
       id: checklistItems.id,
       texto: checklistItems.texto,
       hecho: checklistItems.hecho,
+      // La descripción no viaja al tablero; basta con saber si existe.
+      tieneDescripcion: sql<boolean>`(${checklistItems.descripcion} is not null and ${checklistItems.descripcion} <> '')`,
     })
     .from(checklistItems)
     .where(inArray(checklistItems.tareaId, tareaIds))
@@ -127,7 +132,12 @@ async function itemsChecklistPorTarea(
 
   for (const fila of filas) {
     const lista = porTarea.get(fila.tareaId) ?? [];
-    lista.push({ id: fila.id, texto: fila.texto, hecho: fila.hecho });
+    lista.push({
+      id: fila.id,
+      texto: fila.texto,
+      hecho: fila.hecho,
+      tieneDescripcion: fila.tieneDescripcion,
+    });
     porTarea.set(fila.tareaId, lista);
   }
 

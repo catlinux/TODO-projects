@@ -17,11 +17,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import { peticion, type ColumnaApi, type EtiquetaApi, type TareaApi } from "../api";
+import { peticion, type ColumnaApi, type ElementoChecklistTarjetaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
 import { datosPortadaTarjeta } from "../portada";
 import { moverTareaEnLista } from "../tablero-utils";
-import { IconoAdjunto, IconoCampana, IconoComentario, IconoRepeticion } from "./IconosTarea";
+import { DialogoElementoChecklist } from "./DialogoElementoChecklist";
+import { IconoAdjunto, IconoCampana, IconoComentario, IconoDescripcion, IconoRepeticion } from "./IconosTarea";
 import { PastillaEtiqueta } from "./SelectorEtiquetas";
 
 export interface PropiedadesTablero {
@@ -50,6 +51,7 @@ interface TarjetaProps {
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
   alternarElemento(elementoId: string, hecho: boolean): Promise<void>;
+  abrirElemento(elemento: ElementoChecklistTarjetaApi): void;
 }
 
 /** Elementos del checklist que se ven en la tarjeta antes del «+N más». */
@@ -88,6 +90,7 @@ function TarjetaArrastrable({
   borrarTarea,
   moverTarea,
   alternarElemento,
+  abrirElemento,
 }: TarjetaProps) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -204,19 +207,35 @@ function TarjetaArrastrable({
         <div className="tarjeta-kanban__checklist">
           <ul className="tarjeta-kanban__checklist-lista">
             {elementosVisibles.map((elemento) => (
-              <li key={elemento.id}>
-                <label
-                  className={`tarjeta-kanban__checklist-item${
-                    elemento.hecho ? " tarjeta-kanban__checklist-item--hecho" : ""
-                  }`}
+              <li
+                key={elemento.id}
+                className={`tarjeta-kanban__checklist-item${
+                  elemento.hecho ? " tarjeta-kanban__checklist-item--hecho" : ""
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={elemento.hecho}
+                  aria-label={elemento.texto}
+                  onPointerDown={(evento) => evento.stopPropagation()}
+                  onChange={() => void alternarElemento(elemento.id, !elemento.hecho)}
+                />
+                <button
+                  type="button"
+                  className="tarjeta-kanban__checklist-boton"
+                  aria-label={t("checklist.open", { texto: elemento.texto })}
+                  onPointerDown={(evento) => evento.stopPropagation()}
+                  onKeyDown={(evento) => evento.stopPropagation()}
+                  onClick={(evento) => {
+                    evento.stopPropagation();
+                    abrirElemento(elemento);
+                  }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={elemento.hecho}
-                    onChange={() => void alternarElemento(elemento.id, !elemento.hecho)}
-                  />
                   <span className="tarjeta-kanban__checklist-texto">{elemento.texto}</span>
-                </label>
+                  {elemento.tieneDescripcion ? (
+                    <IconoDescripcion etiqueta={t("checklist.hasDescription")} />
+                  ) : null}
+                </button>
               </li>
             ))}
           </ul>
@@ -355,6 +374,10 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
   const cliente = useQueryClient();
   const queryKey = ["tareas", proyectoId];
   const [activa, setActiva] = useState<TareaApi | null>(null);
+  const [elementoAbierto, setElementoAbierto] = useState<{
+    tareaId: string;
+    elemento: ElementoChecklistTarjetaApi;
+  } | null>(null);
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null);
   const [columnaRenombrando, setColumnaRenombrando] = useState<string | null>(null);
   const [nombreRenombrado, setNombreRenombrado] = useState("");
@@ -654,6 +677,9 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}
                           alternarElemento={alternarElemento}
+                          abrirElemento={(elemento) =>
+                            setElementoAbierto({ tareaId: tarea.id, elemento })
+                          }
                         />
                       ))
                     )}
@@ -742,6 +768,20 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
           <div className="tarjeta-kanban tarjeta-kanban--superpuesta">{activa.titulo}</div>
         ) : null}
       </DragOverlay>
+
+      {elementoAbierto && (
+        <DialogoElementoChecklist
+          key={elementoAbierto.elemento.id}
+          tareaId={elementoAbierto.tareaId}
+          proyectoId={proyectoId}
+          elemento={{
+            id: elementoAbierto.elemento.id,
+            texto: elementoAbierto.elemento.texto,
+            hecho: elementoAbierto.elemento.hecho,
+          }}
+          onCerrar={() => setElementoAbierto(null)}
+        />
+      )}
     </DndContext>
   );
 });

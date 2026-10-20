@@ -163,6 +163,7 @@ export const checklistItems = pgTable(
       .notNull()
       .references(() => tareas.id, { onDelete: "cascade" }),
     texto: text("texto").notNull(),
+    descripcion: text("descripcion"),
     hecho: boolean("hecho").notNull().default(false),
     posicion: integer("posicion").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

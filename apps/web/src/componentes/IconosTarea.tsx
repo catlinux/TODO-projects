@@ -109,3 +109,26 @@ export function IconoAdjunto({ etiqueta }: PropiedadesIcono) {
     </svg>
   );
 }
+
+/** Indica que el elemento del checklist tiene una descripción. */
+export function IconoDescripcion({ etiqueta }: PropiedadesIcono) {
+  return (
+    <svg
+      className="checklist__icono-descripcion"
+      role="img"
+      aria-label={etiqueta}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 6h16" />
+      <path d="M4 11h16" />
+      <path d="M4 16h10" />
+    </svg>
+  );
+}

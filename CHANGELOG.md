@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.24.0] - 2026-10-20
+
+### Añadido
+- Los elementos de un checklist tienen una descripción larga editable. Al pulsar su texto, en la tarjeta abierta y en la del tablero, se abre un diálogo con el texto completo y la descripción; marcar o desmarcar se hace solo con la casilla. Un icono indica los elementos con descripción. Migración `0019` (columna `descripcion`); el texto de un elemento admite hasta 500 caracteres. El asistente puede añadir elementos con descripción.
+
 ## [0.23.0] - 2026-10-20
 
 ### Añadido

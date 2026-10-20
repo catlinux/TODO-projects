@@ -56,6 +56,8 @@ export interface ElementoChecklistTarjetaApi {
   id: string;
   texto: string;
   hecho: boolean;
+  /** El listado no trae la descripción; solo si el elemento tiene una. */
+  tieneDescripcion: boolean;
 }
 
 export interface TareaApi {
@@ -94,6 +96,7 @@ export interface ChecklistItemApi {
   id: string;
   tareaId: string;
   texto: string;
+  descripcion?: string | null;
   hecho: boolean;
   posicion: number;
   createdAt: string;

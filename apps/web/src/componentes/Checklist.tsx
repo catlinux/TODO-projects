@@ -3,6 +3,8 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { peticion, type ChecklistItemApi } from "../api";
+import { DialogoElementoChecklist } from "./DialogoElementoChecklist";
+import { IconoDescripcion } from "./IconosTarea";
 
 export interface PropiedadesChecklist {
   id?: string;
@@ -14,8 +16,7 @@ export function Checklist({ id, tareaId, proyectoId }: PropiedadesChecklist) {
   const { t } = useTranslation();
   const cliente = useQueryClient();
   const [textoNuevo, setTextoNuevo] = useState("");
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [textoEdicion, setTextoEdicion] = useState("");
+  const [elementoAbierto, setElementoAbierto] = useState<ChecklistItemApi | null>(null);
   const [ocultarHechos, setOcultarHechos] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const refNuevo = useRef<HTMLInputElement>(null);
@@ -56,7 +57,7 @@ export function Checklist({ id, tareaId, proyectoId }: PropiedadesChecklist) {
       cambios,
     }: {
       id: string;
-      cambios: { texto?: string; hecho?: boolean; posicion?: number };
+      cambios: { hecho?: boolean; posicion?: number };
     }) => peticion(`/checklist/${id}`, { method: "PATCH", body: JSON.stringify(cambios) }),
     onSuccess: invalidar,
     onError: (err: unknown) => setError(err instanceof Error ? err.message : t("auth.error")),
@@ -79,20 +80,6 @@ export function Checklist({ id, tareaId, proyectoId }: PropiedadesChecklist) {
         refNuevo.current?.focus();
       },
     });
-  }
-
-  function empezarEdicion(elemento: ChecklistItemApi) {
-    setEditandoId(elemento.id);
-    setTextoEdicion(elemento.texto);
-  }
-
-  function confirmarEdicion(elemento: ChecklistItemApi) {
-    const texto = textoEdicion.trim();
-    if (!texto || texto === elemento.texto) {
-      setEditandoId(null);
-      return;
-    }
-    actualizar.mutate({ id: elemento.id, cambios: { texto } }, { onSuccess: () => setEditandoId(null) });
   }
 
   function mover(elemento: ChecklistItemApi, delta: number) {
@@ -162,33 +149,17 @@ export function Checklist({ id, tareaId, proyectoId }: PropiedadesChecklist) {
                 onChange={() => actualizar.mutate({ id: elemento.id, cambios: { hecho: !elemento.hecho } })}
               />
 
-              {editandoId === elemento.id ? (
-                <input
-                  className="checklist__texto"
-                  aria-label={t("checklist.item")}
-                  autoFocus
-                  value={textoEdicion}
-                  onChange={(evento) => setTextoEdicion(evento.target.value)}
-                  onKeyDown={(evento) => {
-                    if (evento.key === "Enter") {
-                      evento.preventDefault();
-                      confirmarEdicion(elemento);
-                    } else if (evento.key === "Escape") {
-                      evento.preventDefault();
-                      setEditandoId(null);
-                    }
-                  }}
-                  onBlur={() => confirmarEdicion(elemento)}
-                />
-              ) : (
-                <button
-                  type="button"
-                  className={`checklist__texto-boton${elemento.hecho ? " checklist__texto-boton--hecho" : ""}`}
-                  onClick={() => empezarEdicion(elemento)}
-                >
-                  {elemento.texto}
-                </button>
-              )}
+              <button
+                type="button"
+                className={`checklist__texto-boton${elemento.hecho ? " checklist__texto-boton--hecho" : ""}`}
+                aria-label={t("checklist.open", { texto: elemento.texto })}
+                onClick={() => setElementoAbierto(elemento)}
+              >
+                <span className="checklist__texto-contenido">{elemento.texto}</span>
+                {elemento.descripcion ? (
+                  <IconoDescripcion etiqueta={t("checklist.hasDescription")} />
+                ) : null}
+              </button>
 
               <button
                 type="button"
@@ -239,6 +210,16 @@ export function Checklist({ id, tareaId, proyectoId }: PropiedadesChecklist) {
           {t("checklist.addButton")}
         </button>
       </form>
+
+      {elementoAbierto && (
+        <DialogoElementoChecklist
+          key={elementoAbierto.id}
+          tareaId={tareaId}
+          proyectoId={proyectoId}
+          elemento={elementoAbierto}
+          onCerrar={() => setElementoAbierto(null)}
+        />
+      )}
     </section>
   );
 }
