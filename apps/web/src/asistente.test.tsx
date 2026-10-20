@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -514,5 +514,140 @@ describe("Página Asistente", () => {
 
     expect(await screen.findByText(/No hay conexión con el servidor/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeTruthy();
+  });
+
+  it("adjunta un archivo de texto como pastilla y envía su contenido con delimitadores", async () => {
+    let cuerpo: CuerpoChat | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/asistente/chat") {
+          cuerpo = JSON.parse(String(init?.body)) as CuerpoChat;
+          return respuestaJson({ mensaje: "Vale", acciones: [] });
+        }
+        return respuestaJson([]);
+      }),
+    );
+
+    const { user } = renderAsistente();
+    await user.upload(
+      screen.getByLabelText("Seleccionar archivos para adjuntar"),
+      new File(["# Notas\nhola"], "notas.md", { type: "text/markdown" }),
+    );
+
+    expect(await screen.findByText("notas.md")).toBeTruthy();
+    expect(screen.getByText("12 B")).toBeTruthy();
+
+    await user.type(screen.getByLabelText("Mensaje para el asistente"), "Convierte esto en tareas");
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+
+    expect(await screen.findByText("Vale")).toBeTruthy();
+    expect(cuerpo).not.toBeNull();
+    expect(cuerpo!.mensajes.at(-1)!.texto).toBe(
+      "Convierte esto en tareas\n\n[Archivo adjunto: notas.md]\n# Notas\nhola\n[Fin del archivo]",
+    );
+    expect(screen.getByText("notas.md")).toBeTruthy();
+  });
+
+  it("rechaza los archivos binarios", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => respuestaJson([])),
+    );
+
+    const { user } = renderAsistente();
+    await user.upload(
+      screen.getByLabelText("Seleccionar archivos para adjuntar"),
+      new File(["texto\u0000binario"], "datos.txt", { type: "text/plain" }),
+    );
+
+    expect(await screen.findByText(/parece un archivo binario/)).toBeTruthy();
+    expect(screen.queryByText("datos.txt")).toBeNull();
+  });
+
+  it("rechaza más de tres archivos por mensaje", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => respuestaJson([])),
+    );
+
+    const { user } = renderAsistente();
+    const archivos = Array.from(
+      { length: 4 },
+      (_, indice) => new File(["x"], `f${indice}.txt`, { type: "text/plain" }),
+    );
+    await user.upload(screen.getByLabelText("Seleccionar archivos para adjuntar"), archivos);
+
+    expect(await screen.findByText(/máximo 3 archivos/)).toBeTruthy();
+    expect(screen.queryByText("f0.txt")).toBeNull();
+  });
+
+  it("rechaza un archivo de más de 100 000 caracteres e indica el límite", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => respuestaJson([])),
+    );
+
+    const { user } = renderAsistente();
+    await user.upload(
+      screen.getByLabelText("Seleccionar archivos para adjuntar"),
+      new File(["a".repeat(100_001)], "grande.txt", { type: "text/plain" }),
+    );
+
+    expect(await screen.findByText(/supera el límite de 100000 caracteres/)).toBeTruthy();
+    expect(screen.queryByText("grande.txt")).toBeNull();
+  });
+
+  it("quita una pastilla de adjunto antes de enviar", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => respuestaJson([])),
+    );
+
+    const { user } = renderAsistente();
+    await user.upload(
+      screen.getByLabelText("Seleccionar archivos para adjuntar"),
+      new File(["hola"], "notas.md", { type: "text/markdown" }),
+    );
+    expect(await screen.findByText("notas.md")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Quitar notas.md" }));
+
+    expect(screen.queryByText("notas.md")).toBeNull();
+  });
+
+  it("muestra el contador al acercarse al límite y bloquea el envío al superarlo", async () => {
+    let llamadas = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/asistente/chat") {
+          llamadas += 1;
+          return respuestaJson({ mensaje: "Vale", acciones: [] });
+        }
+        return respuestaJson([]);
+      }),
+    );
+
+    const { user } = renderAsistente();
+    const cuadro = screen.getByLabelText("Mensaje para el asistente") as HTMLTextAreaElement;
+
+    fireEvent.change(cuadro, { target: { value: "a".repeat(96_001) } });
+    expect(screen.getByText(/96\.001 de 120\.000 caracteres/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Enviar" }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.change(cuadro, { target: { value: "a".repeat(120_001) } });
+    expect(await screen.findByText(/El mensaje es demasiado largo/)).toBeTruthy();
+    const enviar = screen.getByRole("button", { name: "Enviar" }) as HTMLButtonElement;
+    expect(enviar.disabled).toBe(true);
+    await user.click(enviar);
+    expect(llamadas).toBe(0);
+
+    fireEvent.change(cuadro, { target: { value: "Corto" } });
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByText("Vale")).toBeTruthy();
+    expect(llamadas).toBe(1);
   });
 });

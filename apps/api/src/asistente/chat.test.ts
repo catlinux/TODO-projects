@@ -36,6 +36,8 @@ interface GuionLlamada {
 interface Guion {
   estado?: number;
   contenido?: string | null;
+  /** Texto del error que devuelve el proveedor falso. */
+  error?: string;
   llamadas?: GuionLlamada[];
 }
 
@@ -83,7 +85,7 @@ function crearProveedorFalso(guiones: Guion[]): Promise<ProveedorFalso> {
       }
       if (guion.estado && guion.estado >= 400) {
         respuesta.writeHead(guion.estado, { "content-type": "application/json" });
-        respuesta.end(JSON.stringify({ error: { message: "Fallo del proveedor" } }));
+        respuesta.end(JSON.stringify({ error: { message: guion.error ?? "Fallo del proveedor" } }));
         return;
       }
 
@@ -433,6 +435,29 @@ describe("chat del asistente con herramientas", () => {
     }
   });
 
+  it("traduce el error de contexto excedido del proveedor", async () => {
+    const proveedor = await crearProveedorFalso([
+      {
+        estado: 400,
+        error:
+          "This model's maximum context length is 65536 tokens. However, you requested 90000 tokens.",
+      },
+    ]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "contexto");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Analiza esto" }]);
+      expect(chat.statusCode).toBe(502);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe(
+        "El texto es demasiado largo para el modelo; adjunta un fragmento más corto.",
+      );
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
   it("usa una sesión estable de OpenCode Go durante la conversación", async () => {
     const proveedor = await crearProveedorFalso([
       { llamadas: [{ nombre: "listar_proyectos", argumentos: {} }] },
@@ -611,6 +636,45 @@ describe("chat del asistente con herramientas", () => {
     } finally {
       await proveedor.cerrar();
     }
+  });
+
+  it("admite un mensaje de 100 000 caracteres", async () => {
+    const proveedor = await crearProveedorFalso([{ contenido: "Recibido." }]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "largo");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "a".repeat(100_000) }]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe("Recibido.");
+      expect(proveedor.peticiones).toHaveLength(1);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("rechaza un mensaje de 130 000 caracteres con un mensaje claro", async () => {
+    const app = await crearApp();
+    const cookie = await registrar(app, "demasiado-largo");
+
+    const chat = await chatear(app, cookie, [{ rol: "user", texto: "a".repeat(130_000) }]);
+    expect(chat.statusCode).toBe(400);
+    expect((chat.json() as { mensaje: string }).mensaje).toContain("demasiado largo");
+    expect((chat.json() as { mensaje: string }).mensaje).toContain("120000");
+  });
+
+  it("rechaza una suma de 300 000 caracteres entre mensajes", async () => {
+    const app = await crearApp();
+    const cookie = await registrar(app, "suma-larga");
+
+    const chat = await chatear(app, cookie, [
+      { rol: "user", texto: "a".repeat(120_000) },
+      { rol: "assistant", texto: "b".repeat(120_000) },
+      { rol: "user", texto: "c".repeat(60_000) },
+    ]);
+    expect(chat.statusCode).toBe(400);
+    expect((chat.json() as { mensaje: string }).mensaje).toContain("250000");
   });
 
   it("devuelve 409 con configurar:true si el usuario no ha configurado el asistente", async () => {

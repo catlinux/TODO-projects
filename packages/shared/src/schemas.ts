@@ -327,6 +327,15 @@ export const esquemaPruebaAsistente = esquemaConfigAsistente.partial();
 
 export type DatosPruebaAsistente = z.infer<typeof esquemaPruebaAsistente>;
 
+/** Caracteres máximos de un mensaje del asistente (texto escrito más adjuntos). */
+export const MAX_CARACTERES_MENSAJE_ASISTENTE = 120_000;
+
+/** Caracteres máximos de la suma de todos los mensajes de una petición de chat. */
+export const MAX_CARACTERES_CHAT_ASISTENTE = 250_000;
+
+/** Mensajes máximos que se envían en una petición de chat. */
+export const MAX_MENSAJES_CHAT_ASISTENTE = 20;
+
 /** Mensaje del chat del asistente: el cliente envía el historial acotado en cada petición. */
 export const esquemaMensajeAsistente = z.object({
   rol: z.enum(["user", "assistant"], { message: "Rol de mensaje no válido" }),
@@ -334,17 +343,30 @@ export const esquemaMensajeAsistente = z.object({
     .string()
     .trim()
     .min(1, "El mensaje no puede estar vacío")
-    .max(4000, "El mensaje es demasiado largo"),
+    .max(
+      MAX_CARACTERES_MENSAJE_ASISTENTE,
+      `El mensaje es demasiado largo (máximo ${MAX_CARACTERES_MENSAJE_ASISTENTE} caracteres)`,
+    ),
 });
 
-export const esquemaChatAsistente = z.object({
-  mensajes: z
-    .array(esquemaMensajeAsistente)
-    .min(1, "Hace falta al menos un mensaje")
-    .max(20, "El historial no puede superar los 20 mensajes"),
-  conversacionId: z.string().uuid("Conversación no válida").optional(),
-  zona: esquemaZona.optional(),
-});
+export const esquemaChatAsistente = z
+  .object({
+    mensajes: z
+      .array(esquemaMensajeAsistente)
+      .min(1, "Hace falta al menos un mensaje")
+      .max(
+        MAX_MENSAJES_CHAT_ASISTENTE,
+        `El historial no puede superar los ${MAX_MENSAJES_CHAT_ASISTENTE} mensajes`,
+      ),
+    conversacionId: z.string().uuid("Conversación no válida").optional(),
+    zona: esquemaZona.optional(),
+  })
+  .refine(
+    (datos) =>
+      datos.mensajes.reduce((total, mensaje) => total + mensaje.texto.length, 0) <=
+      MAX_CARACTERES_CHAT_ASISTENTE,
+    `La conversación es demasiado larga (máximo ${MAX_CARACTERES_CHAT_ASISTENTE} caracteres en total)`,
+  );
 
 export type DatosMensajeAsistente = z.infer<typeof esquemaMensajeAsistente>;
 export type DatosChatAsistente = z.infer<typeof esquemaChatAsistente>;

@@ -78,6 +78,13 @@ function traducemensajeProveedor(estado: number, cuerpo: string): string {
   ) {
     return "El modelo indicado no existe o no está disponible.";
   }
+  if (
+    texto.includes("maximum context length") ||
+    texto.includes("context length") ||
+    texto.includes("too many tokens")
+  ) {
+    return "El texto es demasiado largo para el modelo; adjunta un fragmento más corto.";
+  }
   if (estado === 429) {
     return "El proveedor ha rechazado la petición por exceso de solicitudes. Inténtalo más tarde.";
   }

@@ -4,6 +4,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.23.0] - 2026-10-20
+
+### Añadido
+- El chat del asistente admite adjuntar archivos de texto (botón de clip o arrastrando; hasta 3 por mensaje y 100.000 caracteres cada uno) para analizarlos y volcarlos a tareas. En el hilo se ven como pastillas y el contenido viaja al modelo entre delimitadores. Los adjuntos antiguos se resumen en la petición cuando el total supera el límite.
+
+### Cambiado
+- Límites del asistente: hasta 120.000 caracteres por mensaje (antes 4.000) y 250.000 por petición, hasta 10 vueltas de herramientas (antes 6), 120 s (antes 60) y respuestas de hasta 4.000 tokens (antes 1.200). El error de contexto excedido del proveedor se traduce a un mensaje claro.
+- El prompt del asistente trata los adjuntos y textos pegados como datos, evita duplicar tareas existentes al volcar un documento y resume lo creado.
+
 ## [0.22.0] - 2026-10-19
 
 ### Añadido

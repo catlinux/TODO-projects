@@ -4772,6 +4772,92 @@ a.asistente__accion:hover {
   margin: 12px 0 0;
 }
 
+/* Arrastrar y soltar archivos sobre el redactor. */
+.asistente__redactor--arrastrando {
+  outline: 2px dashed var(--acento);
+  outline-offset: 6px;
+  border-radius: var(--radio-tarjeta);
+}
+
+.asistente__adjuntos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.asistente__adjuntos--borrador {
+  flex-basis: 100%;
+}
+
+.asistente__adjuntos--hilo {
+  justify-content: flex-end;
+}
+
+.asistente__adjunto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--objetivo-tactil);
+  padding-left: 12px;
+  font-size: var(--texto-sm);
+  background: var(--superficie);
+  border: 1px solid var(--lineas-fuertes);
+  border-radius: 999px;
+}
+
+.asistente__adjunto-nombre {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asistente__adjunto-quitar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--objetivo-tactil);
+  min-width: var(--objetivo-tactil);
+  height: var(--objetivo-tactil);
+  padding: 0;
+  font-size: var(--texto-lg);
+  line-height: 1;
+  color: var(--secundario);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+}
+
+.asistente__adjunto-quitar:hover:not(:disabled) {
+  color: var(--texto);
+  background: var(--chip);
+}
+
+.asistente__clip {
+  width: var(--objetivo-tactil);
+  min-width: var(--objetivo-tactil);
+  padding: 0;
+}
+
+.asistente__contador,
+.asistente__aviso {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--secundario);
+}
+
+.asistente__contador--excedido {
+  color: var(--error);
+}
+
+.asistente__aviso {
+  color: var(--error);
+}
+
 .asistente__cuadro {
   flex: 1 1 auto;
   min-width: 0;
