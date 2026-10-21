@@ -24,6 +24,7 @@ import {
   type RespuestaChatAsistenteApi,
 } from "../api";
 import { BotonVoz } from "../componentes/BotonVoz";
+import { TextoAsistente } from "../markdown";
 
 /** Clave de la conversación en `sessionStorage`; se pierde al cerrar la pestaña. */
 const CLAVE_CONVERSACION = "todo-asistente-conversacion";
@@ -161,6 +162,36 @@ function zonaLocal(): string | undefined {
   }
 }
 
+function BotonCopiar({ texto }: { texto: string }) {
+  const { t } = useTranslation();
+  const [copiado, setCopiado] = useState(false);
+
+  useEffect(() => {
+    if (!copiado) return;
+    const temporizador = setTimeout(() => setCopiado(false), 2000);
+    return () => clearTimeout(temporizador);
+  }, [copiado]);
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+    } catch {
+      // Sin permiso de portapapeles no hay nada que hacer.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="boton-fantasma asistente__copiar"
+      onClick={() => void copiar()}
+    >
+      {copiado ? t("asistente.copied") : t("asistente.copy")}
+    </button>
+  );
+}
+
 function IconoClip() {
   return (
     <svg
@@ -218,6 +249,7 @@ export default function Asistente() {
     mutationFn: (historial: Mensaje[]) => {
       const zona = zonaLocal();
       const { mensajes: preparados } = componerPeticion(historial.slice(-MAX_HISTORIAL));
+      // Sin timeout propio: el servidor corta a los 240 s y aquí se espera lo que haga falta.
       return peticion<RespuestaChatAsistenteApi>("/asistente/chat", {
         method: "POST",
         body: JSON.stringify({
@@ -256,6 +288,17 @@ export default function Asistente() {
   });
 
   const esperando = enviar.isPending;
+  const [esperaProlongada, setEsperaProlongada] = useState(false);
+
+  useEffect(() => {
+    if (!esperando) {
+      setEsperaProlongada(false);
+      return;
+    }
+    // Las respuestas largas pueden tardar minutos: el plazo lo marca el servidor.
+    const temporizador = setTimeout(() => setEsperaProlongada(true), 20_000);
+    return () => clearTimeout(temporizador);
+  }, [esperando]);
   const caracteres = contarCaracteres(borrador, adjuntos);
   const mostrarContador = caracteres > MAX_CARACTERES_MENSAJE_ASISTENTE * UMBRAL_CONTADOR;
   const superaLimite = caracteres > MAX_CARACTERES_MENSAJE_ASISTENTE;
@@ -411,7 +454,15 @@ export default function Asistente() {
               mensaje.rol === "user" ? "usuario" : "asistente"
             }`}
           >
-            {mensaje.texto.trim() && <p className="asistente__burbuja">{mensaje.texto}</p>}
+            {mensaje.texto.trim() &&
+              (mensaje.rol === "assistant" ? (
+                <div className="asistente__burbuja asistente__burbuja--texto">
+                  <TextoAsistente texto={mensaje.texto} />
+                  <BotonCopiar texto={mensaje.texto} />
+                </div>
+              ) : (
+                <p className="asistente__burbuja">{mensaje.texto}</p>
+              ))}
             {mensaje.adjuntos && mensaje.adjuntos.length > 0 && (
               <ul
                 className="asistente__adjuntos asistente__adjuntos--hilo"
@@ -445,7 +496,9 @@ export default function Asistente() {
 
         {esperando && (
           <div className="asistente__mensaje asistente__mensaje--asistente">
-            <p className="asistente__burbuja asistente__pensando">{t("asistente.thinking")}</p>
+            <p className="asistente__burbuja asistente__pensando">
+              {esperaProlongada ? t("asistente.thinkingLong") : t("asistente.thinking")}
+            </p>
           </div>
         )}
 

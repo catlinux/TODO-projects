@@ -4810,6 +4810,93 @@ form.columna-agregar button {
   border-color: transparent;
 }
 
+.asistente__burbuja--texto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.asistente__texto {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.asistente__texto > :first-child {
+  margin-top: 0;
+}
+
+.asistente__texto > :last-child {
+  margin-bottom: 0;
+}
+
+.asistente__texto p,
+.asistente__texto ul,
+.asistente__texto ol,
+.asistente__texto pre,
+.asistente__texto h3,
+.asistente__texto h4,
+.asistente__texto h5,
+.asistente__texto h6 {
+  margin: 0 0 8px;
+}
+
+.asistente__texto h3,
+.asistente__texto h4,
+.asistente__texto h5,
+.asistente__texto h6 {
+  line-height: 1.3;
+}
+
+.asistente__texto h3 {
+  font-size: var(--texto-md);
+}
+
+.asistente__texto h4,
+.asistente__texto h5,
+.asistente__texto h6 {
+  font-size: var(--texto-base);
+}
+
+.asistente__texto ul,
+.asistente__texto ol {
+  padding-left: 20px;
+}
+
+.asistente__texto li + li {
+  margin-top: 2px;
+}
+
+.asistente__texto code {
+  padding: 1px 4px;
+  font-family: var(--fuente-mono);
+  font-size: 0.9em;
+  background: var(--superficie);
+  border-radius: 4px;
+}
+
+.asistente__codigo {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: var(--superficie);
+  border: 1px solid var(--lineas);
+  border-radius: var(--radio-control);
+  white-space: pre;
+}
+
+.asistente__codigo code {
+  padding: 0;
+  background: transparent;
+  white-space: pre;
+}
+
+.asistente__copiar {
+  align-self: flex-start;
+  padding: 0 8px;
+  font-size: var(--texto-sm);
+}
+
 .asistente__pensando {
   font-style: italic;
   color: var(--secundario);

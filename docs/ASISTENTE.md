@@ -43,6 +43,16 @@ Puedes pegar textos largos (por ejemplo, un changelog entero) o adjuntar archivo
 
 El contenido de los adjuntos se envía al proveedor elegido, igual que el texto del chat. No adjuntes archivos con datos que no quieras compartir con ese proveedor.
 
+## Respuestas largas
+
+- Cada llamada al modelo pide hasta 8000 tokens de respuesta. Si el modelo agota ese tope (`finish_reason: length`), el servidor le pide que continúe exactamente donde lo dejó y concatena los fragmentos, hasta 6 continuaciones automáticas. Esos mensajes internos no se muestran en el chat.
+- Si aun así no termina, la respuesta llega con el aviso «(La respuesta se ha cortado por longitud; pídeme que continúe.)».
+- El tiempo máximo de una petición es de 240 s (Apache corta a los 300 s). Si se agota con texto ya escrito, se devuelve ese texto con el aviso «(La respuesta se ha cortado por tiempo; pídeme que continúe.)» en lugar de un error sin contenido.
+- Si una llamada a herramientas se corta a medias (sus argumentos JSON quedarían truncados), no se ejecuta: se reintenta una vez pidiendo pasos más pequeños y, si vuelve a pasar, se devuelve un error claro.
+- Si el proveedor rechaza el tope de tokens por ser demasiado alto, se reintenta una vez con 4096.
+- Mientras se espera, el chat muestra «Escribiendo…» y, a partir de 20 s, «Sigue trabajando; las respuestas largas pueden tardar unos minutos». La web no impone un plazo propio: espera lo que marque el servidor.
+- Las respuestas del asistente se muestran con párrafos, listas, títulos y bloques de código (convertidos de Markdown sin interpretar HTML) y cada una tiene un botón «Copiar».
+
 ## Privacidad y seguridad
 
 - El texto del chat, el contenido de los archivos adjuntos y los datos de tus proyectos y tareas que el asistente consulta se envían al proveedor elegido.

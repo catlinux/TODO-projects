@@ -332,7 +332,7 @@ describe("Página Asistente", () => {
     expect(cuerpo!.mensajes.at(-1)).toEqual({ rol: "user", texto: "Otro" });
   });
 
-  it("muestra el indicador «Pensando…» mientras espera", async () => {
+  it("muestra el indicador «Escribiendo…» mientras espera", async () => {
     let resolver: ((respuesta: Response) => void) | null = null;
     vi.stubGlobal(
       "fetch",
@@ -347,10 +347,35 @@ describe("Página Asistente", () => {
     const { user } = renderAsistente();
     await user.type(screen.getByLabelText("Mensaje para el asistente"), "Hola{Enter}");
 
-    expect(await screen.findByText("Pensando…")).toBeTruthy();
+    expect(await screen.findByText("Escribiendo…")).toBeTruthy();
     resolver!(respuestaJson({ mensaje: "Hola, ¿en qué te ayudo?", acciones: [] }));
     expect(await screen.findByText("Hola, ¿en qué te ayudo?")).toBeTruthy();
-    expect(screen.queryByText("Pensando…")).toBeNull();
+    expect(screen.queryByText("Escribiendo…")).toBeNull();
+  });
+
+  it("da formato a la respuesta y permite copiarla", async () => {
+    const texto =
+      "# Manual\n\nIntroducción con **negrita**.\n\n- uno\n- dos\n\n```\nconst x = 1;\n```";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/asistente/chat") {
+          return respuestaJson({ mensaje: texto, acciones: [] });
+        }
+        return respuestaJson([]);
+      }),
+    );
+
+    const { user } = renderAsistente();
+    await user.type(screen.getByLabelText("Mensaje para el asistente"), "Manual{Enter}");
+
+    expect(await screen.findByRole("heading", { name: "Manual" })).toBeTruthy();
+    expect(screen.getByText("negrita").tagName).toBe("STRONG");
+    expect(screen.getByText("uno")).toBeTruthy();
+    expect(screen.getByText("const x = 1;")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Copiar" }));
+    expect(await screen.findByRole("button", { name: "Copiado" })).toBeTruthy();
   });
 
   it("Enter envía y Mayús+Enter añade un salto de línea", async () => {

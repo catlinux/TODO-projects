@@ -40,23 +40,55 @@ export interface OpcionesLlamadaModelo {
   sesion?: string;
 }
 
+/** Motivo del corte según el proveedor, normalizado. */
+export type FinalizacionModelo = "stop" | "length" | "tool_calls" | "otro";
+
 export interface RespuestaModelo {
   contenido: string | null;
   toolCalls: LlamadaHerramientaModelo[];
+  finalizacion: FinalizacionModelo;
 }
 
 /** Error del proveedor ya traducido para mostrarlo al usuario, sin datos sensibles. */
 export class ErrorProveedor extends Error {
-  constructor(mensaje: string) {
+  /** Permite distinguir el agotamiento del tiempo de otros fallos. */
+  readonly causa: "tiempo" | "max_tokens" | undefined;
+
+  constructor(mensaje: string, causa?: "tiempo" | "max_tokens") {
     super(mensaje);
     this.name = "ErrorProveedor";
+    this.causa = causa;
   }
 }
 
 interface RespuestaChat {
   choices?: Array<{
     message?: { content?: unknown; tool_calls?: unknown };
+    finish_reason?: unknown;
   }>;
+}
+
+/** Tope al que se reintenta si el proveedor rechaza el pedido por demasiado alto. */
+const MAX_TOKENS_REINTENTO = 4096;
+
+function normalizarFinalizacion(valor: unknown): FinalizacionModelo {
+  if (valor === "stop") return "stop";
+  if (valor === "length") return "length";
+  if (valor === "tool_calls" || valor === "function_call") return "tool_calls";
+  return "otro";
+}
+
+/** 400 del proveedor por un `max_tokens` mayor de lo que admite el modelo. */
+function rechazaMaxTokens(estado: number, cuerpo: string, maxTokens: number): boolean {
+  if (estado !== 400 || maxTokens <= MAX_TOKENS_REINTENTO) return false;
+  const texto = cuerpo.toLowerCase();
+  // El límite de contexto también habla de «maximum» y no se arregla bajando max_tokens.
+  if (texto.includes("context length")) return false;
+  return (
+    texto.includes("max_tokens") ||
+    texto.includes("max tokens") ||
+    texto.includes("maximum")
+  );
 }
 
 function traducemensajeProveedor(estado: number, cuerpo: string): string {
@@ -117,11 +149,29 @@ function esLlamadaHerramienta(valor: unknown): valor is LlamadaHerramientaModelo
 }
 
 export async function llamarModelo(opciones: OpcionesLlamadaModelo): Promise<RespuestaModelo> {
+  try {
+    return await pedirModelo(opciones, opciones.maxTokens);
+  } catch (error) {
+    if (
+      error instanceof ErrorProveedor &&
+      error.causa === "max_tokens" &&
+      opciones.maxTokens > MAX_TOKENS_REINTENTO
+    ) {
+      return pedirModelo(opciones, MAX_TOKENS_REINTENTO);
+    }
+    throw error;
+  }
+}
+
+async function pedirModelo(
+  opciones: OpcionesLlamadaModelo,
+  maxTokens: number,
+): Promise<RespuestaModelo> {
   const url = `${opciones.baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const cuerpo: Record<string, unknown> = {
     model: opciones.modelo,
     messages: opciones.mensajes,
-    max_tokens: opciones.maxTokens,
+    max_tokens: maxTokens,
   };
   if (opciones.herramientas && opciones.herramientas.length > 0) {
     cuerpo.tools = opciones.herramientas;
@@ -145,18 +195,22 @@ export async function llamarModelo(opciones: OpcionesLlamadaModelo): Promise<Res
     });
   } catch (error) {
     if (esCancelacion(error)) {
-      throw new ErrorProveedor("El proveedor ha tardado demasiado en responder.");
+      throw new ErrorProveedor("El proveedor ha tardado demasiado en responder.", "tiempo");
     }
     throw new ErrorProveedor("No se pudo conectar con el proveedor.");
   }
 
   if (!respuesta.ok) {
     const cuerpoError = await respuesta.text().catch(() => "");
+    if (rechazaMaxTokens(respuesta.status, cuerpoError, maxTokens)) {
+      throw new ErrorProveedor(traducemensajeProveedor(respuesta.status, cuerpoError), "max_tokens");
+    }
     throw new ErrorProveedor(traducemensajeProveedor(respuesta.status, cuerpoError));
   }
 
   const datos = (await respuesta.json().catch(() => null)) as RespuestaChat | null;
-  const mensaje = datos?.choices?.[0]?.message;
+  const eleccion = datos?.choices?.[0];
+  const mensaje = eleccion?.message;
   if (!mensaje) {
     throw new ErrorProveedor("El proveedor ha devuelto una respuesta no válida.");
   }
@@ -168,5 +222,6 @@ export async function llamarModelo(opciones: OpcionesLlamadaModelo): Promise<Res
   return {
     contenido: typeof mensaje.content === "string" ? mensaje.content : null,
     toolCalls,
+    finalizacion: normalizarFinalizacion(eleccion?.finish_reason),
   };
 }

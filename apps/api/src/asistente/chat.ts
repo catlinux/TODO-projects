@@ -23,13 +23,21 @@ import {
 import { construirPromptSistema } from "./sistema.js";
 
 export const MAX_VUELTAS_CHAT = 10;
-export const TIEMPO_MAXIMO_CHAT_MS = 120_000;
-export const MAX_TOKENS_CHAT = 4000;
+export const TIEMPO_MAXIMO_CHAT_MS = 240_000;
+export const MAX_TOKENS_CHAT = 8000;
 export const MAX_LONGITUD_RESULTADO = 8000;
 export const LIMITE_CHAT_MAX = 20;
 export const LIMITE_CHAT_VENTANA_MS = 60_000;
 /** Cuerpo máximo de esta ruta: 250 000 caracteres pueden ocupar más del 1 MB por defecto. */
 export const LIMITE_CUERPO_CHAT_BYTES = 2 * 1024 * 1024;
+/** Continuaciones automáticas cuando el modelo agota su tope de tokens. */
+export const MAX_CONTINUACIONES_CHAT = 6;
+export const MENSAJE_CONTINUACION = "Continúa exactamente donde lo dejaste, sin repetir nada.";
+export const MENSAJE_PASOS_PEQUENOS =
+  "La llamada anterior se ha cortado por longitud. Vuelve a intentarlo en pasos más pequeños, con argumentos más cortos.";
+export const AVISO_CORTE_LONGITUD =
+  "(La respuesta se ha cortado por longitud; pídeme que continúe.)";
+export const AVISO_CORTE_TIEMPO = "(La respuesta se ha cortado por tiempo; pídeme que continúe.)";
 
 export interface OpcionesChat {
   claveCifrado: Buffer | null;
@@ -145,23 +153,71 @@ export function registrarRutasChat(
       const signal = AbortSignal.timeout(tiempoMaximo);
       const acciones: AccionAsistente[] = [];
       let ultimoContenido = "";
+      let textoGenerado = "";
+      let reintentoToolCortado = false;
+
+      const llamar = () =>
+        llamarModelo({
+          baseUrl: config.baseUrl,
+          modelo: config.modelo,
+          clave: config.clave,
+          razonamiento: config.razonamiento,
+          mensajes,
+          herramientas: HERRAMIENTAS_ASISTENTE,
+          maxTokens,
+          signal,
+          ...(config.preset === "opencode-go" ? { sesion: conversacionId } : {}),
+        });
 
       try {
         for (let vuelta = 0; vuelta < maxVueltas; vuelta += 1) {
-          const respuesta = await llamarModelo({
-            baseUrl: config.baseUrl,
-            modelo: config.modelo,
-            clave: config.clave,
-            razonamiento: config.razonamiento,
-            mensajes,
-            herramientas: HERRAMIENTAS_ASISTENTE,
-            maxTokens,
-            signal,
-            ...(config.preset === "opencode-go" ? { sesion: conversacionId } : {}),
-          });
+          let respuesta = await llamar();
+
+          // Con las herramientas, «length» suele significar argumentos JSON a medias:
+          // no se ejecutan nunca; se pide al modelo que lo haga en pasos más pequeños.
+          if (respuesta.toolCalls.length > 0 && respuesta.finalizacion === "length") {
+            if (reintentoToolCortado) {
+              throw new ErrorProveedor(
+                "El proveedor ha cortado una llamada a herramientas por longitud. Pídemelo en pasos más pequeños.",
+              );
+            }
+            reintentoToolCortado = true;
+            if (respuesta.contenido) {
+              ultimoContenido = respuesta.contenido;
+            }
+            mensajes.push({ role: "user", content: MENSAJE_PASOS_PEQUENOS });
+            vuelta -= 1;
+            continue;
+          }
 
           if (respuesta.toolCalls.length === 0) {
-            return { mensaje: respuesta.contenido ?? "", acciones };
+            let texto = respuesta.contenido ?? "";
+            textoGenerado = texto;
+            let continuaciones = 0;
+
+            while (
+              respuesta.finalizacion === "length" &&
+              continuaciones < MAX_CONTINUACIONES_CHAT
+            ) {
+              continuaciones += 1;
+              if (respuesta.contenido) {
+                mensajes.push({ role: "assistant", content: respuesta.contenido });
+              }
+              mensajes.push({ role: "user", content: MENSAJE_CONTINUACION });
+              respuesta = await llamar();
+              // Si al continuar aparecen herramientas, se devuelve lo escrito.
+              if (respuesta.toolCalls.length > 0) break;
+              texto += respuesta.contenido ?? "";
+              textoGenerado = texto;
+            }
+
+            if (respuesta.finalizacion === "length") {
+              return {
+                mensaje: `${texto}${texto ? " " : ""}${AVISO_CORTE_LONGITUD}`,
+                acciones,
+              };
+            }
+            return { mensaje: texto, acciones };
           }
 
           if (respuesta.contenido) {
@@ -196,6 +252,10 @@ export function registrarRutasChat(
         return { mensaje: ultimoContenido ? `${ultimoContenido} ${resumen}` : resumen, acciones };
       } catch (error) {
         if (error instanceof ErrorProveedor) {
+          // Si ya hay texto escrito, se entrega con el aviso en vez de un 502 sin contenido.
+          if (error.causa === "tiempo" && textoGenerado) {
+            return { mensaje: `${textoGenerado} ${AVISO_CORTE_TIEMPO}`, acciones };
+          }
           reply.code(502).send({ mensaje: error.message });
           return;
         }

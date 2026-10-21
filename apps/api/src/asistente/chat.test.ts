@@ -38,6 +38,10 @@ interface Guion {
   contenido?: string | null;
   /** Texto del error que devuelve el proveedor falso. */
   error?: string;
+  /** `finish_reason` del proveedor; por defecto «stop». */
+  finalizacion?: string;
+  /** Retraso antes de responder, para probar el agotamiento del tiempo. */
+  retrasoMs?: number;
   llamadas?: GuionLlamada[];
 }
 
@@ -83,31 +87,44 @@ function crearProveedorFalso(guiones: Guion[]): Promise<ProveedorFalso> {
         respuesta.end(JSON.stringify({ error: { message: "Sin guion" } }));
         return;
       }
-      if (guion.estado && guion.estado >= 400) {
-        respuesta.writeHead(guion.estado, { "content-type": "application/json" });
-        respuesta.end(JSON.stringify({ error: { message: guion.error ?? "Fallo del proveedor" } }));
-        return;
-      }
 
-      const mensaje: Record<string, unknown> = {
-        role: "assistant",
-        content: guion.contenido ?? null,
+      const responder = () => {
+        if (guion.estado && guion.estado >= 400) {
+          respuesta.writeHead(guion.estado, { "content-type": "application/json" });
+          respuesta.end(JSON.stringify({ error: { message: guion.error ?? "Fallo del proveedor" } }));
+          return;
+        }
+
+        const mensaje: Record<string, unknown> = {
+          role: "assistant",
+          content: guion.contenido ?? null,
+        };
+        if (guion.llamadas) {
+          mensaje.tool_calls = guion.llamadas.map((llamada, indice) => ({
+            id: `llamada-${numero}-${indice}`,
+            type: "function",
+            function: {
+              name: llamada.nombre,
+              arguments:
+                typeof llamada.argumentos === "string"
+                  ? llamada.argumentos
+                  : JSON.stringify(llamada.argumentos),
+            },
+          }));
+        }
+        respuesta.writeHead(200, { "content-type": "application/json" });
+        respuesta.end(
+          JSON.stringify({
+            choices: [{ message: mensaje, finish_reason: guion.finalizacion ?? "stop" }],
+          }),
+        );
       };
-      if (guion.llamadas) {
-        mensaje.tool_calls = guion.llamadas.map((llamada, indice) => ({
-          id: `llamada-${numero}-${indice}`,
-          type: "function",
-          function: {
-            name: llamada.nombre,
-            arguments:
-              typeof llamada.argumentos === "string"
-                ? llamada.argumentos
-                : JSON.stringify(llamada.argumentos),
-          },
-        }));
+
+      if (guion.retrasoMs) {
+        setTimeout(responder, guion.retrasoMs);
+      } else {
+        responder();
       }
-      respuesta.writeHead(200, { "content-type": "application/json" });
-      respuesta.end(JSON.stringify({ choices: [{ message: mensaje }] }));
     });
   });
 
@@ -768,6 +785,167 @@ describe("chat del asistente con herramientas", () => {
       const contenidos = resultados.map((mensaje) => String(mensaje.content)).join("\n");
       expect(contenidos).toContain("Herramienta desconocida");
       expect(contenidos).toContain("no son JSON válido");
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("continúa automáticamente cuando el texto se corta por longitud", async () => {
+    const proveedor = await crearProveedorFalso([
+      { contenido: "Parte uno. ", finalizacion: "length" },
+      { contenido: "Parte dos.", finalizacion: "stop" },
+    ]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "continuacion");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Escríbeme un manual" }]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe("Parte uno. Parte dos.");
+      expect(proveedor.peticiones).toHaveLength(2);
+
+      const segunda = mensajesDe(proveedor.peticiones[1]!);
+      expect(segunda.at(-2)).toMatchObject({ role: "assistant", content: "Parte uno. " });
+      expect(segunda.at(-1)).toMatchObject({
+        role: "user",
+        content: "Continúa exactamente donde lo dejaste, sin repetir nada.",
+      });
+      // Los mensajes internos de continuación no llegan al cliente.
+      expect(chat.body).not.toContain("Continúa exactamente");
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("avisa cuando se agotan las continuaciones por longitud", async () => {
+    const guiones: Guion[] = Array.from({ length: 7 }, (_, indice) => ({
+      contenido: `parte-${indice} `,
+      finalizacion: "length",
+    }));
+    const proveedor = await crearProveedorFalso(guiones);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "tope-continuaciones");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Manual completo" }]);
+      expect(chat.statusCode).toBe(200);
+      const mensaje = (chat.json() as { mensaje: string }).mensaje;
+      expect(mensaje).toContain("parte-6");
+      expect(mensaje).toContain(
+        "(La respuesta se ha cortado por longitud; pídeme que continúe.)",
+      );
+      expect(proveedor.peticiones).toHaveLength(7);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("no ejecuta herramientas con argumentos cortados y pide pasos más pequeños", async () => {
+    const proveedor = await crearProveedorFalso([
+      {
+        llamadas: [{ nombre: "crear_tarea", argumentos: { titulo: "No debe crearse" } }],
+        finalizacion: "length",
+      },
+      { contenido: "Lo haré en pasos más pequeños." },
+    ]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "tool-cortada");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Crea la tarea" }]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe("Lo haré en pasos más pequeños.");
+      expect((chat.json() as { acciones: unknown[] }).acciones).toHaveLength(0);
+
+      const filas = await db
+        .select()
+        .from(tareas)
+        .where(eq(tareas.titulo, "No debe crearse"));
+      expect(filas).toHaveLength(0);
+
+      const segunda = mensajesDe(proveedor.peticiones[1]!);
+      expect(segunda.at(-1)).toMatchObject({
+        role: "user",
+        content:
+          "La llamada anterior se ha cortado por longitud. Vuelve a intentarlo en pasos más pequeños, con argumentos más cortos.",
+      });
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("devuelve un error claro si las herramientas se cortan otra vez", async () => {
+    const guion = {
+      llamadas: [{ nombre: "listar_proyectos", argumentos: {} }],
+      finalizacion: "length",
+    } satisfies Guion;
+    const proveedor = await crearProveedorFalso([guion, { ...guion }]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "tool-cortada-dos");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Lista todo" }]);
+      expect(chat.statusCode).toBe(502);
+      expect((chat.json() as { mensaje: string }).mensaje).toContain("longitud");
+      expect(proveedor.peticiones).toHaveLength(2);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("devuelve el texto ya generado si se agota el tiempo total", async () => {
+    const proveedor = await crearProveedorFalso([
+      { contenido: "Primera parte.", finalizacion: "length" },
+      { contenido: "Segunda parte.", finalizacion: "stop", retrasoMs: 500 },
+    ]);
+    try {
+      const app = await crearApp({
+        asistente: {
+          ...OPCIONES_CHAT,
+          chat: { ...OPCIONES_CHAT!.chat!, tiempoMaximoMs: 100 },
+        },
+      });
+      const cookie = await registrar(app, "tiempo-agotado");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Manual largo" }]);
+      expect(chat.statusCode).toBe(200);
+      const mensaje = (chat.json() as { mensaje: string }).mensaje;
+      expect(mensaje).toContain("Primera parte.");
+      expect(mensaje).toContain("(La respuesta se ha cortado por tiempo; pídeme que continúe.)");
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("reintenta con 4096 tokens si el proveedor rechaza el máximo pedido", async () => {
+    const proveedor = await crearProveedorFalso([
+      {
+        estado: 400,
+        error: "max_tokens is too large: 8000. This model supports at most 4096 tokens.",
+      },
+      { contenido: "Listo." },
+    ]);
+    try {
+      const app = await crearApp({
+        asistente: {
+          ...OPCIONES_CHAT,
+          chat: { ...OPCIONES_CHAT!.chat!, maxTokens: 8000 },
+        },
+      });
+      const cookie = await registrar(app, "max-tokens");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Hola" }]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe("Listo.");
+      expect(proveedor.peticiones).toHaveLength(2);
+      expect(proveedor.peticiones[0]!.cuerpo.max_tokens).toBe(8000);
+      expect(proveedor.peticiones[1]!.cuerpo.max_tokens).toBe(4096);
     } finally {
       await proveedor.cerrar();
     }
