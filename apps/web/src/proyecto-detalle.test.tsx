@@ -1340,4 +1340,225 @@ describe("ProyectoDetalle", () => {
     const boton = await screen.findByRole("button", { name: /añadir descripción/i });
     expect(boton.textContent).toContain("Añadir descripción");
   });
+
+  function respuestaJson(datos: unknown, estado = 200): Response {
+    return new Response(JSON.stringify(datos), {
+      status: estado,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const columnasCabecera = [
+    { id: "c1", proyectoId: "p1", nombre: "Pendiente", posicion: 0, createdAt: "", updatedAt: "" },
+    { id: "c2", proyectoId: "p1", nombre: "En curso", posicion: 1, createdAt: "", updatedAt: "" },
+  ];
+  const tareasCabecera = [
+    {
+      id: "t1",
+      proyectoId: "p1",
+      columnaId: "c1",
+      titulo: "Tarea inicial",
+      posicion: 0,
+      createdAt: "",
+      updatedAt: "",
+    },
+  ];
+
+  function montarCabecera(
+    opciones: {
+      nombre?: string;
+      esBandeja?: boolean;
+      alParchear?: (cuerpo: Record<string, unknown>) => Response;
+    } = {},
+  ) {
+    let nombre = opciones.nombre ?? "Proyecto";
+    const proyecto = () => ({
+      id: "p1",
+      nombre,
+      esBandeja: opciones.esBandeja ?? false,
+      propietarioId: "u1",
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/proyectos/p1" && method === "GET") {
+          return respuestaJson(proyecto());
+        }
+        if (url === "/api/proyectos/p1" && method === "PATCH") {
+          const cuerpo = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+          if (typeof cuerpo.nombre === "string") nombre = cuerpo.nombre;
+          if (opciones.alParchear) return opciones.alParchear(cuerpo);
+          return respuestaJson(proyecto());
+        }
+        if (url === "/api/proyectos/p1/columnas") return respuestaJson(columnasCabecera);
+        if (url === "/api/proyectos/p1/tareas") return respuestaJson(tareasCabecera);
+        return respuestaJson([]);
+      }),
+    );
+
+    const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={cliente}>
+        <MemoryRouter initialEntries={["/proyectos/p1"]}>
+          <Routes>
+            <Route path="/proyectos/:id" element={<ProyectoDetalle />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+  }
+
+  it("contrae una columna, deja solo títulos y recuerda la elección", async () => {
+    const user = userEvent.setup();
+    montarCabecera();
+
+    const plegar = await screen.findByRole("button", { name: /contraer columna pendiente/i });
+    expect(plegar.getAttribute("aria-expanded")).toBe("true");
+    await user.click(plegar);
+
+    await waitFor(() => {
+      expect(JSON.parse(window.localStorage.getItem("todo.compactas.p1") ?? "[]")).toEqual(["c1"]);
+    });
+    const tarjeta = screen.getByText("Tarea inicial").closest("li");
+    expect(tarjeta?.className).toContain("tarjeta-kanban--compacta");
+    expect(tarjeta?.querySelector(".tarjeta-kanban__portada")).toBeNull();
+    expect(screen.getByRole("link", { name: "Tarea inicial" }).getAttribute("href")).toBe(
+      "/proyectos/p1/tareas/t1",
+    );
+    expect(
+      screen.getByRole("button", { name: /expandir columna pendiente/i }).getAttribute("aria-expanded"),
+    ).toBe("false");
+  });
+
+  it("recuerda las columnas compactas guardadas al volver al proyecto", async () => {
+    window.localStorage.setItem("todo.compactas.p1", JSON.stringify(["c1"]));
+    montarCabecera();
+
+    expect(await screen.findByRole("button", { name: /expandir columna pendiente/i })).toBeTruthy();
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
+  });
+
+  it("compacta y expande todas las columnas con el botón global", async () => {
+    const user = userEvent.setup();
+    montarCabecera();
+
+    await user.click(await screen.findByRole("button", { name: "Compactar todo" }));
+    await waitFor(() => {
+      expect(JSON.parse(window.localStorage.getItem("todo.compactas.p1") ?? "[]")).toEqual([
+        "c1",
+        "c2",
+      ]);
+    });
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Expandir todo" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Compactar todo" })).toBeTruthy();
+    });
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).not.toContain(
+      "tarjeta-kanban--compacta",
+    );
+    expect(window.localStorage.getItem("todo.compactas.p1")).toBe("[]");
+  });
+
+  it("edita el nombre del proyecto con el PATCH y recorta espacios", async () => {
+    let cuerpoPatch: Record<string, unknown> | null = null;
+    montarCabecera({
+      alParchear: (cuerpo) => {
+        cuerpoPatch = cuerpo;
+        return respuestaJson({
+          id: "p1",
+          nombre: String(cuerpo.nombre ?? ""),
+          propietarioId: "u1",
+          createdAt: "",
+          updatedAt: "",
+        });
+      },
+    });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: /editar nombre/i }));
+    const campo = await screen.findByLabelText(/nombre del proyecto/i);
+    expect((campo as HTMLInputElement).maxLength).toBe(200);
+    await user.clear(campo);
+    await user.type(campo, "  Proyecto renovado  ");
+    await user.click(screen.getByRole("button", { name: /^guardar$/i }));
+
+    await waitFor(() => expect(cuerpoPatch).toEqual({ nombre: "Proyecto renovado" }));
+    expect(await screen.findByRole("heading", { name: "Proyecto renovado" })).toBeTruthy();
+    expect(screen.queryByLabelText(/nombre del proyecto/i)).toBeNull();
+  });
+
+  it("Escape cancela la edición del nombre sin guardar", async () => {
+    const peticiones: string[] = [];
+    montarCabecera({
+      alParchear: (cuerpo) => {
+        peticiones.push(String(cuerpo.nombre));
+        return respuestaJson({ id: "p1", nombre: String(cuerpo.nombre), propietarioId: "u1", createdAt: "", updatedAt: "" });
+      },
+    });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: /editar nombre/i }));
+    const campo = await screen.findByLabelText(/nombre del proyecto/i);
+    await user.clear(campo);
+    await user.type(campo, "Otro nombre");
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByLabelText(/nombre del proyecto/i)).toBeNull();
+    expect(screen.getByRole("heading", { name: "Proyecto" })).toBeTruthy();
+    expect(peticiones).toHaveLength(0);
+  });
+
+  it("no guarda un nombre vacío", async () => {
+    const peticiones: string[] = [];
+    montarCabecera({
+      alParchear: (cuerpo) => {
+        peticiones.push(String(cuerpo.nombre));
+        return respuestaJson({ id: "p1", nombre: "Proyecto", propietarioId: "u1", createdAt: "", updatedAt: "" });
+      },
+    });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: /editar nombre/i }));
+    const campo = await screen.findByLabelText(/nombre del proyecto/i);
+    await user.clear(campo);
+    await user.click(screen.getByRole("button", { name: /^guardar$/i }));
+
+    expect(peticiones).toHaveLength(0);
+    expect(screen.getByLabelText(/nombre del proyecto/i)).toBeTruthy();
+  });
+
+  it("muestra el error del servidor al renombrar el proyecto", async () => {
+    montarCabecera({
+      alParchear: () => respuestaJson({ mensaje: "No se pudo cambiar el nombre" }, 409),
+    });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: /editar nombre/i }));
+    const campo = await screen.findByLabelText(/nombre del proyecto/i);
+    await user.clear(campo);
+    await user.type(campo, "Proyecto renovado");
+    await user.click(screen.getByRole("button", { name: /^guardar$/i }));
+
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain("No se pudo cambiar el nombre");
+    // Sigue en edición para poder reintentar.
+    expect(screen.getByLabelText(/nombre del proyecto/i)).toBeTruthy();
+  });
+
+  it("no ofrece editar el nombre en la Bandeja de entrada", async () => {
+    montarCabecera({ esBandeja: true });
+
+    expect(await screen.findByRole("heading", { name: "Proyecto" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /editar nombre/i })).toBeNull();
+  });
 });

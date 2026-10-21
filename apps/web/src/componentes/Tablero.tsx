@@ -36,6 +36,9 @@ export interface PropiedadesTablero {
   onRenombrarColumna(columnaId: string, nombre: string): void;
   onMoverColumna(columnaId: string, posicion: number): void;
   onEliminarColumna(columnaId: string): void;
+  /** Columnas en vista compacta (solo el título de cada tarjeta). */
+  columnasCompactas: string[];
+  onAlternarColumnaCompacta(columnaId: string): void;
 }
 
 export interface ControlTablero {
@@ -48,6 +51,7 @@ interface TarjetaProps {
   columnas: ColumnaApi[];
   etiquetas: EtiquetaApi[];
   hecha: boolean;
+  compacta: boolean;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
   alternarElemento(elementoId: string, hecho: boolean): Promise<void>;
@@ -87,6 +91,7 @@ function TarjetaArrastrable({
   columnas,
   etiquetas,
   hecha,
+  compacta,
   borrarTarea,
   moverTarea,
   alternarElemento,
@@ -100,6 +105,7 @@ function TarjetaArrastrable({
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [submenuMover, setSubmenuMover] = useState(false);
   const [imagenFallida, setImagenFallida] = useState(false);
+  const [checklistExpandido, setChecklistExpandido] = useState(false);
   const refOpciones = useRef<HTMLButtonElement>(null);
 
   const estilo = {
@@ -136,13 +142,43 @@ function TarjetaArrastrable({
   const elementosChecklist = checklist?.items ?? [];
   const elementosVisibles = elementosChecklist.slice(0, MAX_ELEMENTOS_EN_TARJETA);
   const elementosRestantes = elementosChecklist.length - elementosVisibles.length;
+  const elementosAMostrar = checklistExpandido ? elementosChecklist : elementosVisibles;
+
+  const botonAsa = (
+    <button
+      type="button"
+      className="boton-icono tarjeta-kanban__asa"
+      aria-label={t("tasks.drag")}
+      {...attributes}
+      {...listeners}
+    >
+      ≡
+    </button>
+  );
+
+  const botonOpciones = (
+    <button
+      type="button"
+      className="boton-icono tarjeta-kanban__opciones"
+      ref={refOpciones}
+      aria-label={`${t("tasks.options")} ${tarea.titulo}`}
+      aria-haspopup="menu"
+      aria-expanded={menuAbierto}
+      onClick={() => {
+        setSubmenuMover(false);
+        setMenuAbierto((abierto) => !abierto);
+      }}
+    >
+      ⋯
+    </button>
+  );
 
   return (
     <li
       ref={setNodeRef}
-      className={`tarjeta-kanban${hecha ? " tarjeta-kanban--hecha" : ""}${
-        isDragging ? " tarjeta-kanban--arrastrando" : ""
-      }`}
+      className={`tarjeta-kanban${compacta ? " tarjeta-kanban--compacta" : ""}${
+        hecha ? " tarjeta-kanban--hecha" : ""
+      }${isDragging ? " tarjeta-kanban--arrastrando" : ""}`}
       style={estilo}
       onKeyDown={(evento) => {
         if (evento.key === "Escape" && menuAbierto) {
@@ -152,157 +188,178 @@ function TarjetaArrastrable({
         }
       }}
     >
-      <div className="tarjeta-kanban__barra">
-        <button
-          type="button"
-          className="boton-icono tarjeta-kanban__asa"
-          aria-label={t("tasks.drag")}
-          {...attributes}
-          {...listeners}
-        >
-          ≡
-        </button>
-        <button
-          type="button"
-          className="boton-icono tarjeta-kanban__opciones"
-          ref={refOpciones}
-          aria-label={`${t("tasks.options")} ${tarea.titulo}`}
-          aria-haspopup="menu"
-          aria-expanded={menuAbierto}
-          onClick={() => {
-            setSubmenuMover(false);
-            setMenuAbierto((abierto) => !abierto);
-          }}
-        >
-          ⋯
-        </button>
-      </div>
+      {compacta ? (
+        <div className="tarjeta-kanban__fila-compacta">
+          {botonAsa}
+          <Link
+            id={`tarjeta-${tarea.id}`}
+            className="tarjeta-kanban__enlace tarjeta-kanban__enlace--compacto"
+            to={rutaTarjeta}
+            title={tarea.titulo}
+            onClick={() => cerrarMenu(false)}
+          >
+            <span className="tarjeta-kanban__vineta" aria-hidden="true">
+              ›
+            </span>
+            <span className="tarjeta-kanban__titulo-compacto">{tarea.titulo}</span>
+          </Link>
+          {tieneChecklist && checklist && (
+            <span
+              className={`tarjeta-kanban__insignia cifra${
+                checklistCompleto ? " tarjeta-kanban__insignia--hecha" : ""
+              }`}
+              aria-label={t("tasks.checklistBadge", {
+                hechos: checklist.hechos,
+                total: checklist.total,
+              })}
+            >
+              {checklist.hechos}/{checklist.total}
+            </span>
+          )}
+          {botonOpciones}
+        </div>
+      ) : (
+        <>
+          <div className="tarjeta-kanban__barra">
+            {botonAsa}
+            {botonOpciones}
+          </div>
 
-      <div
-        className={`tarjeta-kanban__portada${
-          portada.imagen ? " tarjeta-kanban__portada--imagen" : ""
-        }`}
-        style={portada.imagen ? undefined : portada.estilo}
-      >
-        {portada.imagen && (
-          <img
-            className="tarjeta-kanban__imagen"
-            src={portada.imagen}
-            alt=""
-            draggable={false}
-            onError={() => setImagenFallida(true)}
-          />
-        )}
-        <Link
-          id={`tarjeta-${tarea.id}`}
-          className="tarjeta-kanban__enlace"
-          to={rutaTarjeta}
-          onClick={() => cerrarMenu(false)}
-        >
-          <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
-        </Link>
-      </div>
+          <div
+            className={`tarjeta-kanban__portada${
+              portada.imagen ? " tarjeta-kanban__portada--imagen" : ""
+            }`}
+            style={portada.imagen ? undefined : portada.estilo}
+          >
+            {portada.imagen && (
+              <img
+                className="tarjeta-kanban__imagen"
+                src={portada.imagen}
+                alt=""
+                draggable={false}
+                onError={() => setImagenFallida(true)}
+              />
+            )}
+            <Link
+              id={`tarjeta-${tarea.id}`}
+              className="tarjeta-kanban__enlace"
+              to={rutaTarjeta}
+              onClick={() => cerrarMenu(false)}
+            >
+              <span className="tarjeta-kanban__titulo">{tarea.titulo}</span>
+            </Link>
+          </div>
 
-      {elementosVisibles.length > 0 && (
-        <div className="tarjeta-kanban__checklist">
-          <ul className="tarjeta-kanban__checklist-lista">
-            {elementosVisibles.map((elemento) => (
-              <li
-                key={elemento.id}
-                className={`tarjeta-kanban__checklist-item${
-                  elemento.hecho ? " tarjeta-kanban__checklist-item--hecho" : ""
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={elemento.hecho}
-                  aria-label={elemento.texto}
-                  onPointerDown={(evento) => evento.stopPropagation()}
-                  onChange={() => void alternarElemento(elemento.id, !elemento.hecho)}
-                />
+          {elementosVisibles.length > 0 && (
+            <div className="tarjeta-kanban__checklist">
+              <ul className="tarjeta-kanban__checklist-lista">
+                {elementosAMostrar.map((elemento) => (
+                  <li
+                    key={elemento.id}
+                    className={`tarjeta-kanban__checklist-item${
+                      elemento.hecho ? " tarjeta-kanban__checklist-item--hecho" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={elemento.hecho}
+                      aria-label={elemento.texto}
+                      onPointerDown={(evento) => evento.stopPropagation()}
+                      onChange={() => void alternarElemento(elemento.id, !elemento.hecho)}
+                    />
+                    <button
+                      type="button"
+                      className="tarjeta-kanban__checklist-boton"
+                      aria-label={t("checklist.open", { texto: elemento.texto })}
+                      onPointerDown={(evento) => evento.stopPropagation()}
+                      onKeyDown={(evento) => evento.stopPropagation()}
+                      onClick={(evento) => {
+                        evento.stopPropagation();
+                        abrirElemento(elemento);
+                      }}
+                    >
+                      <span className="tarjeta-kanban__checklist-texto">{elemento.texto}</span>
+                      {elemento.tieneDescripcion ? (
+                        <IconoDescripcion etiqueta={t("checklist.hasDescription")} />
+                      ) : null}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {(elementosRestantes > 0 || checklistExpandido) && (
                 <button
                   type="button"
-                  className="tarjeta-kanban__checklist-boton"
-                  aria-label={t("checklist.open", { texto: elemento.texto })}
+                  className="tarjeta-kanban__checklist-mas"
+                  aria-expanded={checklistExpandido}
                   onPointerDown={(evento) => evento.stopPropagation()}
                   onKeyDown={(evento) => evento.stopPropagation()}
                   onClick={(evento) => {
                     evento.stopPropagation();
-                    abrirElemento(elemento);
+                    setChecklistExpandido((expandido) => !expandido);
                   }}
                 >
-                  <span className="tarjeta-kanban__checklist-texto">{elemento.texto}</span>
-                  {elemento.tieneDescripcion ? (
-                    <IconoDescripcion etiqueta={t("checklist.hasDescription")} />
-                  ) : null}
+                  {checklistExpandido
+                    ? t("tasks.checklistLess")
+                    : t("tasks.checklistMore", { n: elementosRestantes })}
                 </button>
-              </li>
-            ))}
-          </ul>
-          {elementosRestantes > 0 && (
-            <Link
-              className="tarjeta-kanban__checklist-mas"
-              to={rutaTarjeta}
-              onClick={() => cerrarMenu(false)}
-            >
-              {t("tasks.checklistMore", { n: elementosRestantes })}
-            </Link>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {(etiquetasDeTarea.length > 0 ||
-        chip ||
-        tieneAviso ||
-        tieneRecurrencia ||
-        tieneChecklist ||
-        tieneComentarios ||
-        tieneAdjuntos) && (
-        <div className="tarjeta-kanban__pie">
-          {etiquetasDeTarea.length > 0 && (
-            <span className="tarjeta-kanban__etiquetas">
-              {etiquetasDeTarea.map((etiqueta) => (
-                <PastillaEtiqueta key={etiqueta.id} etiqueta={etiqueta} />
-              ))}
-            </span>
+          {(etiquetasDeTarea.length > 0 ||
+            chip ||
+            tieneAviso ||
+            tieneRecurrencia ||
+            tieneChecklist ||
+            tieneComentarios ||
+            tieneAdjuntos) && (
+            <div className="tarjeta-kanban__pie">
+              {etiquetasDeTarea.length > 0 && (
+                <span className="tarjeta-kanban__etiquetas">
+                  {etiquetasDeTarea.map((etiqueta) => (
+                    <PastillaEtiqueta key={etiqueta.id} etiqueta={etiqueta} />
+                  ))}
+                </span>
+              )}
+              <span className="tarjeta-kanban__indicadores">
+                {chip && (
+                  <span className={`chip-fecha chip-fecha--${estadoChip} cifra`}>{chip.texto}</span>
+                )}
+                {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
+                {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
+                {tieneChecklist && checklist && (
+                  <span
+                    className={`tarjeta-kanban__insignia cifra${
+                      checklistCompleto ? " tarjeta-kanban__insignia--hecha" : ""
+                    }`}
+                    aria-label={t("tasks.checklistBadge", {
+                      hechos: checklist.hechos,
+                      total: checklist.total,
+                    })}
+                  >
+                    {checklist.hechos}/{checklist.total}
+                  </span>
+                )}
+                {tieneComentarios && (
+                  <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--comentarios">
+                    <IconoComentario etiqueta={t("tasks.commentBadge", { n: comentarios })} />
+                    <span className="cifra" aria-hidden="true">
+                      {comentarios}
+                    </span>
+                  </span>
+                )}
+                {tieneAdjuntos && (
+                  <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--adjuntos">
+                    <IconoAdjunto etiqueta={t("tasks.attachmentBadge", { n: adjuntos })} />
+                    <span className="cifra" aria-hidden="true">
+                      {adjuntos}
+                    </span>
+                  </span>
+                )}
+              </span>
+            </div>
           )}
-          <span className="tarjeta-kanban__indicadores">
-            {chip && (
-              <span className={`chip-fecha chip-fecha--${estadoChip} cifra`}>{chip.texto}</span>
-            )}
-            {tieneAviso && <IconoCampana etiqueta={t("tasks.hasReminder")} />}
-            {tieneRecurrencia && <IconoRepeticion etiqueta={t("tasks.repeats")} />}
-            {tieneChecklist && checklist && (
-              <span
-                className={`tarjeta-kanban__insignia cifra${
-                  checklistCompleto ? " tarjeta-kanban__insignia--hecha" : ""
-                }`}
-                aria-label={t("tasks.checklistBadge", {
-                  hechos: checklist.hechos,
-                  total: checklist.total,
-                })}
-              >
-                {checklist.hechos}/{checklist.total}
-              </span>
-            )}
-            {tieneComentarios && (
-              <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--comentarios">
-                <IconoComentario etiqueta={t("tasks.commentBadge", { n: comentarios })} />
-                <span className="cifra" aria-hidden="true">
-                  {comentarios}
-                </span>
-              </span>
-            )}
-            {tieneAdjuntos && (
-              <span className="tarjeta-kanban__insignia tarjeta-kanban__insignia--adjuntos">
-                <IconoAdjunto etiqueta={t("tasks.attachmentBadge", { n: adjuntos })} />
-                <span className="cifra" aria-hidden="true">
-                  {adjuntos}
-                </span>
-              </span>
-            )}
-          </span>
-        </div>
+        </>
       )}
 
       {menuAbierto && (
@@ -367,6 +424,8 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     onRenombrarColumna,
     onMoverColumna,
     onEliminarColumna,
+    columnasCompactas,
+    onAlternarColumnaCompacta,
   },
   ref,
 ) {
@@ -570,10 +629,11 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
         {columnasOrdenadas.map((columna, indice) => {
           const tareasColumna = tareasPorColumna(columna.id);
           const menuVisible = menuAbierto === columna.id;
+          const compacta = columnasCompactas.includes(columna.id);
           return (
             <section
               key={columna.id}
-              className="columna-kanban"
+              className={`columna-kanban${compacta ? " columna-kanban--compacta" : ""}`}
               aria-label={columna.nombre}
               onKeyDown={(evento) => {
                 if (evento.key === "Escape" && menuVisible) {
@@ -605,6 +665,17 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                     <span className="columna-kanban__contador cifra">{tareasColumna.length}</span>
                   </div>
                 )}
+                <button
+                  type="button"
+                  className="boton-icono columna-kanban__plegar"
+                  aria-expanded={!compacta}
+                  aria-label={`${
+                    compacta ? t("columns.expand") : t("columns.collapse")
+                  } ${columna.nombre}`}
+                  onClick={() => onAlternarColumnaCompacta(columna.id)}
+                >
+                  <IconoChevron plegada={compacta} />
+                </button>
                 <button
                   type="button"
                   className="boton-icono"
@@ -674,6 +745,7 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                           columnas={columnas}
                           etiquetas={etiquetas}
                           hecha={indice === columnasOrdenadas.length - 1}
+                          compacta={compacta}
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}
                           alternarElemento={alternarElemento}
@@ -765,7 +837,19 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
       </div>
       <DragOverlay>
         {activa ? (
-          <div className="tarjeta-kanban tarjeta-kanban--superpuesta">{activa.titulo}</div>
+          <div
+            className={`tarjeta-kanban tarjeta-kanban--superpuesta${
+              columnasCompactas.includes(activa.columnaId)
+                ? " tarjeta-kanban--superpuesta-compacta"
+                : ""
+            }`}
+          >
+            {columnasCompactas.includes(activa.columnaId) ? (
+              <span className="tarjeta-kanban__titulo-compacto">{activa.titulo}</span>
+            ) : (
+              activa.titulo
+            )}
+          </div>
         ) : null}
       </DragOverlay>
 
@@ -785,6 +869,24 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     </DndContext>
   );
 });
+
+function IconoChevron({ plegada }: { plegada: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {plegada ? <path d="M6 9l6 6 6-6" /> : <path d="M18 15l-6-6-6 6" />}
+    </svg>
+  );
+}
 
 function ColumnaSolt({ id, children }: { id: string; children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id });

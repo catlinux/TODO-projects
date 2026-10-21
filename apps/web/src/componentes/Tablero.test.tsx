@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -47,6 +47,8 @@ const accionesColumnas = {
   onRenombrarColumna: vi.fn(),
   onMoverColumna: vi.fn(),
   onEliminarColumna: vi.fn(),
+  columnasCompactas: [] as string[],
+  onAlternarColumnaCompacta: vi.fn(),
 };
 
 function WrapperDePrueba({ onRef }: FichaProps) {
@@ -320,7 +322,11 @@ describe("Tablero", () => {
     expect(portada?.querySelector(".tarjeta-kanban__titulo")?.textContent).toBe("Tarea inicial");
   });
 
-  function renderConEtiquetas(tareas: TareaApi[], etiquetas: EtiquetaApi[]) {
+  function renderConEtiquetas(
+    tareas: TareaApi[],
+    etiquetas: EtiquetaApi[],
+    opciones: { compactas?: string[]; onAlternar?: (columnaId: string) => void } = {},
+  ) {
     const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     cliente.setQueryData(["tareas", "p1"], tareas);
     render(
@@ -333,6 +339,8 @@ describe("Tablero", () => {
             tareas={tareas}
             etiquetas={etiquetas}
             {...accionesColumnas}
+            columnasCompactas={opciones.compactas ?? []}
+            onAlternarColumnaCompacta={opciones.onAlternar ?? accionesColumnas.onAlternarColumnaCompacta}
           />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -380,7 +388,7 @@ describe("Tablero", () => {
     expect(screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__insignia")).toBeNull();
   });
 
-  it("muestra los cuatro primeros elementos y «+N más» enlazando a la tarjeta", () => {
+  it("muestra los cuatro primeros elementos y un botón «+N más»", () => {
     renderConEtiquetas(
       [
         {
@@ -412,8 +420,53 @@ describe("Tablero", () => {
       true,
     );
 
-    const mas = screen.getByRole("link", { name: "+2 más" });
-    expect(mas.getAttribute("href")).toBe("/proyectos/p1/tareas/t1");
+    const mas = screen.getByRole("button", { name: "+2 más" });
+    expect(mas.getAttribute("aria-expanded")).toBe("false");
+    expect((mas as HTMLButtonElement).closest("a")).toBeNull();
+  });
+
+  it("«+N más» despliega todo el checklist sin abrir la tarjeta y «Ver menos» lo pliega", async () => {
+    const user = userEvent.setup();
+    renderConEtiquetas(
+      [
+        {
+          ...tareasIniciales[0]!,
+          checklist: {
+            hechos: 0,
+            total: 6,
+            items: [
+              { id: "e1", texto: "Primero", hecho: false, tieneDescripcion: false },
+              { id: "e2", texto: "Segundo", hecho: false, tieneDescripcion: false },
+              { id: "e3", texto: "Tercero", hecho: false, tieneDescripcion: false },
+              { id: "e4", texto: "Cuarto", hecho: false, tieneDescripcion: false },
+              { id: "e5", texto: "Quinto", hecho: false, tieneDescripcion: false },
+              { id: "e6", texto: "Sexto", hecho: false, tieneDescripcion: false },
+            ],
+          },
+        },
+      ],
+      [],
+    );
+
+    const tarjeta = () => screen.getByText("Tarea inicial").closest("li");
+    const boton = screen.getByRole("button", { name: "+2 más" });
+    await user.click(boton);
+
+    expect(screen.queryByText("Quinto")).toBeTruthy();
+    expect(screen.queryByText("Sexto")).toBeTruthy();
+    expect(tarjeta()?.querySelectorAll(".tarjeta-kanban__checklist-item")).toHaveLength(6);
+    // No navega ni abre la tarjeta ni su menú.
+    expect(screen.getByTestId("ruta-actual").textContent).toBe("/");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    const menos = screen.getByRole("button", { name: "Ver menos" });
+    expect(menos.getAttribute("aria-expanded")).toBe("true");
+    await user.click(menos);
+
+    expect(screen.queryByText("Quinto")).toBeNull();
+    expect(tarjeta()?.querySelectorAll(".tarjeta-kanban__checklist-item")).toHaveLength(4);
+    expect(screen.getByRole("button", { name: "+2 más" })).toBeTruthy();
   });
 
   it("marcar un elemento llama a la API con el valor correcto", async () => {
@@ -647,5 +700,50 @@ describe("Tablero", () => {
     expect(
       screen.getByText("Tarea inicial").closest("li")?.querySelector(".tarjeta-kanban__insignia--adjuntos"),
     ).toBeNull();
+  });
+
+  it("contrae una columna con el botón de la cabecera y lo anuncia con aria-expanded", async () => {
+    const user = userEvent.setup();
+    const onAlternar = vi.fn();
+    renderConEtiquetas(tareasIniciales, [], { onAlternar });
+
+    const boton = screen.getByRole("button", { name: /contraer columna pendiente/i });
+    expect(boton.getAttribute("aria-expanded")).toBe("true");
+    await user.click(boton);
+
+    expect(onAlternar).toHaveBeenCalledWith("c1");
+    expect(accionesColumnas.onAlternarColumnaCompacta).not.toHaveBeenCalled();
+  });
+
+  it("en vista compacta deja solo el título, los mandos y el indicador del checklist", () => {
+    renderConEtiquetas(
+      [{ ...tareasIniciales[0]!, checklist: { hechos: 1, total: 3 } }, tareasIniciales[1]!],
+      [],
+      { compactas: ["c1"] },
+    );
+
+    const compacta = screen.getByText("Tarea inicial").closest("li")!;
+    expect(compacta.className).toContain("tarjeta-kanban--compacta");
+    expect(compacta.querySelector(".tarjeta-kanban__portada")).toBeNull();
+    expect(compacta.querySelector(".tarjeta-kanban__pie")).toBeNull();
+    expect(compacta.querySelector(".tarjeta-kanban__etiquetas")).toBeNull();
+    expect(compacta.querySelector(".tarjeta-kanban__insignia")?.textContent).toBe("1/3");
+
+    // El título compacto sigue enlazando a la tarjeta y muestra el título completo.
+    const enlace = screen.getByRole("link", { name: "Tarea inicial" });
+    expect(enlace.getAttribute("href")).toBe("/proyectos/p1/tareas/t1");
+    expect(enlace.getAttribute("title")).toBe("Tarea inicial");
+    expect(within(compacta).getByRole("button", { name: /arrastrar tarea/i })).toBeTruthy();
+    expect(
+      within(compacta).getByRole("button", { name: /opciones de la tarjeta tarea inicial/i }),
+    ).toBeTruthy();
+
+    const ancho = screen.getByRole("button", { name: /expandir columna pendiente/i });
+    expect(ancho.getAttribute("aria-expanded")).toBe("false");
+
+    // La otra columna sigue con las tarjetas completas.
+    expect(
+      screen.getByText("Otra").closest("li")?.querySelector(".tarjeta-kanban__portada"),
+    ).not.toBeNull();
   });
 });

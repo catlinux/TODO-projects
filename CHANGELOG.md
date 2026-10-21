@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.25.0] - 2026-10-21
+
+### Añadido
+- Tablero: el «+N más» del checklist de la tarjeta despliega el resto de elementos en la propia tarjeta («Ver menos» los pliega) sin abrirla; la tarjeta solo se abre desde su encabezado.
+- Tablero: se pueden contraer las columnas (flecha en la cabecera) y compactar o expandir todo desde la barra del proyecto; en la vista compacta solo se ven los títulos. Se recuerda por proyecto en el navegador.
+- El nombre del proyecto se puede editar desde su cabecera (no la Bandeja de entrada).
+- Asistente: las respuestas largas (manuales, guías) llegan completas con continuación automática cuando el modelo agota los tokens; hasta 8.000 tokens por llamada y 240 s en total; si se corta, avisa. Las respuestas se muestran con formato (párrafos, listas, títulos y código) y llevan botón «Copiar».
+
 ## [0.24.0] - 2026-10-20
 
 ### Añadido

@@ -12,6 +12,7 @@ import { PastillaEtiqueta } from "../componentes/SelectorEtiquetas";
 import { Tablero } from "../componentes/Tablero";
 import { inicial } from "../inicial";
 import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
+import { guardarColumnasCompactas, leerColumnasCompactas } from "../tablero-utils";
 
 export interface PropiedadesProyectoDetalle {
   /** Abre el diálogo de personalizar. Sin él, lo abre el estado de la propia página (A6). */
@@ -87,6 +88,25 @@ function IconoFondo() {
   );
 }
 
+function IconoLapiz() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
+
 function IconoCerrar() {
   return (
     <svg
@@ -144,11 +164,17 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const [filtroEtiquetas, setFiltroEtiquetas] = useState<string[]>([]);
   const [filtroAbierto, setFiltroAbierto] = useState(false);
   const [vista, setVista] = useState<VistaProyecto>(() => leerVista(proyectoId));
+  const [columnasCompactas, setColumnasCompactas] = useState<string[]>(() =>
+    leerColumnasCompactas(proyectoId),
+  );
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
   const [editandoDescripcion, setEditandoDescripcion] = useState(false);
   const [descripcion, setDescripcion] = useState("");
   const [errorDescripcion, setErrorDescripcion] = useState<string | null>(null);
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [nombre, setNombre] = useState("");
+  const [errorNombre, setErrorNombre] = useState<string | null>(null);
   const [borrarAbierto, setBorrarAbierto] = useState(false);
   const [errorBorrar, setErrorBorrar] = useState<string | null>(null);
   const refDialogo = useRef<HTMLDialogElement>(null);
@@ -157,6 +183,7 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   // Al cambiar de proyecto, la vista guardada de ese proyecto.
   useEffect(() => {
     setVista(leerVista(proyectoId));
+    setColumnasCompactas(leerColumnasCompactas(proyectoId));
   }, [proyectoId]);
 
   useEffect(() => {
@@ -321,6 +348,23 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     },
   });
 
+  const guardarNombre = useMutation({
+    mutationFn: async (texto: string) =>
+      peticion(`/proyectos/${proyectoId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ nombre: texto }),
+      }),
+    onSuccess: async () => {
+      setErrorNombre(null);
+      await cliente.invalidateQueries({ queryKey: ["proyecto", proyectoId] });
+      await cliente.invalidateQueries({ queryKey: ["proyectos"] });
+      setEditandoNombre(false);
+    },
+    onError: (err: unknown) => {
+      setErrorNombre(err instanceof Error ? err.message : t("auth.error"));
+    },
+  });
+
   const borrarProyecto = useMutation({
     mutationFn: async () => peticion(`/proyectos/${proyectoId}`, { method: "DELETE" }),
     onMutate: () => setErrorBorrar(null),
@@ -349,6 +393,24 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     setDescripcion("");
     setErrorDescripcion(null);
     setEditandoDescripcion(false);
+  }
+
+  function empezarEdicionNombre() {
+    setNombre(proyecto.data?.nombre ?? "");
+    setErrorNombre(null);
+    setEditandoNombre(true);
+  }
+
+  function cancelarEdicionNombre() {
+    setNombre("");
+    setErrorNombre(null);
+    setEditandoNombre(false);
+  }
+
+  function confirmarNombre() {
+    const limpio = nombre.trim();
+    if (!limpio) return;
+    guardarNombre.mutate(limpio);
   }
 
   if (proyecto.isLoading || columnas.isLoading || tareas.isLoading) {
@@ -388,6 +450,29 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     guardarVista(proyectoId, nueva);
   }
 
+  const nombreActual = proyecto.data?.nombre ?? t("projects.title");
+  const esBandeja = proyecto.data?.esBandeja === true;
+  const todasCompactas =
+    listaColumnas.length > 0 &&
+    listaColumnas.every((columna) => columnasCompactas.includes(columna.id));
+
+  function guardarCompactas(siguientes: string[]) {
+    setColumnasCompactas(siguientes);
+    guardarColumnasCompactas(proyectoId, siguientes);
+  }
+
+  function alternarColumnaCompacta(columnaId: string) {
+    guardarCompactas(
+      columnasCompactas.includes(columnaId)
+        ? columnasCompactas.filter((id) => id !== columnaId)
+        : [...columnasCompactas, columnaId],
+    );
+  }
+
+  function alternarTodasCompactas() {
+    guardarCompactas(todasCompactas ? [] : listaColumnas.map((columna) => columna.id));
+  }
+
   return (
     <main className="proyecto">
       <FondoProyecto fondo={proyecto.data?.fondo ?? null} />
@@ -397,9 +482,67 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
             {inicial(proyecto.data?.nombre ?? "")}
           </span>
           <div className="cabecera-proyecto__titulo">
-            <h1 title={proyecto.data?.nombre ?? t("projects.title")}>
-              {proyecto.data?.nombre ?? t("projects.title")}
-            </h1>
+            {editandoNombre ? (
+              <form
+                className="cabecera-proyecto__nombre-form"
+                onSubmit={(evento) => {
+                  evento.preventDefault();
+                  confirmarNombre();
+                }}
+              >
+                <input
+                  className="cabecera-proyecto__nombre-campo"
+                  aria-label={t("projects.projectName")}
+                  type="text"
+                  maxLength={200}
+                  autoFocus
+                  value={nombre}
+                  onChange={(evento) => setNombre(evento.target.value)}
+                  onKeyDown={(evento) => {
+                    if (evento.key === "Escape") {
+                      evento.preventDefault();
+                      cancelarEdicionNombre();
+                    }
+                  }}
+                />
+                <div className="cabecera-proyecto__nombre-acciones">
+                  <button
+                    type="submit"
+                    className="boton-cabecera boton-cabecera--blanco"
+                    disabled={!nombre.trim() || guardarNombre.isPending}
+                  >
+                    {t("tasks.save")}
+                  </button>
+                  <button
+                    type="button"
+                    className="boton-cabecera"
+                    onClick={cancelarEdicionNombre}
+                  >
+                    {t("tasks.cancel")}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="cabecera-proyecto__nombre">
+                <h1 title={nombreActual}>{nombreActual}</h1>
+                {!esBandeja && (
+                  <button
+                    type="button"
+                    className="boton-icono cabecera-proyecto__editar-nombre"
+                    aria-label={t("projects.editName")}
+                    title={t("projects.editName")}
+                    onClick={empezarEdicionNombre}
+                  >
+                    <IconoLapiz />
+                  </button>
+                )}
+              </div>
+            )}
+            {errorNombre && (
+              <p className="error cabecera-proyecto__nombre-error" role="alert">
+                {errorNombre}
+              </p>
+            )}
             <div className="cabecera-proyecto__descripcion">
               {editandoDescripcion ? (
                 <form
@@ -490,6 +633,11 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
                 {t("projects.list")}
               </button>
             </div>
+            {vista === "tablero" && (
+              <button type="button" className="boton-cabecera" onClick={alternarTodasCompactas}>
+                {todasCompactas ? t("projects.expandAll") : t("projects.compactAll")}
+              </button>
+            )}
             <button
               type="button"
               className="boton-cabecera"
@@ -601,6 +749,8 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
             }
             onMoverColumna={(columnaId, posicion) => reordenarColumna.mutate({ columnaId, posicion })}
             onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
+            columnasCompactas={columnasCompactas}
+            onAlternarColumnaCompacta={alternarColumnaCompacta}
           />
         )}
       </div>

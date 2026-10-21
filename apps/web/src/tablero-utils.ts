@@ -1,3 +1,29 @@
+/** Clave de localStorage donde el proyecto recuerda sus columnas compactas. */
+function claveColumnasCompactas(proyectoId: string): string {
+  return `todo.compactas.${proyectoId}`;
+}
+
+/** Columnas que el usuario dejó en vista compacta; ausente o ilegible → ninguna. */
+export function leerColumnasCompactas(proyectoId: string): string[] {
+  try {
+    const crudo = window.localStorage.getItem(claveColumnasCompactas(proyectoId));
+    if (!crudo) return [];
+    const datos: unknown = JSON.parse(crudo);
+    if (!Array.isArray(datos)) return [];
+    return datos.filter((id): id is string => typeof id === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function guardarColumnasCompactas(proyectoId: string, ids: string[]): void {
+  try {
+    window.localStorage.setItem(claveColumnasCompactas(proyectoId), JSON.stringify(ids));
+  } catch {
+    // Sin localStorage (modo privado): la elección dura lo que la página.
+  }
+}
+
 export interface TareaTablero {
   id: string;
   proyectoId: string;

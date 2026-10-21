@@ -214,6 +214,71 @@ kbd {
   min-width: 0;
 }
 
+/* Nombre y lápiz: el título conserva su tamaño y el botón no lo desplaza. */
+.cabecera-proyecto__nombre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.cabecera-proyecto__editar-nombre {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--marco) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--marco) 34%, transparent);
+}
+
+.cabecera-proyecto__editar-nombre:hover:not(:disabled) {
+  color: #fff;
+  background: color-mix(in srgb, var(--marco) 42%, transparent);
+  border-color: color-mix(in srgb, var(--marco) 52%, transparent);
+}
+
+.cabecera-proyecto__nombre-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+/* Mismo cuerpo que el h1 para que solo se note el campo, no el cambio. */
+.cabecera-proyecto__nombre-campo {
+  width: min(100%, 420px);
+  min-height: 40px;
+  padding: 4px 8px;
+  font-size: clamp(1.5rem, 1.1rem + 1.5vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #fff;
+  background: color-mix(in srgb, var(--marco) 22%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radio-control);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.cabecera-proyecto__nombre-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cabecera-proyecto__nombre-acciones .boton-cabecera {
+  height: auto;
+  min-height: var(--objetivo-tactil);
+}
+
+.cabecera-proyecto__nombre-error {
+  margin: 4px 0 0;
+  padding: 4px 8px;
+  color: var(--menu-texto-fuerte);
+  background: color-mix(in srgb, var(--marco) 80%, transparent);
+  border-radius: var(--radio-control);
+}
+
 /* Nombre como título: grande, ajustado y legible sobre cualquier portada. */
 .cabecera-proyecto h1 {
   display: -webkit-box;
@@ -2332,6 +2397,7 @@ form.columna-agregar button {
 
 .columna-kanban__titulo {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -2415,6 +2481,10 @@ form.columna-agregar button {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+.columna-kanban--compacta .columna-kanban__tareas {
+  gap: 4px;
 }
 
 /* Columna vacía: texto discreto, alineado a la izquierda. */
@@ -2724,6 +2794,81 @@ form.columna-agregar button {
   min-height: 32px;
   padding: 0 3px;
   font-size: 12px;
+}
+
+button.tarjeta-kanban__checklist-mas {
+  color: var(--secundario);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+button.tarjeta-kanban__checklist-mas:hover:not(:disabled) {
+  color: var(--texto);
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Vista compacta: una sola línea por tarjeta, sin portada ni indicadores. */
+.tarjeta-kanban--compacta {
+  display: block;
+}
+
+.tarjeta-kanban__fila-compacta {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 1px 6px;
+}
+
+.tarjeta-kanban__fila-compacta .boton-icono {
+  flex: 0 0 auto;
+}
+
+.tarjeta-kanban__enlace--compacto {
+  position: static;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 2px;
+  color: var(--texto);
+}
+
+.tarjeta-kanban__vineta {
+  flex: 0 0 auto;
+  color: var(--secundario);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tarjeta-kanban__titulo-compacto {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--texto);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tarjeta-kanban--compacta .tarjeta-kanban__insignia {
+  flex: 0 0 auto;
+}
+
+.tarjeta-kanban--superpuesta-compacta {
+  max-width: 260px;
+  padding: 8px 10px;
+}
+
+.tarjeta-kanban--superpuesta-compacta .tarjeta-kanban__titulo-compacto {
+  display: block;
 }
 
 /* Fila compacta bajo la portada: etiquetas e indicadores. */

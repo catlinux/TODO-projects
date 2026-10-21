@@ -97,6 +97,10 @@
       "libraryLoadError": "No se pudo cargar la biblioteca",
       "randomSeven": "Elegir 7 al azar"
     },
+    "editName": "Editar nombre",
+    "projectName": "Nombre del proyecto",
+    "compactAll": "Compactar todo",
+    "expandAll": "Expandir todo",
     "deleteProject": "Eliminar proyecto",
     "deleteProjectTitle": "Eliminar proyecto",
     "deleteProjectWarning_other": "Se eliminará «{{nombre}}» y se perderán {{count}} tareas.",
@@ -172,6 +176,7 @@
     "editDescription": "Editar descripción",
     "checklistBadge": "Checklist: {{hechos}} de {{total}}",
     "checklistMore": "+{{n}} más",
+    "checklistLess": "Ver menos",
     "commentBadge": "Comentarios: {{n}}",
     "attachmentBadge": "Adjuntos: {{n}}",
     "listEmpty": "Aún no hay tareas en este proyecto. Crea la primera.",
@@ -314,7 +319,9 @@
     "moveLeft": "Mover a la izquierda",
     "moveRight": "Mover a la derecha",
     "delete": "Eliminar columna",
-    "empty": "No hay columnas todavía"
+    "empty": "No hay columnas todavía",
+    "collapse": "Contraer columna",
+    "expand": "Expandir columna"
   },
   "dnd": {
     "announcements": {
