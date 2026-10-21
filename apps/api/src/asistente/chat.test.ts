@@ -12,6 +12,7 @@ import type { Database } from "../db/index.js";
 import * as schema from "../db/schema.js";
 import { tareas } from "../db/schema.js";
 import { VERSION } from "../version.js";
+import { llamarModelo } from "./cliente.js";
 
 const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
@@ -25,6 +26,8 @@ const OPCIONES_CHAT: NonNullable<OpcionesApp["asistente"]> = {
     tiempoMaximoMs: 5000,
     maxTokens: 500,
     limite: { max: 1000, ventanaMs: 60_000 },
+    // Los reintentos por 5xx no deben ralentizar las pruebas.
+    esperasReintentoMs: [0, 0],
   },
 };
 
@@ -492,8 +495,12 @@ describe("chat del asistente con herramientas", () => {
     }
   });
 
-  it("devuelve 502 con el proveedor caído y sin filtrar la clave", async () => {
-    const proveedor = await crearProveedorFalso([{ estado: 500 }]);
+  it("devuelve 502 con el proveedor caído, con el código y sin filtrar la clave", async () => {
+    const proveedor = await crearProveedorFalso([
+      { estado: 500 },
+      { estado: 500 },
+      { estado: 500 },
+    ]);
     try {
       const app = await crearApp();
       const cookie = await registrar(app, "caido");
@@ -502,10 +509,109 @@ describe("chat del asistente con herramientas", () => {
       const chat = await chatear(app, cookie, [{ rol: "user", texto: "Hola" }]);
       expect(chat.statusCode).toBe(502);
       expect((chat.json() as { mensaje: string }).mensaje).toBe(
-        "El proveedor no responde en este momento.",
+        "El proveedor no responde en este momento (error 500). Inténtalo de nuevo en unos segundos.",
       );
       expect(chat.body).not.toContain(CLAVE_PROVEEDOR);
+      expect(proveedor.peticiones).toHaveLength(3);
     } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("reintenta un 503 y el segundo intento usa menos max_tokens", async () => {
+    const proveedor = await crearProveedorFalso([
+      { estado: 503, error: "upstream no disponible" },
+      { contenido: "Listo tras reintentar." },
+    ]);
+    try {
+      const app = await crearApp({
+        asistente: {
+          ...OPCIONES_CHAT,
+          chat: { ...OPCIONES_CHAT!.chat!, maxTokens: 8000 },
+        },
+      });
+      const cookie = await registrar(app, "reintento-503");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Hola" }]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe("Listo tras reintentar.");
+      expect(proveedor.peticiones).toHaveLength(2);
+      expect(proveedor.peticiones[0]!.cuerpo.max_tokens).toBe(8000);
+      expect(proveedor.peticiones[1]!.cuerpo.max_tokens).toBe(4000);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("registra el error del proveedor sin secretos ni el texto del usuario", async () => {
+    const errorLargo = `Petición no válida. Authorization: Bearer sk-viva-9999 y oc_sk_proveedor-1234. ${"x".repeat(400)}`;
+    const proveedor = await crearProveedorFalso([{ estado: 400, error: errorLargo }]);
+    const registros: Array<Record<string, unknown>> = [];
+    const log = {
+      warn: (datos: Record<string, unknown>, mensaje: string): void => {
+        registros.push({ ...datos, mensaje });
+      },
+    };
+    try {
+      await expect(
+        llamarModelo({
+          baseUrl: proveedor.baseUrl,
+          modelo: "modelo-falso",
+          clave: CLAVE_PROVEEDOR,
+          mensajes: [{ role: "user", content: "texto privado del usuario" }],
+          maxTokens: 8000,
+          log,
+          esperasReintentoMs: [0, 0],
+        }),
+      ).rejects.toThrow();
+
+      expect(registros).toHaveLength(1);
+      const registro = registros[0]!;
+      expect(registro.estado).toBe(400);
+      expect(registro.modelo).toBe("modelo-falso");
+      expect(registro.maxTokens).toBe(8000);
+      expect(registro.mensajes).toBe(1);
+      expect(registro.herramientas).toBe(0);
+      expect(registro.caracteres).toBeGreaterThan(0);
+
+      const cuerpoError = String(registro.cuerpoError);
+      expect(cuerpoError).toContain("Petición no válida");
+      expect(cuerpoError).toContain("***");
+      expect(cuerpoError.length).toBeLessThanOrEqual(300);
+
+      const textoRegistrado = JSON.stringify(registro);
+      expect(textoRegistrado).not.toContain(CLAVE_PROVEEDOR);
+      expect(textoRegistrado).not.toContain("sk-viva-9999");
+      expect(textoRegistrado).not.toContain("oc_sk_proveedor-1234");
+      expect(textoRegistrado).not.toContain("texto privado del usuario");
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("no reintenta un 5xx si ya no queda tiempo total", async () => {
+    const proveedor = await crearProveedorFalso([
+      { estado: 503 },
+      { contenido: "No debería llegar aquí." },
+    ]);
+    const controlador = new AbortController();
+    const temporizador = setTimeout(() => controlador.abort(), 20);
+    try {
+      await expect(
+        llamarModelo({
+          baseUrl: proveedor.baseUrl,
+          modelo: "modelo-falso",
+          clave: CLAVE_PROVEEDOR,
+          mensajes: [{ role: "user", content: "Hola" }],
+          maxTokens: 8000,
+          signal: controlador.signal,
+          esperasReintentoMs: [1000, 3000],
+        }),
+      ).rejects.toMatchObject({ causa: "tiempo" });
+      expect(proveedor.peticiones).toHaveLength(1);
+    } finally {
+      clearTimeout(temporizador);
       await proveedor.cerrar();
     }
   });
@@ -528,6 +634,7 @@ describe("chat del asistente con herramientas", () => {
       expect((chat.json() as { mensaje: string }).mensaje).toBe(
         "El texto es demasiado largo para el modelo; adjunta un fragmento más corto.",
       );
+      expect(proveedor.peticiones).toHaveLength(1);
     } finally {
       await proveedor.cerrar();
     }

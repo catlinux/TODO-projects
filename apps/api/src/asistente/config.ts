@@ -284,6 +284,8 @@ export function registrarRutasAsistente(
         mensajes: [{ role: "user", content: MENSAJE_PRUEBA }],
         maxTokens: MAX_TOKENS_PRUEBA,
         signal: AbortSignal.timeout(tiempoMaximoPrueba),
+        preset: datos.preset ?? existente?.preset ?? null,
+        log: request.log,
         ...((datos.preset ?? existente?.preset) === "opencode-go"
           ? { sesion: randomUUID() }
           : {}),

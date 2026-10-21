@@ -49,6 +49,8 @@ export interface OpcionesChat {
   maxTokens?: number;
   /** Límite de peticiones por usuario. */
   limite?: { max: number; ventanaMs: number };
+  /** Esperas entre reintentos ante 5xx; las pruebas las acortan. */
+  esperasReintentoMs?: readonly number[];
 }
 
 function recortar(texto: string, maximo: number = MAX_LONGITUD_RESULTADO): string {
@@ -82,6 +84,7 @@ export function registrarRutasChat(
   const maxTokens = opciones.maxTokens ?? MAX_TOKENS_CHAT;
   const limiteMax = opciones.limite?.max ?? LIMITE_CHAT_MAX;
   const limiteVentana = opciones.limite?.ventanaMs ?? LIMITE_CHAT_VENTANA_MS;
+  const esperasReintento = opciones.esperasReintentoMs;
 
   const marcas = new Map<string, number[]>();
 
@@ -166,6 +169,9 @@ export function registrarRutasChat(
           herramientas: HERRAMIENTAS_ASISTENTE,
           maxTokens,
           signal,
+          preset: config.preset,
+          log: request.log,
+          ...(esperasReintento ? { esperasReintentoMs: esperasReintento } : {}),
           ...(config.preset === "opencode-go" ? { sesion: conversacionId } : {}),
         });
 

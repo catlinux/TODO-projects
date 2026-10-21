@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.25.2] - 2026-10-21
+
+### Añadido
+- Asistente: los errores del proveedor se registran en el log de la API (estado, modelo, tokens, tamaño y los primeros 300 caracteres del error, sin claves ni contenido del chat) y el mensaje al usuario incluye el código («error 503»).
+
+### Cambiado
+- Asistente: ante un 5xx o un fallo de red transitorio reintenta hasta 2 veces (1 s y 3 s), con la mitad de tokens en el primer reintento, respetando el tiempo total.
+
 ## [0.25.1] - 2026-10-21
 
 ### Añadido

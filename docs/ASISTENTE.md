@@ -50,8 +50,19 @@ El contenido de los adjuntos se envía al proveedor elegido, igual que el texto 
 - El tiempo máximo de una petición es de 240 s (Apache corta a los 300 s). Si se agota con texto ya escrito, se devuelve ese texto con el aviso «(La respuesta se ha cortado por tiempo; pídeme que continúe.)» en lugar de un error sin contenido.
 - Si una llamada a herramientas se corta a medias (sus argumentos JSON quedarían truncados), no se ejecuta: se reintenta una vez pidiendo pasos más pequeños y, si vuelve a pasar, se devuelve un error claro.
 - Si el proveedor rechaza el tope de tokens por ser demasiado alto, se reintenta una vez con 4096.
+- Ante una caída del proveedor (5xx) o un fallo de red transitorio, el servidor reintenta hasta dos veces, con esperas de 1 s y 3 s. El primer reintento baja `max_tokens` a la mitad (mínimo 2048) por si el valor alto es la causa. Un 4xx no se reintenta. Si se agota el tiempo total de la petición, tampoco. Si tras los reintentos sigue fallando, el mensaje incluye el código real: «El proveedor no responde en este momento (error 503). Inténtalo de nuevo en unos segundos.»; si no hubo respuesta, «sin conexión con el proveedor».
 - Mientras se espera, el chat muestra «Escribiendo…» y, a partir de 20 s, «Sigue trabajando; las respuestas largas pueden tardar unos minutos». La web no impone un plazo propio: espera lo que marque el servidor.
 - Las respuestas del asistente se muestran con párrafos, listas, títulos y bloques de código (convertidos de Markdown sin interpretar HTML) y cada una tiene un botón «Copiar».
+
+## Diagnóstico de errores del proveedor
+
+Cada respuesta de error del proveedor queda en el log de la API como `warn`, con el estado HTTP, el preset y la URL base (sin credenciales), el modelo, el `max_tokens` usado, el número de mensajes y de herramientas, el tamaño aproximado de la petición en caracteres y los primeros 300 caracteres del cuerpo de error. Las cadenas con pinta de clave (`oc_sk_…`, `sk-…`, `Bearer …`) se sustituyen por `***`. No se registra el texto del chat ni el de las respuestas. Los reintentos también se registran como `warn`.
+
+Para verlo en el servidor:
+
+```bash
+docker compose -f docker-compose.prod.yml logs api
+```
 
 ## Privacidad y seguridad
 

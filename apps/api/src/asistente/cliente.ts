@@ -27,6 +27,11 @@ export interface HerramientaModelo {
   };
 }
 
+/** Lo mínimo que necesita el cliente para registrar incidencias (p. ej. `request.log`). */
+export interface LoggerLlamadaModelo {
+  warn: (datos: Record<string, unknown>, mensaje: string) => void;
+}
+
 export interface OpcionesLlamadaModelo {
   baseUrl: string;
   modelo: string;
@@ -38,6 +43,12 @@ export interface OpcionesLlamadaModelo {
   signal?: AbortSignal;
   /** Id de sesión estable por conversación; solo se envía con OpenCode Go. */
   sesion?: string;
+  /** Preset del proveedor, solo para el diagnóstico. */
+  preset?: string | null;
+  /** Logger del servidor; sin él no se registran incidencias. */
+  log?: LoggerLlamadaModelo;
+  /** Esperas entre reintentos (por defecto 1 s y 3 s); las pruebas las acortan. */
+  esperasReintentoMs?: readonly number[];
 }
 
 /** Motivo del corte según el proveedor, normalizado. */
@@ -53,11 +64,26 @@ export interface RespuestaModelo {
 export class ErrorProveedor extends Error {
   /** Permite distinguir el agotamiento del tiempo de otros fallos. */
   readonly causa: "tiempo" | "max_tokens" | undefined;
+  /** Estado HTTP que devolvió el proveedor, si llegó a responder. */
+  readonly estado: number | null;
+  /** true si falló la red: no hubo respuesta del proveedor. */
+  readonly red: boolean;
 
-  constructor(mensaje: string, causa?: "tiempo" | "max_tokens") {
+  constructor(
+    mensaje: string,
+    causa?: "tiempo" | "max_tokens",
+    detalles: { estado?: number; red?: boolean } = {},
+  ) {
     super(mensaje);
     this.name = "ErrorProveedor";
     this.causa = causa;
+    this.estado = detalles.estado ?? null;
+    this.red = detalles.red ?? false;
+  }
+
+  /** Solo los 5xx y los fallos de red son transitorios; un 4xx no se reintenta. */
+  get reintentable(): boolean {
+    return this.red || (this.estado !== null && this.estado >= 500);
   }
 }
 
@@ -70,6 +96,89 @@ interface RespuestaChat {
 
 /** Tope al que se reintenta si el proveedor rechaza el pedido por demasiado alto. */
 const MAX_TOKENS_REINTENTO = 4096;
+/** Suelo del `max_tokens` cuando un 5xx hace sospechar que el valor alto es la causa. */
+const MAX_TOKENS_MINIMO_REINTENTO = 2048;
+/** Esperas entre reintentos ante 5xx o fallos de red transitorios. */
+const ESPERAS_REINTENTO_MS = [1000, 3000];
+/** Caracteres del cuerpo de error del proveedor que se guardan en el log. */
+const MAX_CARACTERES_ERROR_LOG = 300;
+/** Secretos que nunca deben acabar en el log: claves del proveedor y credenciales Bearer. */
+const PATRON_SECRETO = /\boc_sk_[A-Za-z0-9_-]+|\bsk-[A-Za-z0-9_-]+|\bBearer\s+\S+/g;
+
+/** Recorta el cuerpo de error y tapa cualquier cadena con pinta de credencial. */
+function cuerpoErrorParaLog(cuerpo: string): string {
+  return cuerpo.slice(0, MAX_CARACTERES_ERROR_LOG).replace(PATRON_SECRETO, "***");
+}
+
+/** baseUrl sin usuario ni contraseña, por si se guardó con credenciales. */
+function sinCredenciales(url: string): string {
+  try {
+    const limpia = new URL(url);
+    limpia.username = "";
+    limpia.password = "";
+    return limpia.toString();
+  } catch {
+    return url.replace(/\/\/[^@/]+@/, "//");
+  }
+}
+
+function registrarErrorProveedor(
+  opciones: OpcionesLlamadaModelo,
+  maxTokens: number,
+  estado: number,
+  cuerpoError: string,
+  caracteres: number,
+): void {
+  opciones.log?.warn(
+    {
+      estado,
+      preset: opciones.preset ?? null,
+      baseUrl: sinCredenciales(opciones.baseUrl),
+      modelo: opciones.modelo,
+      maxTokens,
+      mensajes: opciones.mensajes.length,
+      herramientas: opciones.herramientas?.length ?? 0,
+      caracteres,
+      cuerpoError: cuerpoErrorParaLog(cuerpoError),
+    },
+    "El proveedor ha respondido con un error",
+  );
+}
+
+/** Espera entre reintentos; false si el tiempo total de la petición se agota antes. */
+function esperar(ms: number, signal: AbortSignal | undefined): Promise<boolean> {
+  if (signal?.aborted) {
+    return Promise.resolve(false);
+  }
+  if (ms <= 0) {
+    return Promise.resolve(true);
+  }
+  return new Promise((resolver) => {
+    const alTerminar = (hayTiempo: boolean) => {
+      clearTimeout(temporizador);
+      signal?.removeEventListener("abort", alAbortar);
+      resolver(hayTiempo);
+    };
+    const alAbortar = () => alTerminar(false);
+    const temporizador = setTimeout(() => alTerminar(true), ms);
+    signal?.addEventListener("abort", alAbortar, { once: true });
+  });
+}
+
+function mitadMaxTokens(maxTokens: number): number {
+  return Math.min(
+    maxTokens,
+    Math.max(MAX_TOKENS_MINIMO_REINTENTO, Math.floor(maxTokens / 2)),
+  );
+}
+
+/** Mensaje final cuando se agotan los reintentos. */
+function mensajeTrasReintentos(error: ErrorProveedor): string {
+  if (error.red || error.estado === null) {
+    return "El proveedor no responde en este momento (sin conexión con el proveedor). Inténtalo de nuevo en unos segundos.";
+  }
+  return `El proveedor no responde en este momento (error ${error.estado}). Inténtalo de nuevo en unos segundos.`;
+}
 
 function normalizarFinalizacion(valor: unknown): FinalizacionModelo {
   if (valor === "stop") return "stop";
@@ -149,17 +258,59 @@ function esLlamadaHerramienta(valor: unknown): valor is LlamadaHerramientaModelo
 }
 
 export async function llamarModelo(opciones: OpcionesLlamadaModelo): Promise<RespuestaModelo> {
-  try {
-    return await pedirModelo(opciones, opciones.maxTokens);
-  } catch (error) {
-    if (
-      error instanceof ErrorProveedor &&
-      error.causa === "max_tokens" &&
-      opciones.maxTokens > MAX_TOKENS_REINTENTO
-    ) {
-      return pedirModelo(opciones, MAX_TOKENS_REINTENTO);
+  const esperas = opciones.esperasReintentoMs ?? ESPERAS_REINTENTO_MS;
+  const maxTokensReducido = mitadMaxTokens(opciones.maxTokens);
+  let maxTokens = opciones.maxTokens;
+  let reintentoMaxTokens = false;
+  let reintentos = 0;
+
+  for (;;) {
+    try {
+      return await pedirModelo(opciones, maxTokens);
+    } catch (error) {
+      if (!(error instanceof ErrorProveedor)) {
+        throw error;
+      }
+
+      // 400 por un `max_tokens` que el modelo no admite: un único reintento con 4096.
+      if (
+        error.causa === "max_tokens" &&
+        !reintentoMaxTokens &&
+        maxTokens > MAX_TOKENS_REINTENTO
+      ) {
+        reintentoMaxTokens = true;
+        maxTokens = MAX_TOKENS_REINTENTO;
+        continue;
+      }
+
+      if (!error.reintentable) {
+        throw error;
+      }
+      if (reintentos >= esperas.length) {
+        throw new ErrorProveedor(mensajeTrasReintentos(error), error.causa, {
+          ...(error.estado !== null ? { estado: error.estado } : {}),
+          red: error.red,
+        });
+      }
+
+      const espera = esperas[reintentos] ?? 0;
+      reintentos += 1;
+      // Sin tiempo total restante no se reintenta: el usuario ya espera demasiado.
+      if (!(await esperar(espera, opciones.signal))) {
+        throw new ErrorProveedor("El proveedor ha tardado demasiado en responder.", "tiempo");
+      }
+      maxTokens = maxTokensReducido;
+      opciones.log?.warn(
+        {
+          intento: reintentos,
+          esperaMs: espera,
+          maxTokens,
+          estado: error.estado,
+          red: error.red,
+        },
+        "Se reintenta la llamada al proveedor",
+      );
     }
-    throw error;
   }
 }
 
@@ -179,6 +330,7 @@ async function pedirModelo(
   if (opciones.razonamiento) {
     cuerpo.reasoning_effort = opciones.razonamiento;
   }
+  const serializado = JSON.stringify(cuerpo);
 
   let respuesta: Response;
   try {
@@ -190,22 +342,38 @@ async function pedirModelo(
         "user-agent": AGENTE_USUARIO,
         ...(opciones.sesion ? { "x-opencode-session": opciones.sesion } : {}),
       },
-      body: JSON.stringify(cuerpo),
+      body: serializado,
       ...(opciones.signal ? { signal: opciones.signal } : {}),
     });
   } catch (error) {
     if (esCancelacion(error)) {
       throw new ErrorProveedor("El proveedor ha tardado demasiado en responder.", "tiempo");
     }
-    throw new ErrorProveedor("No se pudo conectar con el proveedor.");
+    throw new ErrorProveedor("No se pudo conectar con el proveedor.", undefined, { red: true });
   }
 
   if (!respuesta.ok) {
     const cuerpoError = await respuesta.text().catch(() => "");
+    registrarErrorProveedor(
+      opciones,
+      maxTokens,
+      respuesta.status,
+      cuerpoError,
+      serializado.length,
+    );
+    const detalles = { estado: respuesta.status };
     if (rechazaMaxTokens(respuesta.status, cuerpoError, maxTokens)) {
-      throw new ErrorProveedor(traducemensajeProveedor(respuesta.status, cuerpoError), "max_tokens");
+      throw new ErrorProveedor(
+        traducemensajeProveedor(respuesta.status, cuerpoError),
+        "max_tokens",
+        detalles,
+      );
     }
-    throw new ErrorProveedor(traducemensajeProveedor(respuesta.status, cuerpoError));
+    throw new ErrorProveedor(
+      traducemensajeProveedor(respuesta.status, cuerpoError),
+      undefined,
+      detalles,
+    );
   }
 
   const datos = (await respuesta.json().catch(() => null)) as RespuestaChat | null;
