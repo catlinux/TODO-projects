@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.25.1] - 2026-10-21
+
+### Añadido
+- Tablero: cada tarjeta tiene su propia flecha para contraerse a una línea (título y contador del checklist) dejando el resto abierto, o para expandirse dentro de una columna compacta. Lo marcado en una tarjeta prevalece sobre su columna; la flecha de la columna y «Compactar todo / Expandir todo» lo restablecen. Se recuerda por proyecto en el navegador.
+
 ## [0.25.0] - 2026-10-21
 
 ### Añadido

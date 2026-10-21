@@ -1368,6 +1368,7 @@ describe("ProyectoDetalle", () => {
     opciones: {
       nombre?: string;
       esBandeja?: boolean;
+      tareas?: typeof tareasCabecera;
       alParchear?: (cuerpo: Record<string, unknown>) => Response;
     } = {},
   ) {
@@ -1395,7 +1396,7 @@ describe("ProyectoDetalle", () => {
           return respuestaJson(proyecto());
         }
         if (url === "/api/proyectos/p1/columnas") return respuestaJson(columnasCabecera);
-        if (url === "/api/proyectos/p1/tareas") return respuestaJson(tareasCabecera);
+        if (url === "/api/proyectos/p1/tareas") return respuestaJson(opciones.tareas ?? tareasCabecera);
         return respuestaJson([]);
       }),
     );
@@ -1467,6 +1468,148 @@ describe("ProyectoDetalle", () => {
       "tarjeta-kanban--compacta",
     );
     expect(window.localStorage.getItem("todo.compactas.p1")).toBe("[]");
+  });
+
+  it("contrae una sola tarjeta y deja abiertas las demás", async () => {
+    const user = userEvent.setup();
+    montarCabecera({
+      tareas: [
+        tareasCabecera[0]!,
+        {
+          id: "t2",
+          proyectoId: "p1",
+          columnaId: "c1",
+          titulo: "Otra tarea",
+          posicion: 1,
+          createdAt: "",
+          updatedAt: "",
+        },
+      ],
+    });
+
+    const boton = await screen.findByRole("button", {
+      name: /contraer tarjeta tarea inicial/i,
+    });
+    expect(boton.getAttribute("aria-expanded")).toBe("true");
+    await user.click(boton);
+
+    const contraida = screen.getByText("Tarea inicial").closest("li")!;
+    expect(contraida.className).toContain("tarjeta-kanban--compacta");
+    expect(contraida.querySelector(".tarjeta-kanban__portada")).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /expandir tarjeta tarea inicial/i }).getAttribute(
+        "aria-expanded",
+      ),
+    ).toBe("false");
+
+    const otra = screen.getByText("Otra tarea").closest("li")!;
+    expect(otra.className).not.toContain("tarjeta-kanban--compacta");
+    expect(otra.querySelector(".tarjeta-kanban__portada")).not.toBeNull();
+    expect(JSON.parse(window.localStorage.getItem("todo.tarjetas.p1") ?? "{}")).toEqual({
+      t1: true,
+    });
+    // La flecha no abre la tarjeta ni su menú.
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("expande una sola tarjeta dentro de una columna compacta", async () => {
+    const user = userEvent.setup();
+    montarCabecera({
+      tareas: [
+        tareasCabecera[0]!,
+        {
+          id: "t2",
+          proyectoId: "p1",
+          columnaId: "c1",
+          titulo: "Otra tarea",
+          posicion: 1,
+          createdAt: "",
+          updatedAt: "",
+        },
+      ],
+    });
+
+    await user.click(
+      await screen.findByRole("button", { name: /contraer columna pendiente/i }),
+    );
+    await user.click(screen.getByRole("button", { name: /expandir tarjeta tarea inicial/i }));
+
+    const expandida = screen.getByText("Tarea inicial").closest("li")!;
+    expect(expandida.className).not.toContain("tarjeta-kanban--compacta");
+    expect(expandida.querySelector(".tarjeta-kanban__portada")).not.toBeNull();
+    expect(screen.getByText("Otra tarea").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
+    expect(JSON.parse(window.localStorage.getItem("todo.tarjetas.p1") ?? "{}")).toEqual({
+      t1: false,
+    });
+  });
+
+  it("la flecha de la columna limpia las anulaciones de sus tarjetas", async () => {
+    const user = userEvent.setup();
+    montarCabecera();
+
+    await user.click(
+      await screen.findByRole("button", { name: /contraer tarjeta tarea inicial/i }),
+    );
+    expect(window.localStorage.getItem("todo.tarjetas.p1")).toBe('{"t1":true}');
+
+    await user.click(screen.getByRole("button", { name: /contraer columna pendiente/i }));
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem("todo.tarjetas.p1")).toBe("{}");
+    });
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
+  });
+
+  it("«Compactar todo» y «Expandir todo» limpian las anulaciones", async () => {
+    const user = userEvent.setup();
+    montarCabecera();
+
+    await user.click(
+      await screen.findByRole("button", { name: /contraer tarjeta tarea inicial/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Compactar todo" }));
+    await waitFor(() => {
+      expect(window.localStorage.getItem("todo.tarjetas.p1")).toBe("{}");
+    });
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
+
+    await user.click(screen.getByRole("button", { name: /expandir tarjeta tarea inicial/i }));
+    expect(JSON.parse(window.localStorage.getItem("todo.tarjetas.p1") ?? "{}")).toEqual({
+      t1: false,
+    });
+
+    await user.click(screen.getByRole("button", { name: "Expandir todo" }));
+    await waitFor(() => {
+      expect(window.localStorage.getItem("todo.tarjetas.p1")).toBe("{}");
+    });
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).not.toContain(
+      "tarjeta-kanban--compacta",
+    );
+  });
+
+  it("recuerda las tarjetas anuladas y descarta los ids que ya no existen", async () => {
+    window.localStorage.setItem(
+      "todo.tarjetas.p1",
+      JSON.stringify({ t1: true, fantasma: true }),
+    );
+    montarCabecera();
+
+    expect(
+      await screen.findByRole("button", { name: /expandir tarjeta tarea inicial/i }),
+    ).toBeTruthy();
+    expect(screen.getByText("Tarea inicial").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
+    await waitFor(() => {
+      expect(window.localStorage.getItem("todo.tarjetas.p1")).toBe('{"t1":true}');
+    });
   });
 
   it("edita el nombre del proyecto con el PATCH y recorta espacios", async () => {

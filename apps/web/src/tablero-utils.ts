@@ -24,6 +24,103 @@ export function guardarColumnasCompactas(proyectoId: string, ids: string[]): voi
   }
 }
 
+/**
+ * Anulaciones individuales de tarjeta: `true` la contrae y `false` la expande,
+ * por encima del estado de su columna. Solo aparecen las tarjetas anuladas.
+ */
+export type AnulacionesTarjeta = Record<string, boolean>;
+
+/** Clave de localStorage donde el proyecto recuerda las tarjetas anuladas. */
+function claveTarjetasAnuladas(proyectoId: string): string {
+  return `todo.tarjetas.${proyectoId}`;
+}
+
+/** Anulaciones guardadas del proyecto; ausente o ilegible → ninguna. */
+export function leerAnulacionesTarjeta(proyectoId: string): AnulacionesTarjeta {
+  try {
+    const crudo = window.localStorage.getItem(claveTarjetasAnuladas(proyectoId));
+    if (!crudo) return {};
+    const datos: unknown = JSON.parse(crudo);
+    if (!datos || typeof datos !== "object" || Array.isArray(datos)) return {};
+    const salida: AnulacionesTarjeta = {};
+    for (const [tareaId, valor] of Object.entries(datos)) {
+      if (typeof valor === "boolean") salida[tareaId] = valor;
+    }
+    return salida;
+  } catch {
+    return {};
+  }
+}
+
+export function guardarAnulacionesTarjeta(
+  proyectoId: string,
+  anulaciones: AnulacionesTarjeta,
+): void {
+  try {
+    window.localStorage.setItem(claveTarjetasAnuladas(proyectoId), JSON.stringify(anulaciones));
+  } catch {
+    // Sin localStorage (modo privado): la elección dura lo que la página.
+  }
+}
+
+/** Estado compacto efectivo: la anulación individual manda sobre la columna. */
+export function estaTarjetaContraida(
+  tareaId: string,
+  columnaContraida: boolean,
+  anulaciones: AnulacionesTarjeta,
+): boolean {
+  return anulaciones[tareaId] ?? columnaContraida;
+}
+
+/**
+ * Invierte el estado compacto de una tarjeta. Si el resultado coincide con el de
+ * su columna, la anulación sobra y se borra para no acumular ids.
+ */
+export function alternarAnulacionTarjeta(
+  anulaciones: AnulacionesTarjeta,
+  tareaId: string,
+  columnaContraida: boolean,
+): AnulacionesTarjeta {
+  const contraida = !estaTarjetaContraida(tareaId, columnaContraida, anulaciones);
+  if (contraida === columnaContraida) {
+    return borrarAnulacionesTarjeta(anulaciones, [tareaId]);
+  }
+  return { ...anulaciones, [tareaId]: contraida };
+}
+
+/** Quita las anulaciones de las tareas indicadas sin tocar las demás. */
+export function borrarAnulacionesTarjeta(
+  anulaciones: AnulacionesTarjeta,
+  tareasIds: readonly string[],
+): AnulacionesTarjeta {
+  const aBorrar = new Set(tareasIds);
+  const claves = Object.keys(anulaciones);
+  if (!claves.some((tareaId) => aBorrar.has(tareaId))) return anulaciones;
+  const salida: AnulacionesTarjeta = {};
+  for (const tareaId of claves) {
+    if (!aBorrar.has(tareaId)) salida[tareaId] = anulaciones[tareaId]!;
+  }
+  return salida;
+}
+
+/**
+ * Descarta las anulaciones de tareas que ya no existen (borradas o de otro
+ * proyecto). Devuelve el mismo objeto si no hay nada que limpiar.
+ */
+export function limpiarAnulacionesTarjeta(
+  anulaciones: AnulacionesTarjeta,
+  tareasIds: readonly string[],
+): AnulacionesTarjeta {
+  const existentes = new Set(tareasIds);
+  const claves = Object.keys(anulaciones);
+  if (claves.every((tareaId) => existentes.has(tareaId))) return anulaciones;
+  const salida: AnulacionesTarjeta = {};
+  for (const tareaId of claves) {
+    if (existentes.has(tareaId)) salida[tareaId] = anulaciones[tareaId]!;
+  }
+  return salida;
+}
+
 export interface TareaTablero {
   id: string;
   proyectoId: string;

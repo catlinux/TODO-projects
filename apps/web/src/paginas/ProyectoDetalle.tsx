@@ -12,7 +12,16 @@ import { PastillaEtiqueta } from "../componentes/SelectorEtiquetas";
 import { Tablero } from "../componentes/Tablero";
 import { inicial } from "../inicial";
 import { aIsoUtc, construirRegla, recurrenciaPorDefecto, zonaNavegador } from "../recurrencia-web";
-import { guardarColumnasCompactas, leerColumnasCompactas } from "../tablero-utils";
+import {
+  alternarAnulacionTarjeta,
+  borrarAnulacionesTarjeta,
+  guardarAnulacionesTarjeta,
+  guardarColumnasCompactas,
+  leerAnulacionesTarjeta,
+  leerColumnasCompactas,
+  limpiarAnulacionesTarjeta,
+  type AnulacionesTarjeta,
+} from "../tablero-utils";
 
 export interface PropiedadesProyectoDetalle {
   /** Abre el diálogo de personalizar. Sin él, lo abre el estado de la propia página (A6). */
@@ -167,6 +176,14 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
   const [columnasCompactas, setColumnasCompactas] = useState<string[]>(() =>
     leerColumnasCompactas(proyectoId),
   );
+  const [anulacionesEstado, setAnulacionesEstado] = useState<{
+    proyectoId: string;
+    valores: AnulacionesTarjeta;
+  }>(() => ({ proyectoId, valores: leerAnulacionesTarjeta(proyectoId) }));
+  const anulacionesTarjeta =
+    anulacionesEstado.proyectoId === proyectoId
+      ? anulacionesEstado.valores
+      : leerAnulacionesTarjeta(proyectoId);
   const [columnaSeleccionada, setColumnaSeleccionada] = useState("");
   const [errorColumna, setErrorColumna] = useState<string | null>(null);
   const [editandoDescripcion, setEditandoDescripcion] = useState(false);
@@ -185,6 +202,25 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     setVista(leerVista(proyectoId));
     setColumnasCompactas(leerColumnasCompactas(proyectoId));
   }, [proyectoId]);
+
+  // Las anulaciones guardadas pertenecen al proyecto para el que se cargaron.
+  useEffect(() => {
+    if (anulacionesEstado.proyectoId === proyectoId) return;
+    setAnulacionesEstado({ proyectoId, valores: leerAnulacionesTarjeta(proyectoId) });
+  }, [anulacionesEstado.proyectoId, proyectoId]);
+
+  // Las anulaciones de tarjetas borradas (o de otro proyecto) dejan de guardarse.
+  useEffect(() => {
+    if (!tareas.data || anulacionesEstado.proyectoId !== proyectoId) return;
+    const limpias = limpiarAnulacionesTarjeta(
+      anulacionesEstado.valores,
+      tareas.data.filter((tarea) => tarea.proyectoId === proyectoId).map((tarea) => tarea.id),
+    );
+    if (limpias !== anulacionesEstado.valores) {
+      setAnulacionesEstado({ proyectoId, valores: limpias });
+      guardarAnulacionesTarjeta(proyectoId, limpias);
+    }
+  }, [anulacionesEstado, proyectoId, tareas.data]);
 
   useEffect(() => {
     if (!columnaSeleccionada && columnas.data && columnas.data.length > 0 && columnas.data[0]) {
@@ -461,16 +497,42 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
     guardarColumnasCompactas(proyectoId, siguientes);
   }
 
+  function guardarAnulaciones(siguientes: AnulacionesTarjeta) {
+    setAnulacionesEstado({ proyectoId, valores: siguientes });
+    guardarAnulacionesTarjeta(proyectoId, siguientes);
+  }
+
   function alternarColumnaCompacta(columnaId: string) {
     guardarCompactas(
       columnasCompactas.includes(columnaId)
         ? columnasCompactas.filter((id) => id !== columnaId)
         : [...columnasCompactas, columnaId],
     );
+    // La columna manda: sus tarjetas dejan de tener una decisión propia.
+    guardarAnulaciones(
+      borrarAnulacionesTarjeta(
+        anulacionesTarjeta,
+        listaTareas.filter((tarea) => tarea.columnaId === columnaId).map((tarea) => tarea.id),
+      ),
+    );
+  }
+
+  function alternarTarjetaCompacta(tareaId: string) {
+    const tarea = listaTareas.find((item) => item.id === tareaId);
+    if (!tarea) return;
+    guardarAnulaciones(
+      alternarAnulacionTarjeta(
+        anulacionesTarjeta,
+        tareaId,
+        columnasCompactas.includes(tarea.columnaId),
+      ),
+    );
   }
 
   function alternarTodasCompactas() {
     guardarCompactas(todasCompactas ? [] : listaColumnas.map((columna) => columna.id));
+    // «Compactar todo / Expandir todo» vale para todas: sin decisiones sueltas.
+    guardarAnulaciones({});
   }
 
   return (
@@ -751,6 +813,8 @@ export default function ProyectoDetalle({ onAbrirFondo }: PropiedadesProyectoDet
             onEliminarColumna={(columnaId) => borrarColumna.mutate(columnaId)}
             columnasCompactas={columnasCompactas}
             onAlternarColumnaCompacta={alternarColumnaCompacta}
+            anulacionesTarjeta={anulacionesTarjeta}
+            onAlternarTarjetaCompacta={alternarTarjetaCompacta}
           />
         )}
       </div>

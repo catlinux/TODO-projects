@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { moverTareaEnLista, type TareaTablero } from "./tablero-utils";
+import {
+  alternarAnulacionTarjeta,
+  borrarAnulacionesTarjeta,
+  estaTarjetaContraida,
+  limpiarAnulacionesTarjeta,
+  moverTareaEnLista,
+  type TareaTablero,
+} from "./tablero-utils";
 
 function tarea(id: string, columnaId: string, posicion: number): TareaTablero {
   return {
@@ -71,5 +78,56 @@ describe("moverTareaEnLista", () => {
     const salida = moverTareaEnLista(tareas, "inexistente", "c2", 0);
     expect(salida).toEqual(tareas);
     expect(salida).not.toBe(tareas);
+  });
+});
+
+describe("estado compacto de las tarjetas", () => {
+  it("sin anulación hereda el estado de la columna", () => {
+    expect(estaTarjetaContraida("t1", true, {})).toBe(true);
+    expect(estaTarjetaContraida("t1", false, {})).toBe(false);
+  });
+
+  it("la anulación individual prevalece sobre la columna", () => {
+    expect(estaTarjetaContraida("t1", false, { t1: true })).toBe(true);
+    expect(estaTarjetaContraida("t1", true, { t1: false })).toBe(false);
+  });
+
+  it("contraer una tarjeta abierta crea la anulación", () => {
+    expect(alternarAnulacionTarjeta({}, "t1", false)).toEqual({ t1: true });
+  });
+
+  it("expandir una tarjeta compacta crea la anulación", () => {
+    expect(alternarAnulacionTarjeta({}, "t1", true)).toEqual({ t1: false });
+  });
+
+  it("al volver al estado de la columna borra la anulación sobrante", () => {
+    expect(alternarAnulacionTarjeta({ t1: true }, "t1", false)).toEqual({});
+    expect(alternarAnulacionTarjeta({ t1: false }, "t1", true)).toEqual({});
+  });
+
+  it("alternar una tarjeta no toca las anulaciones de las demás", () => {
+    expect(alternarAnulacionTarjeta({ t2: false }, "t1", false)).toEqual({
+      t2: false,
+      t1: true,
+    });
+  });
+
+  it("borra solo las anulaciones de las tareas indicadas", () => {
+    const anulaciones = { t1: true, t2: false, t3: true };
+    expect(borrarAnulacionesTarjeta(anulaciones, ["t1", "t3"])).toEqual({ t2: false });
+  });
+
+  it("devuelve el mismo objeto si no hay anulaciones que borrar", () => {
+    const anulaciones = { t1: true };
+    expect(borrarAnulacionesTarjeta(anulaciones, ["t2"])).toBe(anulaciones);
+  });
+
+  it("limpia los ids que ya no existen", () => {
+    expect(limpiarAnulacionesTarjeta({ t1: true, t2: false }, ["t1"])).toEqual({ t1: true });
+  });
+
+  it("no cambia el objeto si todas las anulaciones siguen existiendo", () => {
+    const anulaciones = { t1: true };
+    expect(limpiarAnulacionesTarjeta(anulaciones, ["t1", "t2"])).toBe(anulaciones);
   });
 });

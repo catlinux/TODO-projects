@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 import { peticion, type ColumnaApi, type ElementoChecklistTarjetaApi, type EtiquetaApi, type TareaApi } from "../api";
 import { chipFecha } from "../fechas";
 import { datosPortadaTarjeta } from "../portada";
-import { moverTareaEnLista } from "../tablero-utils";
+import { moverTareaEnLista, estaTarjetaContraida, type AnulacionesTarjeta } from "../tablero-utils";
 import { DialogoElementoChecklist } from "./DialogoElementoChecklist";
 import { IconoAdjunto, IconoCampana, IconoComentario, IconoDescripcion, IconoRepeticion } from "./IconosTarea";
 import { PastillaEtiqueta } from "./SelectorEtiquetas";
@@ -39,6 +39,9 @@ export interface PropiedadesTablero {
   /** Columnas en vista compacta (solo el título de cada tarjeta). */
   columnasCompactas: string[];
   onAlternarColumnaCompacta(columnaId: string): void;
+  /** Anulaciones individuales que mandan sobre el estado de la columna. */
+  anulacionesTarjeta: AnulacionesTarjeta;
+  onAlternarTarjetaCompacta(tareaId: string): void;
 }
 
 export interface ControlTablero {
@@ -52,6 +55,7 @@ interface TarjetaProps {
   etiquetas: EtiquetaApi[];
   hecha: boolean;
   compacta: boolean;
+  onAlternarCompacta(): void;
   borrarTarea(tareaId: string): Promise<void>;
   moverTarea(tareaId: string, columnaId: string): Promise<void>;
   alternarElemento(elementoId: string, hecho: boolean): Promise<void>;
@@ -92,6 +96,7 @@ function TarjetaArrastrable({
   etiquetas,
   hecha,
   compacta,
+  onAlternarCompacta,
   borrarTarea,
   moverTarea,
   alternarElemento,
@@ -156,6 +161,20 @@ function TarjetaArrastrable({
     </button>
   );
 
+  const botonContraer = (
+    <button
+      type="button"
+      className="boton-icono tarjeta-kanban__plegar"
+      aria-expanded={!compacta}
+      aria-label={`${compacta ? t("tasks.expandCard") : t("tasks.collapseCard")} ${tarea.titulo}`}
+      title={compacta ? t("tasks.expandCard") : t("tasks.collapseCard")}
+      onPointerDown={(evento) => evento.stopPropagation()}
+      onClick={onAlternarCompacta}
+    >
+      <IconoChevron plegada={compacta} />
+    </button>
+  );
+
   const botonOpciones = (
     <button
       type="button"
@@ -191,6 +210,7 @@ function TarjetaArrastrable({
       {compacta ? (
         <div className="tarjeta-kanban__fila-compacta">
           {botonAsa}
+          {botonContraer}
           <Link
             id={`tarjeta-${tarea.id}`}
             className="tarjeta-kanban__enlace tarjeta-kanban__enlace--compacto"
@@ -221,7 +241,10 @@ function TarjetaArrastrable({
       ) : (
         <>
           <div className="tarjeta-kanban__barra">
-            {botonAsa}
+            <div className="tarjeta-kanban__mandos">
+              {botonAsa}
+              {botonContraer}
+            </div>
             {botonOpciones}
           </div>
 
@@ -426,6 +449,8 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     onEliminarColumna,
     columnasCompactas,
     onAlternarColumnaCompacta,
+    anulacionesTarjeta,
+    onAlternarTarjetaCompacta,
   },
   ref,
 ) {
@@ -615,6 +640,14 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
     },
   };
 
+  const activaContraida =
+    activa !== null &&
+    estaTarjetaContraida(
+      activa.id,
+      columnasCompactas.includes(activa.columnaId),
+      anulacionesTarjeta,
+    );
+
   return (
     <DndContext
       sensors={sensores}
@@ -745,7 +778,12 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
                           columnas={columnas}
                           etiquetas={etiquetas}
                           hecha={indice === columnasOrdenadas.length - 1}
-                          compacta={compacta}
+                          compacta={estaTarjetaContraida(
+                            tarea.id,
+                            compacta,
+                            anulacionesTarjeta,
+                          )}
+                          onAlternarCompacta={() => onAlternarTarjetaCompacta(tarea.id)}
                           borrarTarea={borrarTarea}
                           moverTarea={moverTarea}
                           alternarElemento={alternarElemento}
@@ -839,12 +877,10 @@ export const Tablero = forwardRef<ControlTablero, PropiedadesTablero>(function T
         {activa ? (
           <div
             className={`tarjeta-kanban tarjeta-kanban--superpuesta${
-              columnasCompactas.includes(activa.columnaId)
-                ? " tarjeta-kanban--superpuesta-compacta"
-                : ""
+              activaContraida ? " tarjeta-kanban--superpuesta-compacta" : ""
             }`}
           >
-            {columnasCompactas.includes(activa.columnaId) ? (
+            {activaContraida ? (
               <span className="tarjeta-kanban__titulo-compacto">{activa.titulo}</span>
             ) : (
               activa.titulo

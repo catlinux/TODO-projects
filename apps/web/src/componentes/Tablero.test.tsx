@@ -49,6 +49,8 @@ const accionesColumnas = {
   onEliminarColumna: vi.fn(),
   columnasCompactas: [] as string[],
   onAlternarColumnaCompacta: vi.fn(),
+  anulacionesTarjeta: {} as Record<string, boolean>,
+  onAlternarTarjetaCompacta: vi.fn(),
 };
 
 function WrapperDePrueba({ onRef }: FichaProps) {
@@ -325,7 +327,12 @@ describe("Tablero", () => {
   function renderConEtiquetas(
     tareas: TareaApi[],
     etiquetas: EtiquetaApi[],
-    opciones: { compactas?: string[]; onAlternar?: (columnaId: string) => void } = {},
+    opciones: {
+      compactas?: string[];
+      onAlternar?: (columnaId: string) => void;
+      anulaciones?: Record<string, boolean>;
+      onAlternarTarjeta?: (tareaId: string) => void;
+    } = {},
   ) {
     const cliente = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     cliente.setQueryData(["tareas", "p1"], tareas);
@@ -341,6 +348,10 @@ describe("Tablero", () => {
             {...accionesColumnas}
             columnasCompactas={opciones.compactas ?? []}
             onAlternarColumnaCompacta={opciones.onAlternar ?? accionesColumnas.onAlternarColumnaCompacta}
+            anulacionesTarjeta={opciones.anulaciones ?? {}}
+            onAlternarTarjetaCompacta={
+              opciones.onAlternarTarjeta ?? accionesColumnas.onAlternarTarjetaCompacta
+            }
           />
         </MemoryRouter>
       </QueryClientProvider>,
@@ -745,5 +756,63 @@ describe("Tablero", () => {
     expect(
       screen.getByText("Otra").closest("li")?.querySelector(".tarjeta-kanban__portada"),
     ).not.toBeNull();
+  });
+
+  it("contrae una tarjeta con su flecha sin abrirla ni abrir el menú", async () => {
+    const user = userEvent.setup();
+    renderConEtiquetas(tareasIniciales, []);
+
+    const boton = screen.getByRole("button", { name: /contraer tarjeta tarea inicial/i });
+    expect(boton.getAttribute("aria-expanded")).toBe("true");
+    await user.click(boton);
+
+    expect(accionesColumnas.onAlternarTarjetaCompacta).toHaveBeenCalledWith("t1");
+    expect(screen.getByTestId("ruta-actual").textContent).toBe("/");
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("una anulación individual contrae solo esa tarjeta", () => {
+    renderConEtiquetas(
+      [
+        { ...tareasIniciales[0]!, columnaId: "c1", posicion: 0 },
+        { ...tareasIniciales[1]!, columnaId: "c1", posicion: 1 },
+      ],
+      [],
+      { anulaciones: { t1: true } },
+    );
+
+    const contraida = screen.getByText("Tarea inicial").closest("li")!;
+    expect(contraida.className).toContain("tarjeta-kanban--compacta");
+    expect(contraida.querySelector(".tarjeta-kanban__portada")).toBeNull();
+    expect(
+      screen.getByText("Otra").closest("li")?.querySelector(".tarjeta-kanban__portada"),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: /expandir tarjeta tarea inicial/i }).getAttribute(
+        "aria-expanded",
+      ),
+    ).toBe("false");
+  });
+
+  it("permite expandir una tarjeta dentro de una columna compacta", async () => {
+    const user = userEvent.setup();
+    const onAlternarTarjeta = vi.fn();
+    renderConEtiquetas(
+      [
+        { ...tareasIniciales[0]!, columnaId: "c1", posicion: 0 },
+        { ...tareasIniciales[1]!, columnaId: "c1", posicion: 1 },
+      ],
+      [],
+      { compactas: ["c1"], onAlternarTarjeta },
+    );
+
+    await user.click(screen.getByRole("button", { name: /expandir tarjeta tarea inicial/i }));
+
+    expect(onAlternarTarjeta).toHaveBeenCalledWith("t1");
+    // La otra tarjeta de la misma columna sigue compacta.
+    expect(screen.getByText("Otra").closest("li")?.className).toContain(
+      "tarjeta-kanban--compacta",
+    );
   });
 });

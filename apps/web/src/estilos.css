@@ -2589,6 +2589,13 @@ form.columna-agregar button {
   border-color: var(--lineas-fuertes);
 }
 
+/* Asa y flecha de plegado, juntas a la izquierda de la barra. */
+.tarjeta-kanban__mandos {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .tarjeta-kanban__asa {
   font-size: 16px;
   cursor: grab;

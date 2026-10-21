@@ -149,6 +149,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "drag": "Arrastrar tarea",
+    "collapseCard": "Contraer tarjeta",
+    "expandCard": "Expandir tarjeta",
     "reminder": "Avisar antes",
     "reminderOptions": {
       "0": "A la hora",
