@@ -32,6 +32,10 @@ export const LIMITE_CHAT_VENTANA_MS = 60_000;
 export const LIMITE_CUERPO_CHAT_BYTES = 2 * 1024 * 1024;
 /** Continuaciones automáticas cuando el modelo agota su tope de tokens. */
 export const MAX_CONTINUACIONES_CHAT = 6;
+/** Tope al duplicar los tokens cuando el modelo se queda sin presupuesto razonando. */
+export const MAX_TOKENS_RAZONAMIENTO = 16_000;
+export const MENSAJE_RAZONAMIENTO_SIN_TEXTO =
+  "El modelo ha agotado la respuesta razonando sin llegar a escribir. Prueba a pedirlo de forma más concreta o a bajar el razonamiento en Ajustes.";
 export const MENSAJE_CONTINUACION = "Continúa exactamente donde lo dejaste, sin repetir nada.";
 export const MENSAJE_PASOS_PEQUENOS =
   "La llamada anterior se ha cortado por longitud. Vuelve a intentarlo en pasos más pequeños, con argumentos más cortos.";
@@ -159,7 +163,7 @@ export function registrarRutasChat(
       let textoGenerado = "";
       let reintentoToolCortado = false;
 
-      const llamar = () =>
+      const llamar = (tokens: number = maxTokens) =>
         llamarModelo({
           baseUrl: config.baseUrl,
           modelo: config.modelo,
@@ -167,7 +171,7 @@ export function registrarRutasChat(
           razonamiento: config.razonamiento,
           mensajes,
           herramientas: HERRAMIENTAS_ASISTENTE,
-          maxTokens,
+          maxTokens: tokens,
           signal,
           preset: config.preset,
           log: request.log,
@@ -200,15 +204,43 @@ export function registrarRutasChat(
             let texto = respuesta.contenido ?? "";
             textoGenerado = texto;
             let continuaciones = 0;
+            let reintentoRazonamiento = false;
 
-            while (
-              respuesta.finalizacion === "length" &&
-              continuaciones < MAX_CONTINUACIONES_CHAT
-            ) {
-              continuaciones += 1;
-              if (respuesta.contenido) {
-                mensajes.push({ role: "assistant", content: respuesta.contenido });
+            while (respuesta.finalizacion === "length") {
+              // Sin nada escrito, el presupuesto se fue en razonar: no es una
+              // respuesta cortada, así que se reintenta con más tokens.
+              if (!respuesta.contenido) {
+                if (reintentoRazonamiento) {
+                  throw new ErrorProveedor(MENSAJE_RAZONAMIENTO_SIN_TEXTO);
+                }
+                if (signal.aborted) {
+                  throw new ErrorProveedor(
+                    "El proveedor ha tardado demasiado en responder.",
+                    "tiempo",
+                  );
+                }
+                reintentoRazonamiento = true;
+                const tokensReintento = Math.min(maxTokens * 2, MAX_TOKENS_RAZONAMIENTO);
+                request.log.warn(
+                  {
+                    maxTokens,
+                    tokensReintento,
+                    tokensRazonamiento: respuesta.tokensRazonamiento,
+                    tieneRazonamiento: respuesta.tieneRazonamiento,
+                  },
+                  "El modelo agotó la respuesta razonando sin escribir; se reintenta con más tokens",
+                );
+                respuesta = await llamar(tokensReintento);
+                // Si al reintentar aparecen herramientas, se devuelve lo escrito.
+                if (respuesta.toolCalls.length > 0) break;
+                texto += respuesta.contenido ?? "";
+                textoGenerado = texto;
+                continue;
               }
+
+              if (continuaciones >= MAX_CONTINUACIONES_CHAT) break;
+              continuaciones += 1;
+              mensajes.push({ role: "assistant", content: respuesta.contenido });
               mensajes.push({ role: "user", content: MENSAJE_CONTINUACION });
               respuesta = await llamar();
               // Si al continuar aparecen herramientas, se devuelve lo escrito.

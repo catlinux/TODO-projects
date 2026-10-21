@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 ## [Sin publicar]
 
+## [0.25.3] - 2026-10-21
+
+### Corregido
+- Asistente: con modelos que razonan (DeepSeek V4.1 Flash en OpenCode Go) el razonamiento podía agotar los tokens y dejar la respuesta vacía. Ahora reintenta una vez con el doble de tokens (hasta 16.000) y, si sigue sin escribir, muestra un mensaje claro; la continuación automática solo se aplica cuando ya hay texto escrito.
+- «Probar conexión» usa 256 tokens y no falla por respuesta vacía: comprueba clave, URL y modelo.
+
 ## [0.25.2] - 2026-10-21
 
 ### Añadido

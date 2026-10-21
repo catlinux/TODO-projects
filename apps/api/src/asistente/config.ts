@@ -17,7 +17,11 @@ import { ErrorProveedor, llamarModelo } from "./cliente.js";
 
 export const TIEMPO_MAXIMO_PRUEBA_MS = 20_000;
 
-const MAX_TOKENS_PRUEBA = 16;
+/**
+ * Suficiente para modelos que razonan: con topes muy bajos gastan el presupuesto
+ * en pensar y devuelven el contenido vacío.
+ */
+const MAX_TOKENS_PRUEBA = 256;
 const MENSAJE_PRUEBA = "Responde solo con OK.";
 const MENSAJE_SIN_CLAVE_CIFRADO =
   "El asistente no está disponible: falta la variable ASISTENTE_CLAVE_CIFRADO en el servidor.";

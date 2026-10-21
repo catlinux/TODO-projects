@@ -58,6 +58,10 @@ export interface RespuestaModelo {
   contenido: string | null;
   toolCalls: LlamadaHerramientaModelo[];
   finalizacion: FinalizacionModelo;
+  /** Tokens que el modelo gastó en razonar, si el proveedor lo informa. */
+  tokensRazonamiento: number;
+  /** true si el proveedor devolvió texto de razonamiento (nunca se expone ese texto). */
+  tieneRazonamiento: boolean;
 }
 
 /** Error del proveedor ya traducido para mostrarlo al usuario, sin datos sensibles. */
@@ -89,9 +93,10 @@ export class ErrorProveedor extends Error {
 
 interface RespuestaChat {
   choices?: Array<{
-    message?: { content?: unknown; tool_calls?: unknown };
+    message?: { content?: unknown; tool_calls?: unknown; reasoning_content?: unknown };
     finish_reason?: unknown;
   }>;
+  usage?: { completion_tokens_details?: { reasoning_tokens?: unknown } };
 }
 
 /** Tope al que se reintenta si el proveedor rechaza el pedido por demasiado alto. */
@@ -387,9 +392,17 @@ async function pedirModelo(
     ? mensaje.tool_calls.filter(esLlamadaHerramienta)
     : [];
 
+  const razonamiento = mensaje.reasoning_content;
+  const tokensInformados = datos?.usage?.completion_tokens_details?.reasoning_tokens;
+
   return {
     contenido: typeof mensaje.content === "string" ? mensaje.content : null,
     toolCalls,
     finalizacion: normalizarFinalizacion(eleccion?.finish_reason),
+    tokensRazonamiento:
+      typeof tokensInformados === "number" && Number.isFinite(tokensInformados)
+        ? tokensInformados
+        : 0,
+    tieneRazonamiento: typeof razonamiento === "string" && razonamiento.trim().length > 0,
   };
 }

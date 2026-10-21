@@ -43,6 +43,10 @@ interface Guion {
   error?: string;
   /** `finish_reason` del proveedor; por defecto «stop». */
   finalizacion?: string;
+  /** Texto de razonamiento del proveedor falso (no debe llegar nunca al cliente). */
+  razonamiento?: string;
+  /** Tokens gastados en razonar, tal como los informa `usage`. */
+  tokensRazonamiento?: number;
   /** Retraso antes de responder, para probar el agotamiento del tiempo. */
   retrasoMs?: number;
   llamadas?: GuionLlamada[];
@@ -102,6 +106,9 @@ function crearProveedorFalso(guiones: Guion[]): Promise<ProveedorFalso> {
           role: "assistant",
           content: guion.contenido ?? null,
         };
+        if (guion.razonamiento !== undefined) {
+          mensaje.reasoning_content = guion.razonamiento;
+        }
         if (guion.llamadas) {
           mensaje.tool_calls = guion.llamadas.map((llamada, indice) => ({
             id: `llamada-${numero}-${indice}`,
@@ -115,12 +122,16 @@ function crearProveedorFalso(guiones: Guion[]): Promise<ProveedorFalso> {
             },
           }));
         }
+        const respuestaFalsa: Record<string, unknown> = {
+          choices: [{ message: mensaje, finish_reason: guion.finalizacion ?? "stop" }],
+        };
+        if (guion.tokensRazonamiento !== undefined) {
+          respuestaFalsa.usage = {
+            completion_tokens_details: { reasoning_tokens: guion.tokensRazonamiento },
+          };
+        }
         respuesta.writeHead(200, { "content-type": "application/json" });
-        respuesta.end(
-          JSON.stringify({
-            choices: [{ message: mensaje, finish_reason: guion.finalizacion ?? "stop" }],
-          }),
-        );
+        respuesta.end(JSON.stringify(respuestaFalsa));
       };
 
       if (guion.retrasoMs) {
@@ -920,6 +931,102 @@ describe("chat del asistente con herramientas", () => {
       });
       // Los mensajes internos de continuación no llegan al cliente.
       expect(chat.body).not.toContain("Continúa exactamente");
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("reintenta con el doble de tokens si el razonamiento deja la respuesta vacía", async () => {
+    const razonamiento = "El usuario pide un manual; debo pensarlo despacio.";
+    const proveedor = await crearProveedorFalso([
+      {
+        contenido: "",
+        finalizacion: "length",
+        razonamiento,
+        tokensRazonamiento: 20,
+      },
+      { contenido: "Respuesta real.", finalizacion: "stop" },
+    ]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "razonamiento-vacio");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Escríbeme un manual" }]);
+      expect(chat.statusCode).toBe(200);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe("Respuesta real.");
+      expect(proveedor.peticiones).toHaveLength(2);
+      expect(proveedor.peticiones[0]!.cuerpo.max_tokens).toBe(500);
+      expect(proveedor.peticiones[1]!.cuerpo.max_tokens).toBe(1000);
+      // Ni el razonamiento ni su texto se cuelan en la respuesta.
+      expect(chat.body).not.toContain(razonamiento);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("devuelve un error claro si el razonamiento vuelve a dejar la respuesta vacía", async () => {
+    const razonamiento = "Sigo pensando y no llego a escribir nada.";
+    const guion = {
+      contenido: "",
+      finalizacion: "length",
+      razonamiento,
+      tokensRazonamiento: 20,
+    } satisfies Guion;
+    const proveedor = await crearProveedorFalso([guion, { ...guion }]);
+    try {
+      const app = await crearApp();
+      const cookie = await registrar(app, "razonamiento-dos-veces");
+      await configurar(app, cookie, proveedor.baseUrl);
+
+      const chat = await chatear(app, cookie, [{ rol: "user", texto: "Piensa algo" }]);
+      expect(chat.statusCode).toBe(502);
+      expect((chat.json() as { mensaje: string }).mensaje).toBe(
+        "El modelo ha agotado la respuesta razonando sin llegar a escribir. Prueba a pedirlo de forma más concreta o a bajar el razonamiento en Ajustes.",
+      );
+      // Un único reintento, no las seis continuaciones habituales.
+      expect(proveedor.peticiones).toHaveLength(2);
+      expect(proveedor.peticiones[1]!.cuerpo.max_tokens).toBe(1000);
+      expect(chat.body).not.toContain(razonamiento);
+    } finally {
+      await proveedor.cerrar();
+    }
+  });
+
+  it("informa del razonamiento sin exponer ni registrar su texto", async () => {
+    const razonamiento = "Pensamiento privado que no debe salir de aquí.";
+    const proveedor = await crearProveedorFalso([
+      {
+        contenido: "",
+        finalizacion: "length",
+        razonamiento,
+        tokensRazonamiento: 20,
+      },
+    ]);
+    const registros: Array<Record<string, unknown>> = [];
+    const log = {
+      warn: (datos: Record<string, unknown>, mensaje: string): void => {
+        registros.push({ ...datos, mensaje });
+      },
+    };
+    try {
+      const respuesta = await llamarModelo({
+        baseUrl: proveedor.baseUrl,
+        modelo: "modelo-falso",
+        clave: CLAVE_PROVEEDOR,
+        mensajes: [{ role: "user", content: "Hola" }],
+        maxTokens: 20,
+        log,
+      });
+
+      expect(respuesta).toMatchObject({
+        contenido: "",
+        finalizacion: "length",
+        tokensRazonamiento: 20,
+        tieneRazonamiento: true,
+      });
+      expect(JSON.stringify(respuesta)).not.toContain(razonamiento);
+      expect(JSON.stringify(registros)).not.toContain(razonamiento);
     } finally {
       await proveedor.cerrar();
     }

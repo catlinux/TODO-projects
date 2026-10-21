@@ -55,7 +55,9 @@ interface ServidorFalso {
 }
 
 /** Servidor Chat Completions falso: responde 200, 401 o deja la petición colgada (timeout). */
-function crearServidorFalso(comportamiento: "ok" | "401" | "esperar"): Promise<ServidorFalso> {
+function crearServidorFalso(
+  comportamiento: "ok" | "401" | "esperar" | "vacio",
+): Promise<ServidorFalso> {
   const peticiones: PeticionFalsa[] = [];
   const server: Server = createServer((peticion, respuesta) => {
     const trozos: Buffer[] = [];
@@ -80,6 +82,22 @@ function crearServidorFalso(comportamiento: "ok" | "401" | "esperar"): Promise<S
       if (comportamiento === "401") {
         respuesta.writeHead(401, { "content-type": "application/json" });
         respuesta.end(JSON.stringify({ error: { message: "Invalid API key" } }));
+        return;
+      }
+      if (comportamiento === "vacio") {
+        // El presupuesto se fue en razonar: 200 con elección válida y contenido vacío.
+        respuesta.writeHead(200, { "content-type": "application/json" });
+        respuesta.end(
+          JSON.stringify({
+            choices: [
+              {
+                message: { role: "assistant", content: "", reasoning_content: "Pensando…" },
+                finish_reason: "length",
+              },
+            ],
+            usage: { completion_tokens_details: { reasoning_tokens: 256 } },
+          }),
+        );
         return;
       }
       respuesta.writeHead(200, { "content-type": "application/json" });
@@ -370,7 +388,7 @@ describe("configuración del proveedor del asistente", () => {
       expect(peticion.sesion).toBeNull();
       expect(peticion.cuerpo).toMatchObject({
         model: "modelo-falso",
-        max_tokens: 16,
+        max_tokens: 256,
         reasoning_effort: "low",
       });
       expect(peticion.cuerpo.messages).toEqual([
@@ -407,6 +425,30 @@ describe("configuración del proveedor del asistente", () => {
       expect(sesionGo1).toMatch(/^[0-9a-f-]{36}$/);
       expect(sesionGo2).toMatch(/^[0-9a-f-]{36}$/);
       expect(sesionGo1).not.toBe(sesionGo2);
+    } finally {
+      await servidor.cerrar();
+    }
+  });
+
+  it("da la prueba por buena si el proveedor responde con contenido vacío", async () => {
+    const servidor = await crearServidorFalso("vacio");
+    try {
+      const cookie = await registrar(app, "probar-vacio");
+      const api = respuestas(app, cookie);
+      const guardado = await api.put({
+        preset: "personalizado",
+        baseUrl: servidor.baseUrl,
+        modelo: "modelo-falso",
+        clave: "sk-vacia-4321",
+      });
+      expect(guardado.statusCode).toBe(200);
+
+      const prueba = await api.probar();
+      expect(prueba.statusCode).toBe(200);
+      expect(prueba.json()).toEqual({ ok: true });
+      expect(prueba.body).not.toContain("Pensando");
+      expect(servidor.peticiones).toHaveLength(1);
+      expect(servidor.peticiones[0]!.cuerpo.max_tokens).toBe(256);
     } finally {
       await servidor.cerrar();
     }
